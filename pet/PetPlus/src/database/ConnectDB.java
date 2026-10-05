@@ -5,7 +5,6 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 
 public final class ConnectDB {
-
     private static final String URL =
             "jdbc:sqlserver://localhost:1433;"
             + "databaseName=PetCareDB;"
