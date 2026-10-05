@@ -1,0 +1,316 @@
+﻿/* =========================================================
+   DU LIEU MAU - PETCAREDB
+   File: SQLQuery_Data.sql
+   Dung sau khi da chay file tao CSDL PetCareDB
+   ========================================================= */
+
+USE PetCareDB;
+GO
+
+/* =========================================================
+   1. TAI KHOAN
+   ========================================================= */
+INSERT INTO TaiKhoan (MaTK, TenDangNhap, MatKhau, VaiTro, TrangThai)
+VALUES
+('TK001', 'admin',    '123456', N'ADMIN',    1),
+('TK002', 'quanly01', '123456', N'QUANLY',   1),
+('TK003', 'nv01',     '123456', N'NHANVIEN', 1),
+('TK004', 'nv02',     '123456', N'NHANVIEN', 1),
+('TK005', 'nv03',     '123456', N'NHANVIEN', 0);
+GO
+
+/* =========================================================
+   2. NHAN VIEN
+   ========================================================= */
+INSERT INTO NhanVien
+(MaNV, TaiKhoanMaTK, TenNV, SDT, CCCD, DiaChi, Email, ChucVu)
+VALUES
+('NV001', 'TK002', N'Nguyễn Minh Anh', '0901000001', '001200000001', N'Quận 1, TP.HCM', 'minhanh@petcare.vn', N'Quản lý'),
+('NV002', 'TK003', N'Trần Văn Minh',   '0901000002', '001200000002', N'Quận 3, TP.HCM', 'vanminh@petcare.vn', N'Nhân viên'),
+('NV003', 'TK004', N'Lê Thị Hoa',      '0901000003', '001200000003', N'Quận 10, TP.HCM', 'thihoa@petcare.vn', N'Nhân viên'),
+('NV004', 'TK005', N'Phạm Quốc Huy',   '0901000004', '001200000004', N'Quận 5, TP.HCM', 'quochuy@petcare.vn', N'Nhân viên');
+GO
+
+/* =========================================================
+   3. BANG LUONG
+   ========================================================= */
+INSERT INTO BangLuong
+(MaBangLuong, NhanVienMaNV, Thang, Nam, LuongCoBan, PhuCap, Thuong, KhauTru)
+VALUES
+('BL001', 'NV001', 9, 2026, 15000000, 2000000, 1500000, 0),
+('BL002', 'NV002', 9, 2026,  9000000, 1000000,  500000, 0),
+('BL003', 'NV003', 9, 2026,  9000000, 1000000,  700000, 0),
+('BL004', 'NV004', 9, 2026,  8500000,  800000,       0, 200000);
+GO
+
+/* =========================================================
+   4. LICH LAM VIEC
+   ========================================================= */
+INSERT INTO LichLamViec
+(MaLichLamViec, NhanVienMaNV, ThoiGianBatDau, ThoiGianKetThuc)
+VALUES
+('LLV001', 'NV002', '2026-10-01 08:00:00', '2026-10-01 17:00:00'),
+('LLV002', 'NV003', '2026-10-01 08:00:00', '2026-10-01 17:00:00'),
+('LLV003', 'NV004', '2026-10-01 13:00:00', '2026-10-01 21:00:00'),
+('LLV004', 'NV002', '2026-10-02 08:00:00', '2026-10-02 17:00:00');
+GO
+
+/* =========================================================
+   5. KHACH HANG
+   ========================================================= */
+INSERT INTO KhachHang
+(MaKH, SDT, DiaChi, HangThanhVien, DiemTichLuy)
+VALUES
+('KH001', '0911000001', N'Quận 1, TP.HCM', N'Vàng', 1200),
+('KH002', '0911000002', N'Quận 7, TP.HCM', N'Bạc', 650),
+('KH003', '0911000003', N'Quận Bình Thạnh, TP.HCM', N'Đồng', 180),
+('KH004', '0911000004', N'Thủ Đức, TP.HCM', N'Vàng', 1450);
+GO
+
+/* =========================================================
+   6. THU CUNG
+   ========================================================= */
+INSERT INTO ThuCung
+(MaThuCung, KhachHangMaKH, TenThuCung, Loai, Giong, GioiTinh, CanNang, NgaySinh, TinhTrangSK, TiemChung)
+VALUES
+('TC001', 'KH001', N'Milo',  N'Chó', N'Poodle', N'Đực', 6.50, '2022-05-10', N'Khỏe mạnh', N'Đã tiêm đầy đủ'),
+('TC002', 'KH001', N'Luna',  N'Mèo', N'Anh lông ngắn', N'Cái', 4.20, '2023-02-15', N'Khỏe mạnh', N'Đã tiêm đầy đủ'),
+('TC003', 'KH002', N'Bông',  N'Chó', N'Pomeranian', N'Cái', 4.80, '2021-08-20', N'Khỏe mạnh', N'Đã tiêm phòng'),
+('TC004', 'KH003', N'Tom',   N'Mèo', N'Mèo ta', N'Đực', 3.90, '2024-01-05', N'Khỏe mạnh', N'Chưa tiêm mũi nhắc'),
+('TC005', 'KH004', N'Lucky', N'Chó', N'Golden Retriever', N'Đực', 28.00, '2020-11-12', N'Khỏe mạnh', N'Đã tiêm đầy đủ');
+GO
+
+/* =========================================================
+   7. LOAI SAN PHAM
+   ========================================================= */
+INSERT INTO LoaiSanPham (MaLoai, TenLoai)
+VALUES
+('LSP001', N'Thức ăn cho chó'),
+('LSP002', N'Thức ăn cho mèo'),
+('LSP003', N'Đồ chơi thú cưng'),
+('LSP004', N'Phụ kiện thú cưng'),
+('LSP005', N'Sản phẩm chăm sóc');
+GO
+
+/* =========================================================
+   8. SAN PHAM
+   ========================================================= */
+INSERT INTO SanPham
+(MaSP, LoaiSanPhamMaLoai, TenSP, GiaBan, SoLuongTon)
+VALUES
+('SP001', 'LSP001', N'Hạt Royal Canin cho chó', 350000, 50),
+('SP002', 'LSP002', N'Hạt Royal Canin cho mèo', 320000, 45),
+('SP003', 'LSP003', N'Bóng cao su cho chó',       85000, 30),
+('SP004', 'LSP004', N'Vòng cổ thú cưng',          120000, 25),
+('SP005', 'LSP005', N'Sữa tắm cho chó mèo',       180000, 40),
+('SP006', 'LSP004', N'Dây dắt thú cưng',          150000, 20);
+GO
+
+/* =========================================================
+   9. MA VACH
+   ========================================================= */
+INSERT INTO MaVach (MaVach, SanPhamMaSP)
+VALUES
+('893000000001', 'SP001'),
+('893000000002', 'SP002'),
+('893000000003', 'SP003'),
+('893000000004', 'SP004'),
+('893000000005', 'SP005'),
+('893000000006', 'SP006');
+GO
+
+/* =========================================================
+   10. KHUYEN MAI
+   ========================================================= */
+INSERT INTO KhuyenMai
+(MaKhuyenMai, TenKhuyenMai, PhanTramGiam, DieuKienApDung, NgayBatDau, NgayKetThuc)
+VALUES
+('KM001', N'Khuyến mãi tháng 10', 10, N'Áp dụng cho sản phẩm được chọn', '2026-10-01', '2026-10-31'),
+('KM002', N'Ưu đãi khách hàng vàng', 15, N'Khách hàng hạng Vàng', '2026-10-01', '2026-12-31');
+GO
+
+/* =========================================================
+   11. KHUYEN MAI - SAN PHAM
+   ========================================================= */
+INSERT INTO KhuyenMaiSanPham
+(KhuyenMaiMaKhuyenMai, SanPhamMaSP, MucGiam)
+VALUES
+('KM001', 'SP001', 35000),
+('KM001', 'SP003',  8500),
+('KM001', 'SP005', 18000),
+('KM002', 'SP002', 48000);
+GO
+
+/* =========================================================
+   12. NHA CUNG CAP
+   ========================================================= */
+INSERT INTO NhaCungCap
+(MaNCC, TenNCC, SoDienThoai, DiaChi, Email)
+VALUES
+('NCC001', N'Công ty Pet Food Việt', '02830000001', N'Quận 1, TP.HCM', 'contact@petfood.vn'),
+('NCC002', N'Công ty Phụ Kiện Thú Cưng', '02830000002', N'Quận 5, TP.HCM', 'info@petaccessory.vn'),
+('NCC003', N'Công ty Chăm Sóc Pet', '02830000003', N'Quận 10, TP.HCM', 'sales@petcare.vn');
+GO
+
+/* =========================================================
+   13. PHIEU NHAP
+   ========================================================= */
+INSERT INTO PhieuNhap
+(MaPN, NhanVienMaNV, NhaCungCapMaNCC, NgayNhap)
+VALUES
+('PN001', 'NV002', 'NCC001', '2026-09-20 09:00:00'),
+('PN002', 'NV003', 'NCC002', '2026-09-22 10:30:00'),
+('PN003', 'NV002', 'NCC003', '2026-09-25 14:00:00');
+GO
+
+/* =========================================================
+   14. CHI TIET PHIEU NHAP
+   ========================================================= */
+INSERT INTO ChiTietPhieuNhap
+(PhieuNhapMaPN, SanPhamMaSP, SoLuongNhap, DonGiaNhap, HanSuDung, ThanhTien)
+VALUES
+('PN001', 'SP001', 30, 280000, '2027-09-20', 8400000),
+('PN001', 'SP002', 25, 250000, '2027-09-20', 6250000),
+('PN002', 'SP004', 20,  80000, NULL, 1600000),
+('PN002', 'SP006', 15, 100000, NULL, 1500000),
+('PN003', 'SP005', 30, 130000, '2028-09-25', 3900000);
+GO
+
+/* =========================================================
+   15. HOA DON
+   ========================================================= */
+INSERT INTO HoaDon
+(MaHoaDon, NgayLapHD, TinhTienGiam, TongTien, ThanhTien)
+VALUES
+('HD001', '2026-10-01 09:30:00', 35000, 435000, 400000),
+('HD002', '2026-10-01 14:15:00', 48000, 440000, 392000),
+('HD003', '2026-10-02 10:00:00',     0, 235000, 235000);
+GO
+
+/* =========================================================
+   16. DON HANG
+   ========================================================= */
+INSERT INTO DonHang
+(MaDonHang, KhachHangMaKH, HoaDonID, NhanVienMaNV, NgayTao, TrangThai)
+VALUES
+('DH001', 'KH001', 'HD001', 'NV002', '2026-10-01 09:25:00', N'Hoàn thành'),
+('DH002', 'KH002', 'HD002', 'NV003', '2026-10-01 14:10:00', N'Hoàn thành'),
+('DH003', 'KH003', 'HD003', 'NV004', '2026-10-02 09:55:00', N'Hoàn thành');
+GO
+
+/* =========================================================
+   17. CHI TIET DON HANG
+   ========================================================= */
+INSERT INTO ChiTietDonHang
+(DonHangMaDonHang, SanPhamMaSP, SoLuong, DonGia, ThanhTien)
+VALUES
+('DH001', 'SP001', 1, 350000, 350000),
+('DH001', 'SP003', 1,  85000,  85000),
+('DH002', 'SP002', 1, 320000, 320000),
+('DH002', 'SP004', 1, 120000, 120000),
+('DH003', 'SP004', 1, 120000, 120000),
+('DH003', 'SP005', 1, 115000, 115000);
+GO
+
+/* =========================================================
+   18. PHUONG THUC THANH TOAN
+   ========================================================= */
+INSERT INTO PhuongThucThanhToan (MaPTTT, TenPTTT)
+VALUES
+('PT001', N'Tiền mặt'),
+('PT002', N'Chuyển khoản'),
+('PT003', N'QR Code');
+GO
+
+/* =========================================================
+   19. THANH TOAN
+   ========================================================= */
+INSERT INTO ThanhToan
+(MaTT, DonHangMaDonHang, KhuyenMaiMaKhuyenMai, PhuongThucThanhToanMaPTTT,
+ HoaDonID, SoTien, NgayThanhToan, TrangThai, TienKhachDua, TienThoi)
+VALUES
+('TT001', 'DH001', 'KM001', 'PT001', 'HD001', 400000, '2026-10-01 09:31:00', N'Đã thanh toán', 450000, 50000),
+('TT002', 'DH002', 'KM002', 'PT003', 'HD002', 392000, '2026-10-01 14:16:00', N'Đã thanh toán', 392000, 0),
+('TT003', 'DH003', NULL,    'PT002', 'HD003', 235000, '2026-10-02 10:01:00', N'Đã thanh toán', 235000, 0);
+GO
+
+/* =========================================================
+   20. TICH DIEM
+   ========================================================= */
+INSERT INTO TichDiem
+(MaTichDiem, HoaDonID, KhachHangMaKH, DiemTichLuy, NgayCapNhat, QuyDoiDiem)
+VALUES
+('TD001', 'HD001', 'KH001', 40, '2026-10-01 09:32:00', 40),
+('TD002', 'HD002', 'KH002', 39, '2026-10-01 14:17:00', 39),
+('TD003', 'HD003', 'KH003', 23, '2026-10-02 10:02:00', 23);
+GO
+
+/* =========================================================
+   21. DICH VU
+   ========================================================= */
+INSERT INTO DichVu
+(MaDichVu, TenDichVu, DonGia, MoTa, TrangThai)
+VALUES
+('DV001', N'Tắm vệ sinh thú cưng', 150000, N'Tắm và vệ sinh cơ bản', 1),
+('DV002', N'Cắt tỉa lông',          250000, N'Cắt tỉa theo yêu cầu', 1),
+('DV003', N'Cắt móng',              80000, N'Cắt móng và vệ sinh chân', 1),
+('DV004', N'Vệ sinh tai',           70000, N'Vệ sinh tai cơ bản', 1);
+GO
+
+/* =========================================================
+   22. LICH HEN
+   ========================================================= */
+INSERT INTO LichHen
+(MaLichHen, ThuCungMaThuCung, KhachHangMaKH, NhanVienMaNV, ThoiGianHen, TrangThai)
+VALUES
+('LH001', 'TC001', 'KH001', 'NV002', '2026-10-05 09:00:00', N'Đã xác nhận'),
+('LH002', 'TC002', 'KH001', 'NV003', '2026-10-05 14:00:00', N'Đã xác nhận'),
+('LH003', 'TC003', 'KH002', 'NV004', '2026-10-06 10:00:00', N'Chờ xác nhận'),
+('LH004', 'TC005', 'KH004', 'NV002', '2026-10-06 15:00:00', N'Đã xác nhận');
+GO
+
+/* =========================================================
+   23. CHI TIET DICH VU
+   ========================================================= */
+INSERT INTO ChiTietDichVu
+(DichVuMaDichVu, LichHenMaLichHen, DonHangMaDonHang, PhuThu)
+VALUES
+('DV001', 'LH001', 'DH001', 0),
+('DV003', 'LH001', 'DH001', 0),
+('DV002', 'LH002', 'DH002', 20000),
+('DV001', 'LH003', 'DH003', 0);
+GO
+
+/* =========================================================
+   KIEM TRA DU LIEU
+   ========================================================= */
+
+SELECT * FROM TaiKhoan;
+SELECT * FROM NhanVien;
+SELECT * FROM BangLuong;
+SELECT * FROM LichLamViec;
+SELECT * FROM KhachHang;
+SELECT * FROM ThuCung;
+SELECT * FROM LoaiSanPham;
+SELECT * FROM SanPham;
+SELECT * FROM MaVach;
+SELECT * FROM KhuyenMai;
+SELECT * FROM KhuyenMaiSanPham;
+SELECT * FROM NhaCungCap;
+SELECT * FROM PhieuNhap;
+SELECT * FROM ChiTietPhieuNhap;
+SELECT * FROM HoaDon;
+SELECT * FROM DonHang;
+SELECT * FROM ChiTietDonHang;
+SELECT * FROM PhuongThucThanhToan;
+SELECT * FROM ThanhToan;
+SELECT * FROM TichDiem;
+SELECT * FROM DichVu;
+SELECT * FROM LichHen;
+SELECT * FROM ChiTietDichVu;
+GO
+
+PRINT N'==============================================';
+PRINT N'DA THEM DU LIEU MAU CHO PetCareDB';
+PRINT N'==============================================';
+GO
