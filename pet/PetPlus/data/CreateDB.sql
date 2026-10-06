@@ -307,12 +307,11 @@ GO
 
    hanSuDung -> DATE
    donGiaNhap -> DECIMAL
-   thanhTien là thuộc tính dẫn xuất
+   thanhTien là thuộc nh dẫn xuất
    ============================================================ */
 
 CREATE TABLE ChiTietPhieuNhap
 (
-    ID           INT IDENTITY(1,1) NOT NULL,
 
     soLuongNhap  INT               NOT NULL,
     donGiaNhap   DECIMAL(18,2)     NOT NULL,
@@ -321,17 +320,7 @@ CREATE TABLE ChiTietPhieuNhap
     maPN         VARCHAR(20)       NOT NULL,
     maSP         VARCHAR(20)       NOT NULL,
 
-    thanhTien AS
-    (
-        CONVERT
-        (
-            DECIMAL(18,2),
-            soLuongNhap * donGiaNhap
-        )
-    ) PERSISTED,
 
-    CONSTRAINT PK_ChiTietPhieuNhap
-        PRIMARY KEY (ID),
 
     CONSTRAINT FK_ChiTietPhieuNhap_PhieuNhap
         FOREIGN KEY (maPN)
@@ -407,7 +396,7 @@ CREATE TABLE DichVu
     tenDichVu  NVARCHAR(150)   NOT NULL,
     donGia     DECIMAL(18,2)   NOT NULL,
     moTa       NVARCHAR(500)   NULL,
-    trangThai  BIT             NOT NULL DEFAULT 1,
+    trangThai  NVARCHAR(20)              NOT NULL ,
 
     maLichHen  VARCHAR(20)     NOT NULL,
 
@@ -437,7 +426,7 @@ CREATE TABLE KhuyenMai
     maKhuyenMai     VARCHAR(20)    NOT NULL,
     tenKhuyenMai    NVARCHAR(150)  NOT NULL,
 
-    phanTramGiam    DECIMAL(5,2)   NOT NULL,
+    phanTramGiam    float   NOT NULL,
 
     dieuKienApDung  NVARCHAR(500)  NULL,
 
@@ -496,8 +485,7 @@ CREATE TABLE HoaDon
 (
     maHoaDon     VARCHAR(20) NOT NULL,
 
-    ngayLapHD    DATETIME2   NOT NULL
-                  DEFAULT SYSDATETIME(),
+    ngayLapHD    DATE   NOT NULL,
 
     maNV         VARCHAR(20) NOT NULL,
     maKH         VARCHAR(20) NOT NULL,
@@ -544,15 +532,6 @@ CREATE TABLE ChiTietHoaDon
 
     soLuong   INT             NOT NULL,
     donGia    DECIMAL(18,2)   NOT NULL,
-
-    thanhTien AS
-    (
-        CONVERT
-        (
-            DECIMAL(18,2),
-            soLuong * donGia
-        )
-    ) PERSISTED,
 
     CONSTRAINT PK_ChiTietHoaDon
         PRIMARY KEY (maHoaDon, maDichVu),
@@ -631,7 +610,7 @@ CREATE TABLE TichDiem
     maTichDiem   VARCHAR(20) NOT NULL,
     diemTichLuy  INT         NOT NULL,
 
-    ngayCapNhat  DATETIME2   NOT NULL
+    ngayCapNhat  DATE  NOT NULL
                   DEFAULT SYSDATETIME(),
 
     maKH         VARCHAR(20) NOT NULL,
