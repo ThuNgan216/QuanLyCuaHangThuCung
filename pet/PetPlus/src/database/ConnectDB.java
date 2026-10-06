@@ -27,7 +27,7 @@ public final class ConnectDB {
 
     public static void main(String[] args) {
 
-        try (Connection connection = getConnection()) {
+        try (Connection connection = getConnection()) { 
 
             System.out.println("================================");
             System.out.println("Káº¾T Ná»�I SQL SERVER THÃ€NH CÃ”NG");
