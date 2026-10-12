@@ -15,18 +15,6 @@ import entity.KhachHang;
 
 public class HoaDonDAO {
 
-    /*
-     * Tính tổng tiền hóa đơn:
-     * Tổng gốc = SUM(soLuong * donGia)
-     * Tổng tiền = Tổng gốc * (1 - phanTramGiam / 100)
-     *
-     * Các bảng sử dụng:
-     * HoaDon
-     * KhachHang
-     * KhuyenMai
-     * ChiTietHoaDon
-     */
-
     private static final String JOIN_TONG_GOC = " LEFT JOIN ( " +
             "     SELECT maHoaDon, " +
             "            SUM(soLuong * donGia) AS TongGoc " +
@@ -37,14 +25,6 @@ public class HoaDonDAO {
     private static final String TONG_TIEN = "(ISNULL(ct.TongGoc, 0) * " +
             "(1 - ISNULL(km.phanTramGiam, 0) / 100.0))";
 
-    /*
-     * Khoảng giá:
-     * 0: Dưới 500.000
-     * 1: Từ 500.000 đến dưới 1.500.000
-     * 2: Từ 1.500.000 đến dưới 3.000.000
-     * 3: Từ 3.000.000 trở lên
-     * -1: Không lọc giá
-     */
     private static final double[] PRICE_MIN = {
             0,
             500000,
@@ -59,23 +39,6 @@ public class HoaDonDAO {
             null
     };
 
-    /**
-     * Tìm kiếm, lọc và sắp xếp hóa đơn.
-     *
-     * @param keyword     Tìm theo mã hóa đơn, tên khách hàng hoặc SĐT.
-     *                    Null hoặc chuỗi rỗng nghĩa là không tìm theo từ khóa.
-     * @param ngay        Ngày cần lọc; null nghĩa là bỏ qua.
-     * @param thang       Tháng cần lọc; null nghĩa là bỏ qua.
-     * @param nam         Năm cần lọc; null nghĩa là bỏ qua.
-     * @param priceIdx    Chỉ số khoảng giá từ 0 đến 3;
-     *                    -1 nghĩa là không lọc giá.
-     * @param sort        1: Tổng tiền tăng dần.
-     *                    -1: Tổng tiền giảm dần.
-     *                    0: Ngày lập mới nhất trước.
-     * @param outTongTien Map lưu mã hóa đơn và tổng tiền tương ứng.
-     * @return Danh sách hóa đơn tìm được.
-     * @throws SQLException Nếu xảy ra lỗi truy vấn SQL Server.
-     */
     public List<HoaDon> timKiem(
             String keyword,
             Integer ngay,
@@ -224,13 +187,6 @@ public class HoaDonDAO {
         return ds;
     }
 
-    /**
-     * Tạo đối tượng KhachHang từ dữ liệu ResultSet.
-     *
-     * SQL đã đặt bí danh:
-     * k.tenKH AS TenKH
-     * k.sdt AS SoDienThoai
-     */
     private KhachHang taoKhachHang(ResultSet rs)
             throws SQLException {
 
