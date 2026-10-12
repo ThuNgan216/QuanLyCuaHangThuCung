@@ -1,0 +1,192 @@
+package ui;
+
+import java.awt.BorderLayout;
+import java.awt.Font;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
+import javax.swing.table.DefaultTableModel;
+
+import database.ConnectDB;
+
+public class TaiKhoanGUI extends JFrame {
+
+private JTable table;private DefaultTableModel tableModel;
+private JButton btnLamMoi;
+
+public TaiKhoanGUI() {
+
+    // =========================
+    // CẤU HÌNH CỬA SỔ
+    // =========================
+    setTitle("Quản lý tài khoản");
+    setSize(800, 500);
+    setLocationRelativeTo(null);
+    setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+    // =========================
+    // TIÊU ĐỀ
+    // =========================
+    JLabel lblTitle = new JLabel(
+            "DANH SÁCH TÀI KHOẢN",
+            SwingConstants.CENTER
+    );
+
+    lblTitle.setFont(
+            new Font("Arial", Font.BOLD, 24)
+    );
+
+    // =========================
+    // TẠO BẢNG
+    // =========================
+    String[] columns = {
+            "Mã tài khoản",
+            "Tên đăng nhập",
+            "Vai trò",
+            "Trạng thái"
+    };
+
+    tableModel = new DefaultTableModel(columns, 0) {
+
+        @Override
+        public boolean isCellEditable(int row, int column) {
+            return false;
+        }
+    };
+
+    table = new JTable(tableModel);
+
+    table.setRowHeight(30);
+
+    table.setFont(
+            new Font("Arial", Font.PLAIN, 14)
+    );
+
+    table.getTableHeader().setFont(
+            new Font("Arial", Font.BOLD, 14)
+    );
+
+    JScrollPane scrollPane = new JScrollPane(table);
+
+    // =========================
+    // NÚT LÀM MỚI
+    // =========================
+    btnLamMoi = new JButton("Làm mới");
+
+    btnLamMoi.setFont(
+            new Font("Arial", Font.PLAIN, 14)
+    );
+
+    btnLamMoi.addActionListener(e -> loadData());
+
+    JPanel panelBottom = new JPanel();
+    panelBottom.add(btnLamMoi);
+
+    // =========================
+    // GHÉP GIAO DIỆN
+    // =========================
+    setLayout(new BorderLayout());
+
+    add(lblTitle, BorderLayout.NORTH);
+    add(scrollPane, BorderLayout.CENTER);
+    add(panelBottom, BorderLayout.SOUTH);
+
+    // =========================
+    // TẢI DỮ LIỆU KHI MỞ
+    // =========================
+    loadData();
+}
+
+// =========================================
+// ĐỌC DỮ LIỆU TỪ BẢNG TaiKhoan
+// =========================================
+private void loadData() {
+
+    // Xóa dữ liệu cũ trên JTable
+    tableModel.setRowCount(0);
+
+    String sql =
+            "SELECT maTK, tenDangNhap, vaiTro, trangThai "
+            + "FROM TaiKhoan";
+
+    try (
+            Connection connection = ConnectDB.getConnection();
+            PreparedStatement statement =
+                    connection.prepareStatement(sql);
+            ResultSet resultSet =
+                    statement.executeQuery()
+    ) {
+
+        // Đọc từng dòng trong database
+        while (resultSet.next()) {
+
+            String maTK =
+                    resultSet.getString("maTK");
+
+            String tenDangNhap =
+                    resultSet.getString("tenDangNhap");
+
+            String vaiTro =
+                    resultSet.getString("vaiTro");
+
+            boolean trangThai =
+                    resultSet.getBoolean("trangThai");
+
+            String trangThaiText;
+
+            if (trangThai) {
+                trangThaiText = "Hoạt động";
+            } else {
+                trangThaiText = "Khóa";
+            }
+
+            // Thêm dòng vào JTable
+            tableModel.addRow(
+                    new Object[] {
+                            maTK,
+                            tenDangNhap,
+                            vaiTro,
+                            trangThaiText
+                    }
+            );
+        }
+
+    } catch (SQLException e) {
+
+        JOptionPane.showMessageDialog(
+                this,
+                "Không thể tải dữ liệu từ database!\n\n"
+                + e.getMessage(),
+                "Lỗi kết nối",
+                JOptionPane.ERROR_MESSAGE
+        );
+
+        e.printStackTrace();
+    }
+}
+
+// =========================================
+// MAIN
+// =========================================
+public static void main(String[] args) {
+
+    SwingUtilities.invokeLater(() -> {
+
+        TaiKhoanGUI gui = new TaiKhoanGUI();
+
+        gui.setVisible(true);
+    });
+}
+
+}
