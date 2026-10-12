@@ -97,11 +97,11 @@ public class LoginFrame extends JFrame {
 					g2.setFont(getFont().deriveFont(Font.ITALIC));
 					// Căn giữa chữ chìm theo chiều dọc
 					int y = (getHeight() - g.getFontMetrics().getHeight()) / 2 + g.getFontMetrics().getAscent();
-<<<<<<< HEAD
-					g2.drawString("Mã nhân viên (VD: admin)", 12, y);
-=======
 					g2.drawString("Mã nhân viên (VD: NV01)", 12, y);
+<<<<<<< HEAD
 >>>>>>> 626b9ab (MainFrame_LoginFame_Auth)
+=======
+>>>>>>> 4d4f4c6 (Sửa SQL + code HoaDon)
 					g2.dispose();
 				}
 			}

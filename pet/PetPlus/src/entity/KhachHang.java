@@ -2,6 +2,7 @@ package entity;
 
 public class KhachHang {
     private String maKH;
+    private String tenKH;
     private String sdt;
     private String diaChi;
     private int hangThanhVien;
@@ -14,8 +15,9 @@ public class KhachHang {
         this.maKH = maKH;
     }
 
-    public KhachHang(String maKH, String sdt, String diaChi, int hangThanhVien, int diemTichLuy) {
+    public KhachHang(String maKH, String tenKH, String sdt, String diaChi, int hangThanhVien, int diemTichLuy) {
         this.maKH = maKH;
+        this.tenKH = tenKH;
         this.sdt = sdt;
         this.diaChi = diaChi;
         this.hangThanhVien = hangThanhVien;
@@ -28,6 +30,14 @@ public class KhachHang {
 
     public void setMaKH(String maKH) {
         this.maKH = maKH;
+    }
+
+    public String getTenKH() {
+        return tenKH;
+    }
+
+    public void setTenKH(String tenKH) {
+        this.tenKH = tenKH;
     }
 
     public String getSdt() {
@@ -89,8 +99,8 @@ public class KhachHang {
 
     @Override
     public String toString() {
-        return "KhachHang [maKH=" + maKH + ", sdt=" + sdt + ", diaChi=" + diaChi + ", hangThanhVien=" + hangThanhVien
-                + ", diemTichLuy=" + diemTichLuy + "]";
+        return "KhachHang [maKH=" + maKH + ", tenKH=" + tenKH + ", sdt=" + sdt + ", diaChi=" + diaChi
+                + ", hangThanhVien=" + hangThanhVien + ", diemTichLuy=" + diemTichLuy + "]";
     }
 
 }
