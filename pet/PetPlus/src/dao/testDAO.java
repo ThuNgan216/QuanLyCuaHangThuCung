@@ -1,3 +1,4 @@
+
 package dao;
 
 import java.sql.Connection;
@@ -9,14 +10,16 @@ import database.ConnectDB;
 
 public class testDAO {
 
-    public static void main(java.lang.String[] args) {
+    public static void main(String[] args) {
 
-        java.lang.String sql = "SELECT maTK, tenDangNhap, vaiTro, trangThai "
-                + "FROM TaiKhoan";
+        String sql =
+            "SELECT maTK, tenDangNhap, vaiTro, trangThai " +
+            "FROM TaiKhoan";
 
         try (
             Connection connection = ConnectDB.getConnection();
-            PreparedStatement statement = connection.prepareStatement(sql);
+            PreparedStatement statement =
+                connection.prepareStatement(sql);
             ResultSet resultSet = statement.executeQuery()
         ) {
 
@@ -28,7 +31,7 @@ public class testDAO {
                     + " | "
                     + resultSet.getString("vaiTro")
                     + " | "
-                    + resultSet.getBoolean("trangThai")
+                    + resultSet.getString("trangThai")
                 );
             }
 

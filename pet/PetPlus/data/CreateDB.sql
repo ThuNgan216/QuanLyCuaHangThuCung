@@ -6,7 +6,7 @@
    ============================================================ */
 
 USE master;
-GO
+
 
 /* ============================================================
    XÓA DATABASE CŨ
@@ -20,7 +20,7 @@ BEGIN
 
     DROP DATABASE PETPLUS;
 END;
-GO
+
 
 
 /* ============================================================
@@ -28,10 +28,9 @@ GO
    ============================================================ */
 
 CREATE DATABASE PETPLUS;
-GO
+
 
 USE PETPLUS;
-GO
 
 
 /* ============================================================
@@ -52,7 +51,7 @@ CREATE TABLE TaiKhoan
     CONSTRAINT UQ_TaiKhoan_TenDangNhap
         UNIQUE (tenDangNhap)
 );
-GO
+
 
 
 /* ============================================================
@@ -86,7 +85,7 @@ CREATE TABLE NhanVien
         FOREIGN KEY (maTK)
         REFERENCES TaiKhoan(maTK)
 );
-GO
+
 
 
 /* ============================================================
@@ -108,7 +107,7 @@ CREATE TABLE CaLamViec
     CONSTRAINT CK_CaLamViec_ThoiGian
         CHECK (gioKetThuc > gioBatDau)
 );
-GO
+
 
 
 /* ============================================================
@@ -142,7 +141,7 @@ CREATE TABLE LichLamViec
     CONSTRAINT UQ_LichLamViec
         UNIQUE (ngayLamViec, maNV, maCa)
 );
-GO
+
 
 
 /* ============================================================
@@ -163,7 +162,7 @@ CREATE TABLE KhachHang
     CONSTRAINT CK_KhachHang_Diem
         CHECK (diemTichLuy >= 0)
 );
-GO
+
 
 
 /* ============================================================
@@ -201,7 +200,7 @@ CREATE TABLE ThuCung
     CONSTRAINT CK_ThuCung_CanNang
         CHECK (canNang IS NULL OR canNang >= 0)
 );
-GO
+
 
 
 /* ============================================================
@@ -226,7 +225,7 @@ CREATE TABLE SanPham
     CONSTRAINT CK_SanPham_SoLuong
         CHECK (soLuongTon >= 0)
 );
-GO
+
 
 
 /* ============================================================
@@ -250,7 +249,7 @@ CREATE TABLE MaVach
         FOREIGN KEY (maSP)
         REFERENCES SanPham(maSP)
 );
-GO
+
 
 
 /* ============================================================
@@ -268,7 +267,7 @@ CREATE TABLE NhaCungCap
     CONSTRAINT PK_NhaCungCap
         PRIMARY KEY (maNCC)
 );
-GO
+
 
 
 /* ============================================================
@@ -298,8 +297,7 @@ CREATE TABLE PhieuNhap
     CONSTRAINT FK_PhieuNhap_NhaCungCap
         FOREIGN KEY (maNCC)
         REFERENCES NhaCungCap(maNCC)
-);
-GO
+)
 
 
 /* ============================================================
@@ -377,7 +375,7 @@ CREATE TABLE LichHen
         FOREIGN KEY (maThuCung)
         REFERENCES ThuCung(maThuCung)
 );
-GO
+
 
 
 /* ============================================================
@@ -410,7 +408,7 @@ CREATE TABLE DichVu
     CONSTRAINT CK_DichVu_DonGia
         CHECK (donGia >= 0)
 );
-GO
+
 
 
 /* ============================================================
@@ -446,7 +444,7 @@ CREATE TABLE KhuyenMai
     CONSTRAINT CK_KhuyenMai_Ngay
         CHECK (ngayKetThuc >= ngayBatDau)
 );
-GO
+
 
 
 /* ============================================================
@@ -511,7 +509,7 @@ CREATE TABLE HoaDon
         FOREIGN KEY (maPTTT)
         REFERENCES PhuongThucThanhToan(maPTTT)
 );
-GO
+
 
 
 /* ============================================================
@@ -550,7 +548,7 @@ CREATE TABLE ChiTietHoaDon
     CONSTRAINT CK_ChiTietHoaDon_DonGia
         CHECK (donGia >= 0)
 );
-GO
+
 
 
 /* ============================================================
@@ -591,7 +589,7 @@ CREATE TABLE KhuyenMaiSanPham
     CONSTRAINT CK_KhuyenMaiSanPham_MucGiam
         CHECK (mucGiam >= 0)
 );
-GO
+
 
 
 /* ============================================================
@@ -735,3 +733,47 @@ PRINT N'PETPLUS ĐÃ ĐƯỢC TẠO THÀNH CÔNG';
 PRINT N'19 BẢNG - ĐÃ SỬA ĐÚNG KIỂU DỮ LIỆU';
 PRINT N'================================================';
 GO
+
+
+-- 1. Tạo tài khoản Admin nếu chưa có
+USE PETPLUS
+IF NOT EXISTS (
+    SELECT 1 FROM TaiKhoan WHERE tenDangNhap = N'admin'
+)
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM TaiKhoan WHERE maTK = 'TK01'
+    )
+    BEGIN
+        INSERT INTO TaiKhoan
+            (maTK, tenDangNhap, matKhau, vaiTro, trangThai)
+        VALUES
+            ('TK01', N'admin', N'Admin@123',
+             N'QUAN_LY', N'Hoạt động');
+    END
+END
+-- 2. Liên kết Admin với NV01 nếu tài khoản chưa được liên kết
+IF EXISTS (
+    SELECT 1 FROM TaiKhoan WHERE tenDangNhap = N'admin'
+)
+AND NOT EXISTS (
+    SELECT 1 FROM NhanVien WHERE maNV = 'NV01'
+)
+BEGIN
+    DECLARE @maTK VARCHAR(20);
+
+    SELECT @maTK = maTK
+    FROM TaiKhoan
+    WHERE tenDangNhap = N'admin';
+
+    IF NOT EXISTS (
+        SELECT 1 FROM NhanVien WHERE maTK = @maTK
+    )
+    BEGIN
+        INSERT INTO NhanVien
+            (maNV, tenNV, sdt, cccd, diaChi, email, chucVu, maTK)
+        VALUES
+            ('NV01', N'Quản lý hệ thống', NULL, NULL,
+             NULL, NULL, N'Quản lý', @maTK);
+    END
+END

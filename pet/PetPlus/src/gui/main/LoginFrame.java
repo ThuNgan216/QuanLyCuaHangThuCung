@@ -1,10 +1,7 @@
 package gui.main;
 
 import appColor.AppColors;
-<<<<<<< HEAD
 import dao.TaiKhoanDAO;
-=======
->>>>>>> 626b9ab (MainFrame_LoginFame_Auth)
 import entity.NhanVien;
 import entity.TaiKhoan;
 import utils.Auth;
@@ -15,10 +12,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 import java.awt.*;
 import java.net.URL;
-<<<<<<< HEAD
 import java.sql.SQLException;
-=======
->>>>>>> 626b9ab (MainFrame_LoginFame_Auth)
 
 public class LoginFrame extends JFrame {
 
