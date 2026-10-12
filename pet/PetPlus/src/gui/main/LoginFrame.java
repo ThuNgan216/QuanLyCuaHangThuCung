@@ -1,6 +1,7 @@
 package gui.main;
 
 import appColor.AppColors;
+import dao.TaiKhoanDAO;
 import entity.NhanVien;
 import entity.TaiKhoan;
 import utils.Auth;
@@ -9,8 +10,9 @@ import javax.swing.*;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
-import java.awt.*;
+import java.awt.*;	
 import java.net.URL;
+import java.sql.SQLException;
 
 public class LoginFrame extends JFrame {
 
@@ -149,52 +151,46 @@ public class LoginFrame extends JFrame {
 		txtPassword.addActionListener(e -> xuLyDangNhap()); // Bấm Enter ở ô MK cũng đăng nhập
 	}
 
-	private void xuLyDangNhap() {
-		String user = txtUsername.getText().trim();
-		String pass = new String(txtPassword.getPassword());
+private void xuLyDangNhap() {
+    String tenDangNhap = txtUsername.getText().trim();
+    String matKhau = new String(txtPassword.getPassword());
 
-		if (user.isEmpty() || pass.isEmpty()) {
-			JOptionPane.showMessageDialog(this, "Vui lòng nhập đầy đủ Tên đăng nhập và Mật khẩu!");
-			return;
-		}
+    if (tenDangNhap.isEmpty() || matKhau.isEmpty()) {
+        JOptionPane.showMessageDialog(
+            this,
+            "Vui lòng nhập tên đăng nhập và mật khẩu!"
+        );
+        return;
+    }
 
-		// --- MOCK DATA: ĐĂNG NHẬP GIẢ LẬP ĐỂ TEST GIAO DIỆN ---
-		// (Sau này code xong DAO thì đổi thành: NhanVien nvLogin =
-		// taiKhoanDAO.dangNhap(user, pass); )
-		NhanVien nvLogin = null;
+    try {
+        TaiKhoanDAO dao = new TaiKhoanDAO();
+        NhanVien nv = dao.dangNhap(tenDangNhap, matKhau);
 
-		if (user.equals("NV01") && pass.equals("123")) {
-			TaiKhoan tk = new TaiKhoan("TK01", "NV01", "123", "QUAN_LY", "Hoạt động");
-			nvLogin = new NhanVien("NV01", "Trần Văn Bí", "0901234567", "079123", "HCM", "bi@gmail.com", "Quản lý", tk);
+        if (nv == null) {
+            JOptionPane.showMessageDialog(
+                this,
+                "Tên đăng nhập hoặc mật khẩu không đúng, " +
+                "hoặc tài khoản đã ngừng hoạt động!"
+            );
+            return;
+        }
 
-		} else if (user.equals("NV02") && pass.equals("123")) {
-			TaiKhoan tk = new TaiKhoan("TK02", "NV02", "123", "KHO", "Hoạt động");
-			nvLogin = new NhanVien("NV02", "Nguyễn Văn Kho", "0901234568", "079124", "HCM", "kho@gmail.com",
-					"Nhân viên kho", tk);
+        Auth.user = nv;
 
-		} else if (user.equals("NV03") && pass.equals("123")) {
-			TaiKhoan tk = new TaiKhoan("TK03", "NV03", "123", "BAN_HANG", "Hoạt động");
-			nvLogin = new NhanVien("NV03", "Lê Thị Bán", "0901234569", "079125", "HCM", "ban@gmail.com",
-					"Nhân viên bán hàng", tk);
+        MainFrame main = new MainFrame();
+        main.setVisible(true);
+        this.dispose();
 
-		} else if (user.equals("NV04") && pass.equals("123")) {
-			TaiKhoan tk = new TaiKhoan("TK04", "NV04", "123", "CHAM_SOC", "Hoạt động");
-			nvLogin = new NhanVien("NV04", "Phạm Chăm Sóc", "0901234570", "079126", "HCM", "chamsoc@gmail.com",
-					"Nhân viên chăm sóc", tk);
-		}
-
-		// --- XỬ LÝ KẾT QUẢ ĐĂNG NHẬP ---
-		if (nvLogin != null) {
-			Auth.user = nvLogin;
-			new MainFrame().setVisible(true);
-			this.dispose();
-		} else {
-			// Cập nhật lại câu thông báo lỗi cho khớp với dữ liệu mới
-			JOptionPane.showMessageDialog(this,
-					"Sai mã nhân viên hoặc mật khẩu!\n(Mẹo: thử NV01/123, NV02/123, NV03/123, NV04/123)", "Lỗi",
-					JOptionPane.ERROR_MESSAGE);
-		}
-	}
+    } catch (SQLException e) {
+        JOptionPane.showMessageDialog(
+            this,
+            "Lỗi kết nối hoặc truy vấn SQL Server:\n"
+                + e.getMessage()
+        );
+        e.printStackTrace();
+    }
+}
 
 	public static void main(String[] args) {
 		SwingUtilities.invokeLater(() -> new LoginFrame().setVisible(true));

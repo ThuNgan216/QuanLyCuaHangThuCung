@@ -44,7 +44,7 @@ public class MainFrame extends JFrame {
 	private JLabel lblRole;
 
 	private final String[] MENU_ITEMS = { "Trang chủ", "Quản lý nhân viên", "Quản lý sản phẩm & kho",
-			"Quản lý thú cưng", "Quản lý khách hàng", "Quản lý bán hàng & thanh toán", "Quản lý dịch vụ & lịch hẹn",
+			"Quản lý thú cưng", "Quản lý khách hàng", "Quản lý Hóa Đơn", "Quản lý dịch vụ & lịch hẹn",
 			"Thống kê và báo cáo" };
 
 	private final String[] MENU_ICONS = { "home.png", "employee.png", "box.png", "pet.png", "customer.png", "cart.png",
@@ -136,15 +136,29 @@ public class MainFrame extends JFrame {
 			menuButtons[i] = createSidebarButton(item, MENU_ICONS[i]);
 			menuPanel.add(menuButtons[i]);
 
-			// Form giả định
-			if (!item.equals("Trang chủ")) {
-				JPanel dummyPanel = new JPanel(new BorderLayout());
-				dummyPanel.setBackground(AppColors.BACKGROUND);
-				JLabel label = new JLabel(item, SwingConstants.CENTER);
-				label.setFont(new Font("Arial", Font.BOLD, 30));
-				dummyPanel.add(label, BorderLayout.CENTER);
-				cardPanel.add(dummyPanel, item);
-			}
+			
+if (!item.equals("Trang chủ")) {
+
+    if (item.equals("Quản lý nhân viên")) {
+        // Giao diện quản lý nhân viên thật
+        QuanLyNhanVienPanel nhanVienPanel =
+                new QuanLyNhanVienPanel();
+
+        cardPanel.add(nhanVienPanel, item);
+
+    } else {
+        // Các chức năng khác tạm thời giữ màn hình giả lập
+        JPanel dummyPanel = new JPanel(new BorderLayout());
+        dummyPanel.setBackground(AppColors.BACKGROUND);
+
+        JLabel label = new JLabel(item, SwingConstants.CENTER);
+        label.setFont(new Font("Arial", Font.BOLD, 30));
+
+        dummyPanel.add(label, BorderLayout.CENTER);
+        cardPanel.add(dummyPanel, item);
+    }
+}
+
 		}
 		sidebarPanel.add(menuPanel, BorderLayout.CENTER);
 
