@@ -10,11 +10,16 @@ import javax.swing.*;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
-<<<<<<< HEAD
-import java.awt.*;
-=======
-import java.awt.*;	
->>>>>>> origin/main
+
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Cursor;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Image;
 import java.net.URL;
 import java.sql.SQLException;
 
@@ -101,11 +106,7 @@ public class LoginFrame extends JFrame {
 					g2.setFont(getFont().deriveFont(Font.ITALIC));
 					// Căn giữa chữ chìm theo chiều dọc
 					int y = (getHeight() - g.getFontMetrics().getHeight()) / 2 + g.getFontMetrics().getAscent();
-<<<<<<< HEAD
-					g2.drawString("Mã nhân viên (VD: admin)", 12, y);
-=======
 					g2.drawString("Mã nhân viên (VD: NV01)", 12, y);
->>>>>>> origin/main
 					g2.dispose();
 				}
 			}
@@ -159,7 +160,6 @@ public class LoginFrame extends JFrame {
 		txtPassword.addActionListener(e -> xuLyDangNhap()); // Bấm Enter ở ô MK cũng đăng nhập
 	}
 
-<<<<<<< HEAD
 	private void xuLyDangNhap() {
 		String tenDangNhap = txtUsername.getText().trim();
 		String matKhau = new String(txtPassword.getPassword());
@@ -197,48 +197,6 @@ public class LoginFrame extends JFrame {
 			e.printStackTrace();
 		}
 	}
-=======
-private void xuLyDangNhap() {
-    String tenDangNhap = txtUsername.getText().trim();
-    String matKhau = new String(txtPassword.getPassword());
-
-    if (tenDangNhap.isEmpty() || matKhau.isEmpty()) {
-        JOptionPane.showMessageDialog(
-            this,
-            "Vui lòng nhập tên đăng nhập và mật khẩu!"
-        );
-        return;
-    }
-
-    try {
-        TaiKhoanDAO dao = new TaiKhoanDAO();
-        NhanVien nv = dao.dangNhap(tenDangNhap, matKhau);
-
-        if (nv == null) {
-            JOptionPane.showMessageDialog(
-                this,
-                "Tên đăng nhập hoặc mật khẩu không đúng, " +
-                "hoặc tài khoản đã ngừng hoạt động!"
-            );
-            return;
-        }
-
-        Auth.user = nv;
-
-        MainFrame main = new MainFrame();
-        main.setVisible(true);
-        this.dispose();
-
-    } catch (SQLException e) {
-        JOptionPane.showMessageDialog(
-            this,
-            "Lỗi kết nối hoặc truy vấn SQL Server:\n"
-                + e.getMessage()
-        );
-        e.printStackTrace();
-    }
-}
->>>>>>> origin/main
 
 	public static void main(String[] args) {
 		SwingUtilities.invokeLater(() -> new LoginFrame().setVisible(true));

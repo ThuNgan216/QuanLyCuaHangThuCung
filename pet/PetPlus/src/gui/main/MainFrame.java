@@ -30,6 +30,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
 
 import appColor.AppColors;
+import gui.panel.pnlHoaDon;
 import utils.Auth; // Gọi class Auth để kiểm tra quyền
 
 public class MainFrame extends JFrame {
@@ -136,28 +137,34 @@ public class MainFrame extends JFrame {
 			menuButtons[i] = createSidebarButton(item, MENU_ICONS[i]);
 			menuPanel.add(menuButtons[i]);
 
-			
-if (!item.equals("Trang chủ")) {
+			if (!item.equals("Trang chủ")) {
 
-    if (item.equals("Quản lý nhân viên")) {
-        // Giao diện quản lý nhân viên thật
-        QuanLyNhanVienPanel nhanVienPanel =
-                new QuanLyNhanVienPanel();
+				if (item.equals("Quản lý nhân viên")) {
+					// Giao diện quản lý nhân viên thật
+					QuanLyNhanVienPanel nhanVienPanel = new QuanLyNhanVienPanel();
 
-        cardPanel.add(nhanVienPanel, item);
+					cardPanel.add(nhanVienPanel, item);
 
-    } else {
-        // Các chức năng khác tạm thời giữ màn hình giả lập
-        JPanel dummyPanel = new JPanel(new BorderLayout());
-        dummyPanel.setBackground(AppColors.BACKGROUND);
+				} else {
+					// Các chức năng khác tạm thời giữ màn hình giả lập
+					JPanel dummyPanel = new JPanel(new BorderLayout());
+					dummyPanel.setBackground(AppColors.BACKGROUND);
 
-        JLabel label = new JLabel(item, SwingConstants.CENTER);
-        label.setFont(new Font("Arial", Font.BOLD, 30));
+					JLabel label = new JLabel(item, SwingConstants.CENTER);
+					label.setFont(new Font("Arial", Font.BOLD, 30));
 
-        dummyPanel.add(label, BorderLayout.CENTER);
-        cardPanel.add(dummyPanel, item);
-    }
-}
+					dummyPanel.add(label, BorderLayout.CENTER);
+					cardPanel.add(dummyPanel, item);
+				}
+				if (item.equals("Quản lý Hóa Đơn")) {
+					// Giao diện quản lý nhân viên thật
+					pnlHoaDon pnlDonHang = new pnlHoaDon();
+
+					cardPanel.add(pnlDonHang, item);
+
+				}
+
+			}
 
 		}
 		sidebarPanel.add(menuPanel, BorderLayout.CENTER);
