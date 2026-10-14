@@ -85,7 +85,7 @@ public class pnlHoaDon extends JPanel {
         header.setBackground(PINK_LIGHT);
         header.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, AppColors.BORDER));
 
-        JLabel lblTitle = new JLabel("Quản lý đơn hàng");
+        JLabel lblTitle = new JLabel("Quản lý hóa đơn");
         lblTitle.setFont(new Font("Arial", Font.BOLD, 24));
         lblTitle.setForeground(AppColors.PRIMARY_DARK);
 
