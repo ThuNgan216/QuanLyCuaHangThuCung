@@ -294,10 +294,12 @@ GO
 CREATE TABLE ChiTietHoaDon
 (
     maHoaDon  VARCHAR(20)     NOT NULL,
-    maDichVu  VARCHAR(20)     NOT NULL,
+    maDichVu  VARCHAR(20)      NULL,
+    maSP VARCHAR(20)      NULL,
     soLuong   INT             NOT NULL,
     donGia    DECIMAL(18,2)   NOT NULL,
-    CONSTRAINT PK_ChiTietHoaDon PRIMARY KEY (maHoaDon, maDichVu),
+    tienKhachDua DECIMAL(18,2)   NULL,
+    CONSTRAINT PK_ChiTietHoaDon PRIMARY KEY (maHoaDon),
     CONSTRAINT FK_ChiTietHoaDon_HoaDon FOREIGN KEY (maHoaDon) REFERENCES HoaDon(maHoaDon),
     CONSTRAINT FK_ChiTietHoaDon_DichVu FOREIGN KEY (maDichVu) REFERENCES DichVu(maDichVu),
     CONSTRAINT CK_ChiTietHoaDon_SoLuong CHECK (soLuong > 0),
@@ -358,219 +360,188 @@ CREATE INDEX IX_HoaDon_MaKH ON HoaDon(maKH);
 CREATE INDEX IX_HoaDon_MaNV ON HoaDon(maNV);
 CREATE INDEX IX_HoaDon_NgayLapHD ON HoaDon(ngayLapHD);
 GO
+USE PETPLUS;
+GO
+SET XACT_ABORT ON;
+BEGIN TRY
+    BEGIN TRANSACTION;
 
-/* ============================================================
-   20. DU LIEU MAU
-   Du lieu duoc them theo thu tu phu thuoc khoa ngoai.
-   ============================================================ */
+    INSERT INTO TaiKhoan (maTK, tenDangNhap, matKhau, vaiTro, trangThai) VALUES
+    ('TK001', N'admin', N'123456', N'ADMIN', N'Hoạt động'),
+    ('TK002', N'nguyenvana', N'123456', N'NHANVIEN', N'Hoạt động'),
+    ('TK003', N'tranthib', N'123456', N'NHANVIEN', N'Hoạt động'),
+    ('TK004', N'levanc', N'123456', N'NHANVIEN', N'Hoạt động'),
+    ('TK005', N'phamthid', N'123456', N'NHANVIEN', N'Hoạt động');
 
-/* 20.1 Tai khoan */
-INSERT INTO TaiKhoan (maTK, tenDangNhap, matKhau, vaiTro, trangThai) VALUES
-('TK01', N'admin',  N'Admin@123',     N'QUAN_LY',  N'Hoạt động'),
-('TK02', N'nv.tuan',N'NhanVien@123', N'NHAN_VIEN',N'Hoạt động'),
-('TK03', N'nv.mai', N'NhanVien@123', N'NHAN_VIEN',N'Hoạt động'),
-('TK04', N'nv.huy', N'NhanVien@123', N'NHAN_VIEN',N'Hoạt động');
+    INSERT INTO NhanVien (maNV, tenNV, sdt, cccd, diaChi, email, chucVu, maTK) VALUES
+    ('NV001', N'Nguyễn Văn An', '0901000001', '079201000001', N'Quận 12, TP.HCM', 'an@petplus.vn', N'Quản lý', 'TK001'),
+    ('NV002', N'Trần Thị Bình', '0901000002', '079201000002', N'Gò Vấp, TP.HCM', 'binh@petplus.vn', N'Thu ngân', 'TK002'),
+    ('NV003', N'Lê Văn Cường', '0901000003', '079201000003', N'Tân Bình, TP.HCM', 'cuong@petplus.vn', N'Chăm sóc thú cưng', 'TK003'),
+    ('NV004', N'Phạm Thị Dung', '0901000004', '079201000004', N'Thủ Đức, TP.HCM', 'dung@petplus.vn', N'Bán hàng', 'TK004'),
+    ('NV005', N'Võ Minh Đức', '0901000005', '079201000005', N'Bình Thạnh, TP.HCM', 'duc@petplus.vn', N'Chăm sóc thú cưng', 'TK005');
+
+    INSERT INTO CaLamViec (maCa, gioBatDau, gioKetThuc, tenCa) VALUES
+    ('CA001', '07:00', '12:00', N'Ca sáng'),
+    ('CA002', '12:00', '17:00', N'Ca chiều'),
+    ('CA003', '17:00', '22:00', N'Ca tối');
+
+    INSERT INTO LichLamViec (maLichLamViec, ngayLamViec, maNV, maCa) VALUES
+    ('LLV001', '2026-10-13', 'NV001', 'CA001'),
+    ('LLV002', '2026-10-13', 'NV002', 'CA002'),
+    ('LLV003', '2026-10-13', 'NV003', 'CA002'),
+    ('LLV004', '2026-10-13', 'NV004', 'CA001'),
+    ('LLV005', '2026-10-13', 'NV005', 'CA003'),
+    ('LLV006', '2026-10-14', 'NV001', 'CA001'),
+    ('LLV007', '2026-10-14', 'NV002', 'CA002');
+
+    INSERT INTO KhachHang (maKH, tenKH, sdt, diaChi, hangThanhVien, diemTichLuy) VALUES
+    ('KH001', N'Nguyễn Minh Anh', '0912000001', N'Quận 1, TP.HCM', 1, 120),
+    ('KH002', N'Trần Quốc Bảo', '0912000002', N'Gò Vấp, TP.HCM', 2, 250),
+    ('KH003', N'Lê Ngọc Chi', '0912000003', N'Tân Phú, TP.HCM', 1, 80),
+    ('KH004', N'Phạm Gia Hân', '0912000004', N'Thủ Đức, TP.HCM', 3, 560),
+    ('KH005', N'Võ Thành Nam', '0912000005', N'Bình Thạnh, TP.HCM', 1, 40),
+    ('KH006', N'Đặng Thu Trang', '0912000006', N'Quận 7, TP.HCM', 2, 310),
+    ('KH007', N'Bùi Hoàng Long', '0912000007', N'Quận 10, TP.HCM', 1, 0),
+    ('KH008', N'Phan Khánh Linh', '0912000008', N'Bình Tân, TP.HCM', 2, 175);
+
+    INSERT INTO ThuCung (maThuCung, tenThuCung, loai, giong, gioiTinh, canNang, ngaySinh, tinhTrangSK, tiemChung, maKH) VALUES
+    ('TC001', N'Milo', N'Chó', N'Poodle', N'Đực', 4.5, '2023-04-12', N'Khỏe mạnh', N'Đã tiêm vaccine cơ bản', 'KH001'),
+    ('TC002', N'Miu', N'Mèo', N'Anh lông ngắn', N'Cái', 3.8, '2024-01-20', N'Khỏe mạnh', N'Đã tiêm vaccine 3 bệnh', 'KH002'),
+    ('TC003', N'Bông', N'Chó', N'Phốc sóc', N'Cái', 3.2, '2022-09-08', N'Cần vệ sinh tai định kỳ', N'Đã tiêm phòng dại', 'KH003'),
+    ('TC004', N'Lucky', N'Chó', N'Golden Retriever', N'Đực', 22.0, '2021-06-15', N'Khỏe mạnh', N'Đã tiêm đủ vaccine', 'KH004'),
+    ('TC005', N'Sữa', N'Mèo', N'Mèo ta', N'Cái', 3.1, '2023-11-02', N'Khỏe mạnh', N'Đã tiêm vaccine cơ bản', 'KH005'),
+    ('TC006', N'Cốm', N'Thỏ', N'Thỏ Hà Lan', N'Đực', 1.7, '2024-05-10', N'Khỏe mạnh', N'Chưa ghi nhận', 'KH006'),
+    ('TC007', N'Đốm', N'Chó', N'Chó ta', N'Đực', 12.5, '2020-08-22', N'Cần kiểm tra da', N'Đã tiêm phòng dại', 'KH007'),
+    ('TC008', N'Bắp', N'Mèo', N'Munchkin', N'Đực', 3.4, '2024-03-17', N'Khỏe mạnh', N'Đã tiêm vaccine cơ bản', 'KH008');
+
+    INSERT INTO SanPham (maSP, tenSP, giaBan, soLuongTon) VALUES
+    ('SP001', N'Hạt chó trưởng thành 2kg', 185000, 45),
+    ('SP002', N'Hạt mèo vị cá hồi 1.5kg', 155000, 38),
+    ('SP003', N'Pate chó lon 400g', 35000, 80),
+    ('SP004', N'Pate mèo lon 400g', 32000, 75),
+    ('SP005', N'Vòng cổ thú cưng', 65000, 25),
+    ('SP006', N'Dây dắt chó', 95000, 20),
+    ('SP007', N'Cát vệ sinh mèo 5L', 89000, 42),
+    ('SP008', N'Bình nước thú cưng', 55000, 30),
+    ('SP009', N'Đồ chơi bóng cao su', 25000, 60),
+    ('SP010', N'Sữa tắm chó mèo 500ml', 115000, 18);
+
+    INSERT INTO MaVach (maVach, maSP) VALUES
+    ('8938501000011', 'SP001'), ('8938501000028', 'SP002'),
+    ('8938501000035', 'SP003'), ('8938501000042', 'SP004'),
+    ('8938501000059', 'SP005'), ('8938501000066', 'SP006'),
+    ('8938501000073', 'SP007'), ('8938501000080', 'SP008'),
+    ('8938501000097', 'SP009'), ('8938501000103', 'SP010');
+
+    INSERT INTO NhaCungCap (maNCC, tenNCC, soDienThoai, diaChi, email) VALUES
+    ('NCC001', N'Công ty Thức ăn PetFood', '02838000001', N'Quận 5, TP.HCM', 'sales@petfood.vn'),
+    ('NCC002', N'Nhà phân phối HappyPet', '02838000002', N'Bình Tân, TP.HCM', 'contact@happypet.vn'),
+    ('NCC003', N'Công ty phụ kiện thú cưng Việt', '02838000003', N'Tân Bình, TP.HCM', 'info@phukienpet.vn');
+
+    INSERT INTO PhieuNhap (maPN, ngayNhap, maNV, maNCC) VALUES
+    ('PN001', '2026-10-01', 'NV001', 'NCC001'),
+    ('PN002', '2026-10-04', 'NV004', 'NCC002'),
+    ('PN003', '2026-10-08', 'NV001', 'NCC003');
+
+    INSERT INTO ChiTietPhieuNhap (soLuongNhap, donGiaNhap, hanSuDung, maPN, maSP) VALUES
+    (30, 135000, '2027-10-01', 'PN001', 'SP001'),
+    (25, 112000, '2027-09-01', 'PN001', 'SP002'),
+    (100, 22000, '2027-06-01', 'PN001', 'SP003'),
+    (80, 20000, '2027-06-01', 'PN001', 'SP004'),
+    (20, 42000, NULL, 'PN002', 'SP005'),
+    (15, 65000, NULL, 'PN002', 'SP006'),
+    (40, 58000, '2028-01-01', 'PN003', 'SP007'),
+    (20, 72000, '2028-01-01', 'PN003', 'SP010');
+
+    INSERT INTO LichHen (maLichHen, thoiGianHen, trangThai, maNV, maKH, maThuCung) VALUES
+    ('LH001', '2026-10-13T09:00:00', N'Đã xác nhận', 'NV003', 'KH001', 'TC001'),
+    ('LH002', '2026-10-13T10:30:00', N'Hoàn thành', 'NV005', 'KH002', 'TC002'),
+    ('LH003', '2026-10-13T14:00:00', N'Đã xác nhận', 'NV003', 'KH003', 'TC003'),
+    ('LH004', '2026-10-14T09:30:00', N'Chờ xác nhận', 'NV005', 'KH004', 'TC004'),
+    ('LH005', '2026-10-14T15:00:00', N'Đã xác nhận', 'NV003', 'KH005', 'TC005'),
+    ('LH006', '2026-10-15T10:00:00', N'Chờ xác nhận', 'NV005', 'KH006', 'TC006');
+
+    INSERT INTO DichVu (maDichVu, tenDichVu, donGia, moTa, trangThai, maLichHen) VALUES
+    ('DV001', N'Tắm và sấy chó nhỏ', 120000, N'Tắm, sấy và chải lông cơ bản', N'Hoàn thành', 'LH001'),
+    ('DV002', N'Vệ sinh tai mèo', 80000, N'Vệ sinh tai và kiểm tra sơ bộ', N'Hoàn thành', 'LH002'),
+    ('DV003', N'Cắt tỉa lông', 180000, N'Cắt tỉa theo yêu cầu khách hàng', N'Đã đặt', 'LH003'),
+    ('DV004', N'Khám sức khỏe tổng quát', 150000, N'Kiểm tra sức khỏe tổng quát', N'Đã đặt', 'LH004'),
+    ('DV005', N'Cắt móng thú cưng', 50000, N'Cắt móng và vệ sinh bàn chân', N'Đã đặt', 'LH005'),
+    ('DV006', N'Tắm mèo', 140000, N'Tắm và sấy dành cho mèo', N'Đã đặt', 'LH006');
+
+    INSERT INTO KhuyenMai (maKhuyenMai, tenKhuyenMai, phanTramGiam, dieuKienApDung, ngayBatDau, ngayKetThuc) VALUES
+    ('KM000', N'Không áp dụng khuyến mãi', 0, N'Áp dụng khi không có chương trình giảm giá', '2025-01-01', '2030-12-31'),
+    ('KM001', N'Ưu đãi khách hàng mới', 10, N'Giảm 10% cho hóa đơn từ 100000 đồng', '2026-01-01', '2026-12-31'),
+    ('KM002', N'Tháng yêu thú cưng', 15, N'Giảm 15% dịch vụ chăm sóc', '2026-10-01', '2026-10-31'),
+    ('KM003', N'Ưu đãi thành viên', 5, N'Giảm 5% cho khách hàng thành viên', '2026-01-01', '2026-12-31');
+
+    INSERT INTO PhuongThucThanhToan (maPTTT, tenPTTT) VALUES
+    ('PT001', N'Tiền mặt'),
+    ('PT002', N'Chuyển khoản'),
+    ('PT003', N'Ví điện tử'),
+    ('PT004', N'Thẻ ngân hàng');
+
+    INSERT INTO HoaDon (maHoaDon, ngayLapHD, maNV, maKH, maKhuyenMai, maPTTT) VALUES
+    ('HD001', '2026-10-02', 'NV002', 'KH001', 'KM001', 'PT001'),
+    ('HD002', '2026-10-03', 'NV002', 'KH002', 'KM000', 'PT002'),
+    ('HD003', '2026-10-05', 'NV004', 'KH003', 'KM003', 'PT001'),
+    ('HD004', '2026-10-07', 'NV002', 'KH004', 'KM002', 'PT003'),
+    ('HD005', '2026-10-09', 'NV004', 'KH005', 'KM000', 'PT001'),
+    ('HD006', '2026-10-10', 'NV002', 'KH006', 'KM001', 'PT004');
+
+    /*
+      Schema hiện tại đặt PRIMARY KEY chỉ trên maHoaDon trong ChiTietHoaDon,
+      nên mỗi hóa đơn chỉ có thể có một dòng chi tiết. Dữ liệu bên dưới tuân thủ
+      đúng cấu trúc đó. Cột maSP không có FK trong schema đã gửi.
+    */
+    INSERT INTO ChiTietHoaDon (maHoaDon, maDichVu, maSP, soLuong, donGia, tienKhachDua) VALUES
+    ('HD001', NULL, 'SP001', 1, 185000, 200000),
+    ('HD002', 'DV002', NULL, 1, 80000, 80000),
+    ('HD003', NULL, 'SP007', 2, 89000, 180000),
+    ('HD004', 'DV004', NULL, 1, 150000, 150000),
+    ('HD005', NULL, 'SP003', 3, 35000, 110000),
+    ('HD006', 'DV005', NULL, 1, 50000, 50000);
+
+    INSERT INTO KhuyenMaiSanPham (maKhuyenMaiMaSanPham, mucGiam, maSP, maKhuyenMai, maHoaDon) VALUES
+    ('KMSP001', 18500, 'SP001', 'KM001', 'HD001'),
+    ('KMSP002', 0, 'SP007', 'KM000', 'HD003'),
+    ('KMSP003', 5250, 'SP003', 'KM003', 'HD005');
+
+    INSERT INTO TichDiem (maTichDiem, diemTichLuy, ngayCapNhat, maKH, maHoaDon) VALUES
+    ('TD001', 17, '2026-10-02', 'KH001', 'HD001'),
+    ('TD002', 8, '2026-10-03', 'KH002', 'HD002'),
+    ('TD003', 17, '2026-10-05', 'KH003', 'HD003'),
+    ('TD004', 15, '2026-10-07', 'KH004', 'HD004'),
+    ('TD005', 10, '2026-10-09', 'KH005', 'HD005'),
+    ('TD006', 5, '2026-10-10', 'KH006', 'HD006');
+
+    COMMIT TRANSACTION;
+    PRINT N'Đã thêm dữ liệu mẫu PETPLUS thành công.';
+END TRY
+BEGIN CATCH
+    IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+    THROW;
+END CATCH;
 GO
 
-/* 20.2 Nhan vien */
-INSERT INTO NhanVien (maNV, tenNV, sdt, cccd, diaChi, email, chucVu, maTK) VALUES
-('NV01', N'Quản lý hệ thống', '0901000001', '079206000001', N'Quận 1, TP. Hồ Chí Minh', 'admin@petplus.vn', N'Quản lý', 'TK01'),
-('NV02', N'Nguyễn Minh Tuấn', '0901000002', '079206000002', N'Quận 3, TP. Hồ Chí Minh', 'tuan@petplus.vn', N'Nhân viên chăm sóc', 'TK02'),
-('NV03', N'Trần Thị Mai',      '0901000003', '079206000003', N'Quận 7, TP. Hồ Chí Minh', 'mai@petplus.vn', N'Nhân viên thu ngân', 'TK03'),
-('NV04', N'Lê Quốc Huy',       '0901000004', '079206000004', N'Thủ Đức, TP. Hồ Chí Minh', 'huy@petplus.vn', N'Nhân viên chăm sóc', 'TK04');
-GO
-
-/* 20.3 Ca lam viec */
-INSERT INTO CaLamViec (maCa, gioBatDau, gioKetThuc, tenCa) VALUES
-('CA01', '07:30:00', '12:00:00', N'Ca sáng'),
-('CA02', '13:00:00', '17:30:00', N'Ca chiều'),
-('CA03', '17:30:00', '21:30:00', N'Ca tối');
-GO
-
-/* 20.4 Lich lam viec */
-INSERT INTO LichLamViec (maLichLamViec, ngayLamViec, maNV, maCa) VALUES
-('LLV01', '2026-10-12', 'NV01', 'CA01'),
-('LLV02', '2026-10-12', 'NV02', 'CA02'),
-('LLV03', '2026-10-12', 'NV03', 'CA01'),
-('LLV04', '2026-10-12', 'NV04', 'CA03'),
-('LLV05', '2026-10-13', 'NV01', 'CA02'),
-('LLV06', '2026-10-13', 'NV02', 'CA01');
-GO
-
-/* 20.5 Khach hang: co tenKH de DAO co the truy van ten khach hang */
-INSERT INTO KhachHang (maKH, tenKH, sdt, diaChi, hangThanhVien, diemTichLuy) VALUES
-('KH01', N'Nguyễn Minh Châu', '0912000001', N'Quận 1, TP. Hồ Chí Minh', 2, 120),
-('KH02', N'Trần Gia Hân',     '0912000002', N'Quận 7, TP. Hồ Chí Minh', 1, 45),
-('KH03', N'Lê Quốc Bảo',     '0912000003', N'Bình Thạnh, TP. Hồ Chí Minh', 3, 260),
-('KH04', N'Phạm Ngọc Anh',   '0912000004', N'Tân Bình, TP. Hồ Chí Minh', 1, 20),
-('KH05', N'Võ Hoàng Nam',    '0912000005', N'Thủ Đức, TP. Hồ Chí Minh', 2, 95),
-('KH06', N'Đặng Thu Hà',     '0912000006', N'Gò Vấp, TP. Hồ Chí Minh', 1, 0);
-GO
-
-/* 20.6 Thu cung */
-INSERT INTO ThuCung (maThuCung, tenThuCung, loai, giong, gioiTinh, canNang, ngaySinh, tinhTrangSK, tiemChung, maKH) VALUES
-('TC01', N'Bông',   N'Chó', N'Poodle',  N'Cái', 4.80, '2022-01-15', N'Khỏe mạnh', N'Đã tiêm phòng dại và 5 bệnh', 'KH01'),
-('TC02', N'Miu',    N'Mèo', N'Anh lông ngắn', N'Cái', 3.60, '2023-04-20', N'Khỏe mạnh', N'Đã tiêm phòng cơ bản', 'KH01'),
-('TC03', N'Đốm',    N'Chó', N'Phốc sóc', N'Đực', 5.20, '2021-09-10', N'Cần kiểm tra da', N'Đã tiêm phòng dại', 'KH02'),
-('TC04', N'Lucky',  N'Thỏ', N'Thỏ Hà Lan', N'Đực', 1.90, '2024-02-05', N'Khỏe mạnh', N'Chưa cập nhật', 'KH03'),
-('TC05', N'Corgi',  N'Chó', N'Corgi', N'Đực', 10.50, '2020-11-12', N'Khỏe mạnh', N'Đã tiêm phòng đầy đủ', 'KH04'),
-('TC06', N'Cam',    N'Mèo', N'Mèo ta', N'Cái', 3.10, '2023-08-01', N'Khỏe mạnh', N'Đã tiêm phòng cơ bản', 'KH05');
-GO
-
-/* 20.7 San pham */
-INSERT INTO SanPham (maSP, tenSP, giaBan, soLuongTon) VALUES
-('SP01', N'Hạt dinh dưỡng cho chó 2kg', 185000, 45),
-('SP02', N'Hạt dinh dưỡng cho mèo 1.5kg', 165000, 38),
-('SP03', N'Cát vệ sinh cho mèo 5L', 75000, 60),
-('SP04', N'Bình sữa và bộ chăm sóc thú cưng', 95000, 24),
-('SP05', N'Sữa tắm chó mèo 500ml', 120000, 30),
-('SP06', N'Dây dắt chó loại tiêu chuẩn', 80000, 20),
-('SP07', N'Đồ chơi bóng cao su', 35000, 55),
-('SP08', N'Pate cho mèo 400g', 42000, 70);
-GO
-
-/* 20.8 Ma vach */
-INSERT INTO MaVach (maVach, maSP) VALUES
-('8938501000001', 'SP01'),
-('8938501000002', 'SP02'),
-('8938501000003', 'SP03'),
-('8938501000004', 'SP04'),
-('8938501000005', 'SP05'),
-('8938501000006', 'SP06'),
-('8938501000007', 'SP07'),
-('8938501000008', 'SP08');
-GO
-
-/* 20.9 Nha cung cap */
-INSERT INTO NhaCungCap (maNCC, tenNCC, soDienThoai, diaChi, email) VALUES
-('NCC01', N'Công ty Thức ăn thú cưng An Phát', '02839000001', N'Quận 5, TP. Hồ Chí Minh', 'sales@anphat.example'),
-('NCC02', N'Nhà phân phối Pet World', '02839000002', N'Quận 10, TP. Hồ Chí Minh', 'contact@petworld.example'),
-('NCC03', N'Công ty Phụ kiện thú cưng Việt', '02839000003', N'Bình Tân, TP. Hồ Chí Minh', 'orders@petviet.example');
-GO
-
-/* 20.10 Phieu nhap */
-INSERT INTO PhieuNhap (maPN, ngayNhap, maNV, maNCC) VALUES
-('PN01', '2026-09-20', 'NV02', 'NCC01'),
-('PN02', '2026-10-01', 'NV01', 'NCC02'),
-('PN03', '2026-10-08', 'NV04', 'NCC03');
-GO
-
-/* 20.11 Chi tiet phieu nhap */
-INSERT INTO ChiTietPhieuNhap (soLuongNhap, donGiaNhap, hanSuDung, maPN, maSP) VALUES
-(30, 135000, '2027-09-20', 'PN01', 'SP01'),
-(25, 120000, '2027-09-20', 'PN01', 'SP02'),
-(50, 48000,  '2027-09-20', 'PN01', 'SP03'),
-(20, 68000,  NULL,         'PN02', 'SP04'),
-(25, 78000,  '2028-10-01', 'PN02', 'SP05'),
-(15, 50000,  NULL,         'PN03', 'SP06'),
-(40, 18000,  NULL,         'PN03', 'SP07'),
-(60, 22000,  '2027-10-08', 'PN03', 'SP08');
-GO
-
-/* 20.12 Lich hen */
-INSERT INTO LichHen (maLichHen, thoiGianHen, trangThai, maNV, maKH, maThuCung) VALUES
-('LH01', '2026-10-10T09:00:00', N'Hoàn thành', 'NV02', 'KH01', 'TC01'),
-('LH02', '2026-10-10T10:30:00', N'Hoàn thành', 'NV03', 'KH02', 'TC03'),
-('LH03', '2026-10-11T14:00:00', N'Hoàn thành', 'NV02', 'KH03', 'TC04'),
-('LH04', '2026-10-12T09:30:00', N'Đang thực hiện', 'NV04', 'KH04', 'TC05'),
-('LH05', '2026-10-12T14:00:00', N'Đã xác nhận', 'NV02', 'KH05', 'TC06'),
-('LH06', '2026-10-13T10:00:00', N'Đã xác nhận', 'NV03', 'KH01', 'TC02'),
-('LH07', '2026-10-13T15:00:00', N'Chờ xác nhận', 'NV04', 'KH01', 'TC01');
-GO
-
-/* 20.13 Dich vu */
-INSERT INTO DichVu (maDichVu, tenDichVu, donGia, moTa, trangThai, maLichHen) VALUES
-('DV01', N'Tắm và vệ sinh cơ bản', 80000, N'Tắm, sấy và vệ sinh tai chân', N'Hoạt động', 'LH01'),
-('DV02', N'Cắt tỉa lông', 120000, N'Cắt tỉa lông theo yêu cầu', N'Hoạt động', 'LH01'),
-('DV03', N'Kiểm tra da và lông', 150000, N'Kiểm tra tình trạng da và tư vấn chăm sóc', N'Hoạt động', 'LH02'),
-('DV04', N'Chăm sóc thỏ', 90000, N'Vệ sinh và kiểm tra tổng quát', N'Hoạt động', 'LH03'),
-('DV05', N'Tắm và cắt tỉa', 130000, N'Tắm sấy và tỉa lông', N'Hoạt động', 'LH04'),
-('DV06', N'Vệ sinh răng miệng', 180000, N'Vệ sinh răng miệng cho thú cưng', N'Hoạt động', 'LH05'),
-('DV07', N'Tắm mèo', 110000, N'Tắm và sấy lông mèo', N'Hoạt động', 'LH06'),
-('DV08', N'Tư vấn chăm sóc thú cưng', 90000, N'Tư vấn dinh dưỡng và chăm sóc', N'Hoạt động', 'LH07');
-GO
-
-/* 20.14 Khuyen mai */
-INSERT INTO KhuyenMai (maKhuyenMai, tenKhuyenMai, phanTramGiam, dieuKienApDung, ngayBatDau, ngayKetThuc) VALUES
-('KM01', N'Ưu đãi khách hàng thân thiết', 10, N'Áp dụng cho hóa đơn dịch vụ đủ điều kiện', '2026-01-01', '2026-12-31'),
-('KM02', N'Ưu đãi khách hàng mới', 5, N'Áp dụng cho khách hàng mới', '2026-01-01', '2026-12-31'),
-('KM03', N'Khuyến mãi đặc biệt', 15, N'Áp dụng trong chương trình khuyến mãi', '2026-09-01', '2026-10-31');
-GO
-
-/* 20.15 Phuong thuc thanh toan */
-INSERT INTO PhuongThucThanhToan (maPTTT, tenPTTT) VALUES
-('PT01', N'Tiền mặt'),
-('PT02', N'Chuyển khoản'),
-('PT03', N'Thẻ ngân hàng'),
-('PT04', N'Ví điện tử');
-GO
-
-/* 20.16 Hoa don */
-INSERT INTO HoaDon (maHoaDon, ngayLapHD, maNV, maKH, maKhuyenMai, maPTTT) VALUES
-('HD01', '2026-10-10', 'NV03', 'KH01', 'KM01', 'PT01'),
-('HD02', '2026-10-10', 'NV03', 'KH02', 'KM02', 'PT02'),
-('HD03', '2026-10-11', 'NV01', 'KH03', 'KM01', 'PT01'),
-('HD04', '2026-10-11', 'NV03', 'KH04', 'KM03', 'PT03'),
-('HD05', '2026-10-12', 'NV01', 'KH05', 'KM02', 'PT04'),
-('HD06', '2026-10-12', 'NV03', 'KH01', 'KM01', 'PT02');
-GO
-
-/* 20.17 Chi tiet hoa don */
-INSERT INTO ChiTietHoaDon (maHoaDon, maDichVu, soLuong, donGia) VALUES
-('HD01', 'DV01', 1, 80000),
-('HD01', 'DV02', 1, 120000),
-('HD02', 'DV03', 1, 150000),
-('HD03', 'DV04', 1, 90000),
-('HD04', 'DV05', 1, 130000),
-('HD05', 'DV06', 1, 180000),
-('HD06', 'DV07', 1, 110000),
-('HD06', 'DV08', 1, 90000);
-GO
-
-/* 20.18 Khuyen mai san pham */
-INSERT INTO KhuyenMaiSanPham (maKhuyenMaiMaSanPham, mucGiam, maSP, maKhuyenMai, maHoaDon) VALUES
-('KMSP01', 10, 'SP01', 'KM01', 'HD01'),
-('KMSP02', 5,  'SP04', 'KM02', 'HD02'),
-('KMSP03', 15, 'SP05', 'KM03', 'HD04');
-GO
-
-/* 20.19 Tich diem */
-INSERT INTO TichDiem (maTichDiem, diemTichLuy, ngayCapNhat, maKH, maHoaDon) VALUES
-('TD01', 20, '2026-10-10', 'KH01', 'HD01'),
-('TD02', 15, '2026-10-10', 'KH02', 'HD02'),
-('TD03', 10, '2026-10-11', 'KH03', 'HD03'),
-('TD04', 25, '2026-10-12', 'KH05', 'HD05');
-GO
-
-/* ============================================================
-   KIEM TRA SO BANG (MONG DOI: 19)
-   ============================================================ */
-SELECT COUNT(*) AS SoLuongBang
-FROM INFORMATION_SCHEMA.TABLES
-WHERE TABLE_TYPE = 'BASE TABLE';
-
-SELECT TABLE_NAME AS TenBang
-FROM INFORMATION_SCHEMA.TABLES
-WHERE TABLE_TYPE = 'BASE TABLE'
-ORDER BY TABLE_NAME;
-GO
-
-/* KIEM TRA COT tenKH */
-SELECT COLUMN_NAME, DATA_TYPE, CHARACTER_MAXIMUM_LENGTH
-FROM INFORMATION_SCHEMA.COLUMNS
-WHERE TABLE_NAME = 'KhachHang'
-ORDER BY ORDINAL_POSITION;
-GO
-
-/* KIEM TRA CAC BANG DU LIEU MAU */
-SELECT * FROM KhachHang ORDER BY maKH;
-SELECT * FROM HoaDon ORDER BY ngayLapHD, maHoaDon;
-SELECT * FROM ChiTietHoaDon ORDER BY maHoaDon, maDichVu;
-GO
-
-PRINT N'================================================';
-PRINT N'PETPLUS DA DUOC TAO THANH CONG';
-PRINT N'19 BANG - DA KHAI BAO tenKH VA DU LIEU MAU';
-PRINT N'TAI KHOAN QUAN LY MAC DINH: admin / Admin@123';
-PRINT N'================================================';
+/* Kiểm tra số bản ghi của 19 bảng */
+SELECT N'TaiKhoan' AS TenBang, COUNT(*) AS SoBanGhi FROM TaiKhoan
+UNION ALL SELECT N'NhanVien', COUNT(*) FROM NhanVien
+UNION ALL SELECT N'CaLamViec', COUNT(*) FROM CaLamViec
+UNION ALL SELECT N'LichLamViec', COUNT(*) FROM LichLamViec
+UNION ALL SELECT N'KhachHang', COUNT(*) FROM KhachHang
+UNION ALL SELECT N'ThuCung', COUNT(*) FROM ThuCung
+UNION ALL SELECT N'SanPham', COUNT(*) FROM SanPham
+UNION ALL SELECT N'MaVach', COUNT(*) FROM MaVach
+UNION ALL SELECT N'NhaCungCap', COUNT(*) FROM NhaCungCap
+UNION ALL SELECT N'PhieuNhap', COUNT(*) FROM PhieuNhap
+UNION ALL SELECT N'ChiTietPhieuNhap', COUNT(*) FROM ChiTietPhieuNhap
+UNION ALL SELECT N'LichHen', COUNT(*) FROM LichHen
+UNION ALL SELECT N'DichVu', COUNT(*) FROM DichVu
+UNION ALL SELECT N'KhuyenMai', COUNT(*) FROM KhuyenMai
+UNION ALL SELECT N'PhuongThucThanhToan', COUNT(*) FROM PhuongThucThanhToan
+UNION ALL SELECT N'HoaDon', COUNT(*) FROM HoaDon
+UNION ALL SELECT N'ChiTietHoaDon', COUNT(*) FROM ChiTietHoaDon
+UNION ALL SELECT N'KhuyenMaiSanPham', COUNT(*) FROM KhuyenMaiSanPham
+UNION ALL SELECT N'TichDiem', COUNT(*) FROM TichDiem;
 GO

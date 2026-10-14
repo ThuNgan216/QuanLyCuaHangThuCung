@@ -5,22 +5,26 @@ import java.math.BigDecimal;
 public class ChiTietHoaDon {
     private HoaDon maHoaDon;
     private DichVu maDichVu;
+    private SanPham maSP;
     private int soLuong;
     private BigDecimal donGia;
+    private BigDecimal tienKhachDua;
 
     public ChiTietHoaDon() {
     }
 
-    public ChiTietHoaDon(HoaDon maHoaDon, DichVu maDichVu) {
+    public ChiTietHoaDon(HoaDon maHoaDon) {
         this.maHoaDon = maHoaDon;
-        this.maDichVu = maDichVu;
     }
 
-    public ChiTietHoaDon(HoaDon maHoaDon, DichVu maDichVu, int soLuong, BigDecimal donGia) {
+    public ChiTietHoaDon(HoaDon maHoaDon, DichVu maDichVu, SanPham maSP, int soLuong, BigDecimal donGia,
+            BigDecimal tienKhachDua) {
         this.maHoaDon = maHoaDon;
         this.maDichVu = maDichVu;
+        this.maSP = maSP;
         this.soLuong = soLuong;
         this.donGia = donGia;
+        this.tienKhachDua = tienKhachDua;
     }
 
     public HoaDon getMaHoaDon() {
@@ -55,41 +59,20 @@ public class ChiTietHoaDon {
         this.donGia = donGia;
     }
 
-    @Override
-    public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((maHoaDon == null) ? 0 : maHoaDon.hashCode());
-        result = prime * result + ((maDichVu == null) ? 0 : maDichVu.hashCode());
-        return result;
+    public SanPham getMaSP() {
+        return maSP;
     }
 
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-        if (obj == null)
-            return false;
-        if (getClass() != obj.getClass())
-            return false;
-        ChiTietHoaDon other = (ChiTietHoaDon) obj;
-        if (maHoaDon == null) {
-            if (other.maHoaDon != null)
-                return false;
-        } else if (!maHoaDon.equals(other.maHoaDon))
-            return false;
-        if (maDichVu == null) {
-            if (other.maDichVu != null)
-                return false;
-        } else if (!maDichVu.equals(other.maDichVu))
-            return false;
-        return true;
+    public void setMaSP(SanPham maSP) {
+        this.maSP = maSP;
     }
 
-    @Override
-    public String toString() {
-        return "ChiTietHoaDon [maHoaDon=" + maHoaDon + ", maDichVu=" + maDichVu + ", soLuong=" + soLuong + ", donGia="
-                + donGia + "]";
+    public BigDecimal getTienKhachDua() {
+        return tienKhachDua;
+    }
+
+    public void setTienKhachDua(BigDecimal tienKhachDua) {
+        this.tienKhachDua = tienKhachDua;
     }
 
 }
