@@ -46,7 +46,7 @@ import entity.KhachHang;
 
 public class pnlHoaDon extends JPanel {
 
-    private static final Color PINK_LIGHT = new Color(0xFFF0F5); // nền tiêu đề / header bảng
+    private static final Color PINK_LIGHT = new Color(0xFFF0F5); // nền tiêu đề
     private static final Color PINK_SELECT = new Color(0xFFE0EA); // nền ô đang chọn
 
     private static final String[] COLUMNS = { "STT", "Mã đơn hàng", "Tên khách hàng", "Số điện thoại", "Ngày lập",
@@ -100,6 +100,12 @@ public class pnlHoaDon extends JPanel {
     }
 
     // ================= DANH SÁCH ĐƠN HÀNG (TRÁI) =================
+    private java.util.function.Consumer<String> onChonHoaDon; // Này để chọn hóa đơn sẽ chuyern sang chi tiết hóa đơn
+
+    public void setOnChonHoaDon(java.util.function.Consumer<String> c) {
+        this.onChonHoaDon = c;
+    }
+
     private JPanel createListPanel() {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(AppColors.WHITE);
@@ -122,6 +128,27 @@ public class pnlHoaDon extends JPanel {
         table.setSelectionBackground(PINK_SELECT);
         table.setSelectionForeground(AppColors.TEXT);
         table.setFillsViewportHeight(false);
+        // Cái này gọi mở ra pnlChiTietHoaDon
+        table.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        table.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                int viewRow = table.rowAtPoint(e.getPoint()); // dòng thật sự được click (-1 nếu click vùng trống)
+                if (viewRow < 0 || onChonHoaDon == null)
+                    return;
+                int modelRow = table.convertRowIndexToModel(viewRow);
+
+                // Tự tìm cột "Mã ..." theo tên cột, khỏi phụ thuộc vị trí
+                int colMa = 1;
+                for (int i = 0; i < model.getColumnCount(); i++) {
+                    if (model.getColumnName(i).toLowerCase().contains("mã")) {
+                        colMa = i;
+                        break;
+                    }
+                }
+                onChonHoaDon.accept(String.valueOf(model.getValueAt(modelRow, colMa)));
+            }
+        });
 
         // Header bảng
         JTableHeader th = table.getTableHeader();

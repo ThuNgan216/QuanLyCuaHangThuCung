@@ -13,6 +13,7 @@ import java.awt.Image;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.net.URL;
+import java.sql.SQLException;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -30,6 +31,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
 
 import appColor.AppColors;
+import gui.panel.pnlChiTietHoaDon;
 import gui.panel.pnlHoaDon;
 import utils.Auth; // Gọi class Auth để kiểm tra quyền
 
@@ -157,10 +159,34 @@ public class MainFrame extends JFrame {
 					cardPanel.add(dummyPanel, item);
 				}
 				if (item.equals("Quản lý Hóa Đơn")) {
-					// Giao diện quản lý nhân viên thật
 					pnlHoaDon pnlDonHang = new pnlHoaDon();
+					pnlChiTietHoaDon pnlChiTiet = new pnlChiTietHoaDon();
 
 					cardPanel.add(pnlDonHang, item);
+					cardPanel.add(pnlChiTiet, "Chi tiết hóa đơn");
+
+					// Chọn 1 dòng trong bảng -> lấy dữ liệu của đúng hóa đơn đó từ SQL -> chuyển
+					// trang
+					pnlDonHang.setOnChonHoaDon(maHD -> {
+						try {
+							dao.ChiTietHoaDonDAO.ChiTietView v = new dao.ChiTietHoaDonDAO().getChiTiet(maHD);
+							if (v == null) {
+								JOptionPane.showMessageDialog(this, "Không tải được chi tiết hóa đơn " + maHD);
+								return;
+							}
+
+							pnlChiTiet.hienThi(v);
+							cardLayout.show(cardPanel, "Chi tiết hóa đơn");
+						} catch (SQLException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+							JOptionPane.showMessageDialog(this, "Lỗi SQL: " + e.getMessage());
+						}
+
+					});
+
+					// Nút "Quay lại" ở trang chi tiết -> về danh sách
+					pnlChiTiet.setOnBack(() -> cardLayout.show(cardPanel, "Quản lý Hóa Đơn"));
 
 				}
 
