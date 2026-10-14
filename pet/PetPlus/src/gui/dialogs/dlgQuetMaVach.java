@@ -1,4 +1,4 @@
-package gui.main.dialogs;
+package gui.dialogs;
 
 import com.github.sarxos.webcam.Webcam;
 import com.github.sarxos.webcam.WebcamPanel;
@@ -25,10 +25,9 @@ public class dlgQuetMaVach extends JDialog {
 
         cameraContainer = new JPanel(new BorderLayout());
         cameraContainer.add(
-            new JLabel("Nhấn Bắt đầu để mở camera",
-                SwingConstants.CENTER),
-            BorderLayout.CENTER
-        );
+                new JLabel("Nhấn Bắt đầu để mở camera",
+                        SwingConstants.CENTER),
+                BorderLayout.CENTER);
 
         add(cameraContainer, BorderLayout.CENTER);
 
@@ -52,7 +51,8 @@ public class dlgQuetMaVach extends JDialog {
     }
 
     private void batCamera() {
-        if (dangMo) return;
+        if (dangMo)
+            return;
 
         dangMo = true;
         btnBatDau.setEnabled(false);
@@ -65,8 +65,7 @@ public class dlgQuetMaVach extends JDialog {
 
                 if (camera == null) {
                     throw new IllegalStateException(
-                        "Không tìm thấy webcam!"
-                    );
+                            "Không tìm thấy webcam!");
                 }
 
                 camera.open();
@@ -89,8 +88,7 @@ public class dlgQuetMaVach extends JDialog {
 
                     cameraContainer.removeAll();
                     cameraContainer.add(
-                        webcamPanel, BorderLayout.CENTER
-                    );
+                            webcamPanel, BorderLayout.CENTER);
 
                     cameraContainer.revalidate();
                     cameraContainer.repaint();
@@ -103,16 +101,16 @@ public class dlgQuetMaVach extends JDialog {
                     btnBatDau.setEnabled(true);
 
                     JOptionPane.showMessageDialog(
-                        dlgQuetMaVach.this,
-                        "Lỗi mở webcam: " + ex.getMessage()
-                    );
+                            dlgQuetMaVach.this,
+                            "Lỗi mở webcam: " + ex.getMessage());
                 }
             }
         }.execute();
     }
 
     private void dungCamera() {
-        if (!dangMo) return;
+        if (!dangMo)
+            return;
 
         dangMo = false;
         btnDung.setEnabled(false);
@@ -126,16 +124,16 @@ public class dlgQuetMaVach extends JDialog {
 
         cameraContainer.removeAll();
         cameraContainer.add(
-            new JLabel("Camera đã dừng",
-                SwingConstants.CENTER),
-            BorderLayout.CENTER
-        );
+                new JLabel("Camera đã dừng",
+                        SwingConstants.CENTER),
+                BorderLayout.CENTER);
 
         cameraContainer.revalidate();
         cameraContainer.repaint();
 
         new Thread(() -> {
-            if (panel != null) panel.stop();
+            if (panel != null)
+                panel.stop();
             if (camera != null && camera.isOpen()) {
                 camera.close();
             }
@@ -150,8 +148,7 @@ public class dlgQuetMaVach extends JDialog {
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
-            dlgQuetMaVach dialog =
-                new dlgQuetMaVach(null);
+            dlgQuetMaVach dialog = new dlgQuetMaVach(null);
             dialog.setVisible(true);
         });
     }
