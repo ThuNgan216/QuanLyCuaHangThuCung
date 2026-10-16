@@ -12,7 +12,7 @@ public final class ConnectDB {
             + "trustServerCertificate=true;";
 
     private static final String USERNAME = "sa";
-    private static final String PASSWORD = "123456";
+    private static final String PASSWORD = "sapassword";
 
     private ConnectDB() {
     }
@@ -30,13 +30,13 @@ public final class ConnectDB {
         try (Connection connection = getConnection()) { 
 
             System.out.println("================================");
-            System.out.println("Káº¾T Ná»�I SQL SERVER THÃ€NH CÃ”NG");
+            System.out.println("KET NOI THANH CONG");
             System.out.println("Database: " + connection.getCatalog());
             System.out.println("================================");
 
         } catch (SQLException e) {
 
-            System.err.println("Káº¾T Ná»�I SQL SERVER THáº¤T Báº I");
+            System.err.println("KET NOI THAT BAI");
             System.err.println("Message: " + e.getMessage());
             System.err.println("SQL State: " + e.getSQLState());
             System.err.println("Error Code: " + e.getErrorCode());

@@ -198,4 +198,130 @@ public class HoaDonDAO {
 
         return kh;
     }
+
+    // ThuNgan
+
+    // Lấy 10 hóa đơn gần đây từ SQL Server
+    public List<Object[]> layHoaDonGanDay() throws SQLException {
+
+        String sql = "SELECT TOP (10) " +
+                "    h.maHoaDon, " +
+                "    h.ngayLapHD, " +
+                "    ISNULL(k.tenKH, N'Khách vãng lai') AS tenKH, " +
+                "    " + TONG_TIEN + " AS tongTien " +
+                "FROM HoaDon h " +
+                "LEFT JOIN KhachHang k ON h.maKH = k.maKH " +
+                "LEFT JOIN KhuyenMai km " +
+                "    ON h.maKhuyenMai = km.maKhuyenMai " +
+                JOIN_TONG_GOC +
+                "ORDER BY h.ngayLapHD DESC, h.maHoaDon DESC";
+
+        List<Object[]> danhSach = new ArrayList<>();
+
+        // Tự động đóng kết nối sau khi truy vấn
+        try (Connection con = ConnectDB.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql);
+                ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                Object[] row = {
+                        rs.getString("maHoaDon"),
+                        rs.getString("tenKH"),
+                        rs.getDouble("tongTien"),
+                        "—",
+                        rs.getDate("ngayLapHD")
+                };
+
+                danhSach.add(row);
+            }
+        }
+
+        return danhSach;
+    }
+
+    // Lấy doanh thu 7 ngày gần nhất
+    public List<Object[]> layDoanhThu7Ngay() throws SQLException {
+
+        String sql = "WITH Ngay AS ( " +
+                " SELECT CAST(DATEADD(DAY, -6, GETDATE()) AS DATE) AS ngay " +
+                " UNION ALL " +
+                " SELECT DATEADD(DAY, 1, ngay) FROM Ngay " +
+                " WHERE ngay < CAST(GETDATE() AS DATE) " +
+                "), TongHoaDon AS ( " +
+                " SELECT h.maHoaDon, h.ngayLapHD, " +
+                " COALESCE(SUM(ct.soLuong * ct.donGia), 0) " +
+                " * (1 - COALESCE(km.phanTramGiam, 0) / 100.0) AS doanhThu " +
+                " FROM HoaDon h " +
+                " LEFT JOIN ChiTietHoaDon ct ON h.maHoaDon = ct.maHoaDon " +
+                " LEFT JOIN KhuyenMai km ON h.maKhuyenMai = km.maKhuyenMai " +
+                " GROUP BY h.maHoaDon, h.ngayLapHD, km.phanTramGiam " +
+                ") " +
+                "SELECT n.ngay, COALESCE(SUM(t.doanhThu), 0) AS doanhThu " +
+                "FROM Ngay n " +
+                "LEFT JOIN TongHoaDon t ON n.ngay = t.ngayLapHD " +
+                "GROUP BY n.ngay ORDER BY n.ngay";
+
+        List<Object[]> danhSach = new ArrayList<>();
+
+        // Kết nối và lấy doanh thu từ database
+        try (Connection con = ConnectDB.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql);
+                ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                danhSach.add(new Object[] {
+                        rs.getDate("ngay").toLocalDate(),
+                        rs.getDouble("doanhThu")
+                });
+            }
+        }
+
+        return danhSach;
+    }
+
+    // Thống kê 4 chỉ số Dashboard trong ngày
+    public Object[] layThongKeHomNay() throws SQLException {
+
+        String sql = "WITH ThongKeHoaDon AS ( " +
+                " SELECT h.maHoaDon, " +
+                " COALESCE(SUM(CASE WHEN ct.maDichVu IS NOT NULL " +
+                " THEN ct.soLuong ELSE 0 END), 0) AS soDichVu, " +
+                " COALESCE(SUM(CASE WHEN ct.maSP IS NOT NULL " +
+                " THEN ct.soLuong ELSE 0 END), 0) AS soSanPham, " +
+                " COALESCE(SUM(ct.soLuong * ct.donGia), 0) " +
+                " * (1 - COALESCE(km.phanTramGiam, 0) / 100.0) " +
+                " AS doanhThu " +
+                " FROM dbo.HoaDon h " +
+                " LEFT JOIN dbo.ChiTietHoaDon ct " +
+                " ON h.maHoaDon = ct.maHoaDon " +
+                " LEFT JOIN dbo.KhuyenMai km " +
+                " ON h.maKhuyenMai = km.maKhuyenMai " +
+                " WHERE h.ngayLapHD = CAST(GETDATE() AS DATE) " +
+                " GROUP BY h.maHoaDon, km.phanTramGiam " +
+                ") " +
+                "SELECT COUNT(*) AS soDonHang, " +
+                " COALESCE(SUM(soDichVu), 0) AS soDichVu, " +
+                " COALESCE(SUM(soSanPham), 0) AS soSanPham, " +
+                " COALESCE(SUM(doanhThu), 0) AS doanhThu " +
+                "FROM ThongKeHoaDon";
+
+        try (Connection con = ConnectDB.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql);
+                ResultSet rs = ps.executeQuery()) {
+
+            if (rs.next()) {
+                return new Object[] {
+                        rs.getInt("soDonHang"),
+                        rs.getInt("soDichVu"),
+                        rs.getInt("soSanPham"),
+                        rs.getBigDecimal("doanhThu")
+                };
+            }
+        }
+
+        return new Object[] {
+                0, 0, 0, java.math.BigDecimal.ZERO
+        };
+    }
+
 }
