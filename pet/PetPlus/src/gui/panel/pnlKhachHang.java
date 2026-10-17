@@ -1,7 +1,7 @@
 
 package gui.panel;
 
-import dao.KhachHangDAO;
+import service.KhachHangService;
 import entity.KhachHang;
 
 import javax.swing.*;
@@ -21,7 +21,7 @@ public class pnlKhachHang extends JPanel {
     private JButton btnXoa;
     private JButton btnLamMoi;
 
-    private final KhachHangDAO khachHangDAO = new KhachHangDAO();
+    private final KhachHangService khachHangService = new KhachHangService();
 
     public pnlKhachHang() {
         setLayout(new BorderLayout(10, 10));
@@ -31,6 +31,7 @@ public class pnlKhachHang extends JPanel {
         khoiTaoGiaoDien();
         ganSuKien();
         taiDanhSach();
+        utils.PetPlusTheme.apply(this);
     }
 
     private void khoiTaoGiaoDien() {
@@ -66,12 +67,12 @@ public class pnlKhachHang extends JPanel {
 
         // Bảng khách hàng
         String[] cot = {
-            "Mã khách hàng",
-            "Tên khách hàng",
-            "Số điện thoại",
-            "Địa chỉ",
-            "Hạng thành viên",
-            "Điểm tích lũy"
+                "Mã khách hàng",
+                "Tên khách hàng",
+                "Số điện thoại",
+                "Địa chỉ",
+                "Hạng thành viên",
+                "Điểm tích lũy"
         };
 
         model = new DefaultTableModel(cot, 0) {
@@ -85,11 +86,9 @@ public class pnlKhachHang extends JPanel {
         tblKhachHang.setFont(new Font("Arial", Font.PLAIN, 13));
         tblKhachHang.setRowHeight(28);
         tblKhachHang.getTableHeader().setFont(
-            new Font("Arial", Font.BOLD, 13)
-        );
+                new Font("Arial", Font.BOLD, 13));
         tblKhachHang.setSelectionMode(
-            ListSelectionModel.SINGLE_SELECTION
-        );
+                ListSelectionModel.SINGLE_SELECTION);
         tblKhachHang.setAutoCreateRowSorter(true);
 
         JScrollPane scrBang = new JScrollPane(tblKhachHang);
@@ -101,8 +100,7 @@ public class pnlKhachHang extends JPanel {
         btnXoa = new JButton("Xóa");
 
         JPanel pnlNut = new JPanel(
-            new FlowLayout(FlowLayout.RIGHT, 10, 5)
-        );
+                new FlowLayout(FlowLayout.RIGHT, 10, 5));
         pnlNut.setBackground(Color.WHITE);
         pnlNut.add(btnThem);
         pnlNut.add(btnSua);
@@ -128,7 +126,7 @@ public class pnlKhachHang extends JPanel {
 
     private void taiDanhSach() {
         try {
-            hienThiDanhSach(khachHangDAO.layDanhSach());
+            hienThiDanhSach(khachHangService.layDanhSach());
         } catch (Exception e) {
             hienThiLoi("Không thể tải danh sách khách hàng.", e);
         }
@@ -139,12 +137,12 @@ public class pnlKhachHang extends JPanel {
 
         for (KhachHang kh : ds) {
             model.addRow(new Object[] {
-                kh.getMaKH(),
-                kh.getTenKH(),
-                kh.getSdt(),
-                kh.getDiaChi(),
-                kh.getHangThanhVien(),
-                kh.getDiemTichLuy()
+                    kh.getMaKH(),
+                    kh.getTenKH(),
+                    kh.getSdt(),
+                    kh.getDiaChi(),
+                    kh.getHangThanhVien(),
+                    kh.getDiemTichLuy()
             });
         }
     }
@@ -156,7 +154,7 @@ public class pnlKhachHang extends JPanel {
             if (tuKhoa.isEmpty()) {
                 taiDanhSach();
             } else {
-                hienThiDanhSach(khachHangDAO.timKiem(tuKhoa));
+                hienThiDanhSach(khachHangService.timKiem(tuKhoa));
             }
         } catch (Exception e) {
             hienThiLoi("Tìm kiếm khách hàng thất bại.", e);
@@ -171,15 +169,13 @@ public class pnlKhachHang extends JPanel {
         }
 
         try {
-            if (khachHangDAO.them(kh)) {
+            if (khachHangService.them(kh)) {
                 JOptionPane.showMessageDialog(
-                    this, "Thêm khách hàng thành công!"
-                );
+                        this, "Thêm khách hàng thành công!");
                 taiDanhSach();
             } else {
                 JOptionPane.showMessageDialog(
-                    this, "Không thể thêm khách hàng."
-                );
+                        this, "Không thể thêm khách hàng.");
             }
         } catch (Exception e) {
             hienThiLoi("Thêm khách hàng thất bại.", e);
@@ -191,8 +187,7 @@ public class pnlKhachHang extends JPanel {
 
         if (dong < 0) {
             JOptionPane.showMessageDialog(
-                this, "Vui lòng chọn khách hàng cần sửa."
-            );
+                    this, "Vui lòng chọn khách hàng cần sửa.");
             return;
         }
 
@@ -200,12 +195,11 @@ public class pnlKhachHang extends JPanel {
         String maKH = model.getValueAt(dongModel, 0).toString();
 
         try {
-            KhachHang khCu = khachHangDAO.timTheoMa(maKH);
+            KhachHang khCu = khachHangService.timTheoMa(maKH);
 
             if (khCu == null) {
                 JOptionPane.showMessageDialog(
-                    this, "Không tìm thấy khách hàng."
-                );
+                        this, "Không tìm thấy khách hàng.");
                 taiDanhSach();
                 return;
             }
@@ -213,15 +207,13 @@ public class pnlKhachHang extends JPanel {
             KhachHang khMoi = hienThiForm(khCu);
 
             if (khMoi != null) {
-                if (khachHangDAO.capNhat(khMoi)) {
+                if (khachHangService.capNhat(khMoi)) {
                     JOptionPane.showMessageDialog(
-                        this, "Cập nhật khách hàng thành công!"
-                    );
+                            this, "Cập nhật khách hàng thành công!");
                     taiDanhSach();
                 } else {
                     JOptionPane.showMessageDialog(
-                        this, "Không thể cập nhật khách hàng."
-                    );
+                            this, "Không thể cập nhật khách hàng.");
                 }
             }
         } catch (Exception e) {
@@ -234,8 +226,7 @@ public class pnlKhachHang extends JPanel {
 
         if (dong < 0) {
             JOptionPane.showMessageDialog(
-                this, "Vui lòng chọn khách hàng cần xóa."
-            );
+                    this, "Vui lòng chọn khách hàng cần xóa.");
             return;
         }
 
@@ -243,32 +234,28 @@ public class pnlKhachHang extends JPanel {
         String maKH = model.getValueAt(dongModel, 0).toString();
 
         int luaChon = JOptionPane.showConfirmDialog(
-            this,
-            "Bạn có chắc muốn xóa khách hàng " + maKH + "?",
-            "Xác nhận xóa",
-            JOptionPane.YES_NO_OPTION
-        );
+                this,
+                "Bạn có chắc muốn xóa khách hàng " + maKH + "?",
+                "Xác nhận xóa",
+                JOptionPane.YES_NO_OPTION);
 
         if (luaChon != JOptionPane.YES_OPTION) {
             return;
         }
 
         try {
-            if (khachHangDAO.xoa(maKH)) {
+            if (khachHangService.xoa(maKH)) {
                 JOptionPane.showMessageDialog(
-                    this, "Xóa khách hàng thành công!"
-                );
+                        this, "Xóa khách hàng thành công!");
                 taiDanhSach();
             } else {
                 JOptionPane.showMessageDialog(
-                    this, "Không thể xóa khách hàng."
-                );
+                        this, "Không thể xóa khách hàng.");
             }
         } catch (Exception e) {
             hienThiLoi(
-                "Xóa thất bại. Khách hàng có thể đang được tham chiếu bởi hóa đơn, thú cưng hoặc lịch hẹn.",
-                e
-            );
+                    "Xóa thất bại. Khách hàng có thể đang được tham chiếu bởi hóa đơn, thú cưng hoặc lịch hẹn.",
+                    e);
         }
     }
 
@@ -276,23 +263,17 @@ public class pnlKhachHang extends JPanel {
         boolean dangSua = khCu != null;
 
         JTextField txtMa = new JTextField(
-            dangSua ? khCu.getMaKH() : ""
-        );
+                dangSua ? khCu.getMaKH() : "");
         JTextField txtTen = new JTextField(
-            dangSua ? khCu.getTenKH() : ""
-        );
+                dangSua ? khCu.getTenKH() : "");
         JTextField txtSDT = new JTextField(
-            dangSua ? giaTri(khCu.getSdt()) : ""
-        );
+                dangSua ? giaTri(khCu.getSdt()) : "");
         JTextField txtDiaChi = new JTextField(
-            dangSua ? giaTri(khCu.getDiaChi()) : ""
-        );
+                dangSua ? giaTri(khCu.getDiaChi()) : "");
         JTextField txtHang = new JTextField(
-            dangSua ? String.valueOf(khCu.getHangThanhVien()) : "0"
-        );
+                dangSua ? String.valueOf(khCu.getHangThanhVien()) : "0");
         JTextField txtDiem = new JTextField(
-            dangSua ? String.valueOf(khCu.getDiemTichLuy()) : "0"
-        );
+                dangSua ? String.valueOf(khCu.getDiemTichLuy()) : "0");
 
         txtMa.setEditable(!dangSua);
 
@@ -311,12 +292,11 @@ public class pnlKhachHang extends JPanel {
         pnl.add(txtDiem);
 
         int ketQua = JOptionPane.showConfirmDialog(
-            this,
-            pnl,
-            dangSua ? "Sửa khách hàng" : "Thêm khách hàng",
-            JOptionPane.OK_CANCEL_OPTION,
-            JOptionPane.PLAIN_MESSAGE
-        );
+                this,
+                pnl,
+                dangSua ? "Sửa khách hàng" : "Thêm khách hàng",
+                JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.PLAIN_MESSAGE);
 
         if (ketQua != JOptionPane.OK_OPTION) {
             return null;
@@ -329,15 +309,13 @@ public class pnlKhachHang extends JPanel {
 
         if (ma.isEmpty() || ten.isEmpty()) {
             JOptionPane.showMessageDialog(
-                this, "Mã và tên khách hàng không được để trống."
-            );
+                    this, "Mã và tên khách hàng không được để trống.");
             return null;
         }
 
         if (!sdt.isEmpty() && !sdt.matches("\\d{9,15}")) {
             JOptionPane.showMessageDialog(
-                this, "Số điện thoại phải gồm 9–15 chữ số."
-            );
+                    this, "Số điện thoại phải gồm 9–15 chữ số.");
             return null;
         }
 
@@ -347,23 +325,20 @@ public class pnlKhachHang extends JPanel {
 
             if (hang < 0 || diem < 0) {
                 JOptionPane.showMessageDialog(
-                    this, "Hạng thành viên và điểm không được âm."
-                );
+                        this, "Hạng thành viên và điểm không được âm.");
                 return null;
             }
 
             return new KhachHang(
-                ma,
-                ten,
-                sdt.isEmpty() ? null : sdt,
-                diaChi.isEmpty() ? null : diaChi,
-                hang,
-                diem
-            );
+                    ma,
+                    ten,
+                    sdt.isEmpty() ? null : sdt,
+                    diaChi.isEmpty() ? null : diaChi,
+                    hang,
+                    diem);
         } catch (NumberFormatException e) {
             JOptionPane.showMessageDialog(
-                this, "Hạng thành viên và điểm phải là số nguyên."
-            );
+                    this, "Hạng thành viên và điểm phải là số nguyên.");
             return null;
         }
     }
@@ -374,11 +349,10 @@ public class pnlKhachHang extends JPanel {
 
     private void hienThiLoi(String thongBao, Exception e) {
         JOptionPane.showMessageDialog(
-            this,
-            thongBao + "\nChi tiết: " + e.getMessage(),
-            "Lỗi",
-            JOptionPane.ERROR_MESSAGE
-        );
+                this,
+                thongBao + "\nChi tiết: " + e.getMessage(),
+                "Lỗi",
+                JOptionPane.ERROR_MESSAGE);
         e.printStackTrace();
     }
 }
