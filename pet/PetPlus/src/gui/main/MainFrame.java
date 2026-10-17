@@ -13,6 +13,11 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import gui.panel.pnlHoaDon;
+import gui.panel.pnlThuCung;
+import gui.panel.pnlTichDiem;
+import gui.panel.pnlDichVu;
+import gui.panel.pnlLichHen;
+import gui.panel.pnlKhachHang;
 import utils.Auth;
 import dao.HoaDonDAO;
 import dao.SanPhamDAO;
@@ -50,7 +55,7 @@ public class MainFrame extends JFrame {
             // Danh mục
             { "Loại sản phẩm", "Nhà cung cấp", "Dịch vụ", "Ca làm việc" },
             // Cập nhật
-            { "Sản phẩm", "Khách hàng", "Thú cưng", "Nhân viên", "Lịch hẹn", "Khuyến mãi", "Quản lý hóa đơn" },
+            { "Sản phẩm", "Khách hàng", "Thú cưng", "Tích điểm", "Nhân viên", "Lịch hẹn", "Khuyến mãi", "Quản lý hóa đơn" },
             // Tìm kiếm
             { "Sản phẩm", "Khách hàng", "Hóa đơn", "Phiếu nhập", "Lịch hẹn" },
             // Xử lý
@@ -216,6 +221,11 @@ public class MainFrame extends JFrame {
         registerCard("Thanh toán", createExistingPanel("Thanh toán"));
         // Đăng ký trang quản lý hóa đơn
         registerCard("Quản lý hóa đơn", new pnlHoaDon());
+        registerCard("Khách hàng", new pnlKhachHang());
+        registerCard("Thú cưng", new pnlThuCung());
+        registerCard("Tích điểm", new pnlTichDiem());
+        registerCard("Dịch vụ", new pnlDichVu());
+        registerCard("Lịch hẹn", new pnlLichHen());
         registerCard("Đổi mật khẩu", placeholder("Đổi mật khẩu"));
         // 5. HIỂN THỊ THÔNG TIN TÀI KHOẢN
         updateAccountInfo();
