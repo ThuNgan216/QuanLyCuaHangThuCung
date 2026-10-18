@@ -1,0 +1,106 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Current File",
+            "request": "launch",
+            "mainClass": "${file}",
+            "classPaths": [
+                "$Auto",
+                "${workspaceFolder}/pet/PetPlus/lib/sqljdbc42.jar"
+            ]
+        },
+        {
+            "type": "java",
+            "name": "testDAO",
+            "request": "launch",
+            "mainClass": "dao.testDAO",
+            "projectName": "PetPlus_6d290777",
+            "classPaths": [
+                "$Auto",
+                "${workspaceFolder}/pet/PetPlus/lib/sqljdbc42.jar"
+            ]
+        },
+        {
+            "type": "java",
+            "name": "ConnectDB",
+            "request": "launch",
+            "mainClass": "database.ConnectDB",
+            "projectName": "PetPlus_6d290777",
+            "classPaths": [
+                "$Auto",
+                "${workspaceFolder}/pet/PetPlus/lib/sqljdbc42.jar"
+            ]
+        },
+        {
+            "type": "java",
+            "name": "dlgQuetMaVach",
+            "request": "launch",
+            "mainClass": "gui.dialogs.dlgQuetMaVach",
+            "projectName": "PetPlus_6d290777",
+            "classPaths": [
+                "$Auto",
+                "${workspaceFolder}/pet/PetPlus/lib/sqljdbc42.jar"
+            ]
+        },
+        {
+            "type": "java",
+            "name": "LoginFrame",
+            "request": "launch",
+            "mainClass": "gui.main.LoginFrame",
+            "projectName": "PetPlus_6d290777",
+            "classPaths": [
+                "$Auto",
+                "${workspaceFolder}/pet/PetPlus/lib/sqljdbc42.jar"
+            ]
+        },
+        {
+            "type": "java",
+            "name": "MainFrame",
+            "request": "launch",
+            "mainClass": "gui.main.MainFrame",
+            "projectName": "PetPlus_6d290777",
+            "classPaths": [
+                "$Auto",
+                "${workspaceFolder}/pet/PetPlus/lib/sqljdbc42.jar"
+            ]
+        },
+        {
+            "type": "java",
+            "name": "pnlSanPham",
+            "request": "launch",
+            "mainClass": "gui.panel.pnlSanPham",
+            "projectName": "PetPlus_6d290777",
+            "classPaths": [
+                "$Auto",
+                "${workspaceFolder}/pet/PetPlus/lib/sqljdbc42.jar"
+            ]
+        },
+        {
+            "type": "java",
+            "name": "pnlThanhToan",
+            "request": "launch",
+            "mainClass": "gui.panel.pnlThanhToan",
+            "projectName": "PetPlus_6d290777",
+            "classPaths": [
+                "$Auto",
+                "${workspaceFolder}/pet/PetPlus/lib/sqljdbc42.jar"
+            ]
+        },
+        {
+            "type": "java",
+            "name": "barcodeScanner",
+            "request": "launch",
+            "mainClass": "network.barcodeScanner",
+            "projectName": "PetPlus_6d290777",
+            "classPaths": [
+                "$Auto",
+                "${workspaceFolder}/pet/PetPlus/lib/sqljdbc42.jar"
+            ]
+        }
+    ]
+}

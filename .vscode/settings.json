@@ -1,0 +1,5 @@
+{
+    "java.project.referencedLibraries": [
+        "pet/PetPlus/lib/**/*.jar"
+    ]
+}
