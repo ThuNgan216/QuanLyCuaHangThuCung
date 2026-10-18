@@ -5,14 +5,13 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 
 public final class ConnectDB {
-    private static final String URL =
-            "jdbc:sqlserver://localhost:1433;"
+    private static final String URL = "jdbc:sqlserver://localhost:1433;"
             + "databaseName=PETPLUS;"
             + "encrypt=true;"
             + "trustServerCertificate=true;";
 
     private static final String USERNAME = "sa";
-    private static final String PASSWORD = "123456";
+    private static final String PASSWORD = "sapassword";
 
     private ConnectDB() {
     }
@@ -21,13 +20,12 @@ public final class ConnectDB {
         return DriverManager.getConnection(
                 URL,
                 USERNAME,
-                PASSWORD
-        );
+                PASSWORD);
     }
 
     public static void main(String[] args) {
 
-        try (Connection connection = getConnection()) { 
+        try (Connection connection = getConnection()) {
 
             System.out.println("================================");
             System.out.println("KET NOI THANH CONG");
