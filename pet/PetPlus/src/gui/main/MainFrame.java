@@ -12,7 +12,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
-import gui.panel.pnlHoaDon;
+import gui.panel.pnlQuanLyHoaDon;
 import utils.Auth;
 import dao.HoaDonDAO;
 import dao.SanPhamDAO;
@@ -40,8 +40,10 @@ public class MainFrame extends JFrame {
     private JLabel lblSanPhamHomNay;
     private JLabel lblDoanhThuHomNay;
     private JButton activeButton;
-    private final String[] MENU_ITEMS = {"Trang chủ", "Hệ thống", "Danh mục", "Cập nhật", "Tìm kiếm", "Xử lý", "Báo biểu"};
-    private final String[] MENU_ICONS = {"home.png", "settings.png", "box.png", "employee.png", "search.png", "cart.png", "chart.png"};
+    private final String[] MENU_ITEMS = { "Trang chủ", "Hệ thống", "Danh mục", "Cập nhật", "Tìm kiếm", "Xử lý",
+            "Báo biểu" };
+    private final String[] MENU_ICONS = { "home.png", "settings.png", "box.png", "employee.png", "search.png",
+            "cart.png", "chart.png" };
     // Menu con theo từng nhóm chức năng
     private final String[][] SUB_MENUS = {
             {},
@@ -215,7 +217,8 @@ public class MainFrame extends JFrame {
         registerCard("Nhân viên", createExistingPanel("Nhân viên"));
         registerCard("Thanh toán", createExistingPanel("Thanh toán"));
         // Đăng ký trang quản lý hóa đơn
-        registerCard("Quản lý hóa đơn", new pnlHoaDon());
+        registerCard("Quản lý hóa đơn", placeholder("Quản lý hóa đơn"));
+        registerCard("Hóa đơn", createExistingPanel("Hóa đơn"));
         registerCard("Đổi mật khẩu", placeholder("Đổi mật khẩu"));
         // 5. HIỂN THỊ THÔNG TIN TÀI KHOẢN
         updateAccountInfo();
@@ -288,8 +291,10 @@ public class MainFrame extends JFrame {
         try {
             if ("Nhân viên".equals(name))
                 return new QuanLyNhanVienPanel();
+            if ("Hóa đơn".equals(name))
+                return new pnlQuanLyHoaDon();
             if ("Thanh toán".equals(name))
-                return new pnlHoaDon();
+                return placeholder("Thanh toán");
         } catch (Exception ex) {
             System.err.println("Không thể tạo panel " + name + ": " + ex.getMessage());
         }
@@ -423,6 +428,7 @@ public class MainFrame extends JFrame {
                 HoaDonDAO dao = new HoaDonDAO();
                 return dao.layThongKeHomNay();
             }
+
             @Override
             protected void done() {
                 try {
@@ -492,6 +498,7 @@ public class MainFrame extends JFrame {
                 SanPhamDAO dao = new SanPhamDAO();
                 return dao.layTop5SanPhamBanChay();
             }
+
             @Override
             protected void done() {
                 try {
@@ -571,6 +578,7 @@ public class MainFrame extends JFrame {
                 HoaDonDAO dao = new HoaDonDAO();
                 return dao.layHoaDonGanDay();
             }
+
             @Override
             protected void done() {
                 try {
@@ -641,6 +649,7 @@ public class MainFrame extends JFrame {
         });
         return pane;
     }
+
     // Biểu đồ doanh thu 7 ngày gần nhất
     private static class RevenueChart extends JPanel {
         private final double[] values = new double[7];
@@ -649,10 +658,12 @@ public class MainFrame extends JFrame {
         private String errorMessage = null;
         // Trục Y cố định từ 0 đến 4 triệu
         private static final double MAX_REVENUE = 4_000_000.0;
+
         RevenueChart() {
             setOpaque(false);
             loadRevenue();
         }
+
         // Tải dữ liệu doanh thu từ database
         private void loadRevenue() {
             SwingWorker<java.util.List<Object[]>, Void> worker = new SwingWorker<java.util.List<Object[]>, Void>() {
@@ -662,6 +673,7 @@ public class MainFrame extends JFrame {
                     HoaDonDAO dao = new HoaDonDAO();
                     return dao.layDoanhThu7Ngay();
                 }
+
                 @Override
                 protected void done() {
                     try {
@@ -684,6 +696,7 @@ public class MainFrame extends JFrame {
             };
             worker.execute();
         }
+
         @Override
         protected void paintComponent(Graphics graphics) {
             super.paintComponent(graphics);
@@ -772,6 +785,7 @@ public class MainFrame extends JFrame {
                 if (btn != activeButton)
                     btn.setBackground(new Color(255, 226, 237));
             }
+
             @Override
             public void mouseExited(MouseEvent e) {
                 if (btn != activeButton)
@@ -826,14 +840,17 @@ public class MainFrame extends JFrame {
             dispose();
         }
     }
+
     private static class RoundPanel extends JPanel {
         private final Color color;
         private final int radius;
+
         RoundPanel(Color color, int radius) {
             this.color = color;
             this.radius = radius;
             setOpaque(false);
         }
+
         @Override
         protected void paintComponent(Graphics graphics) {
             Graphics2D g = (Graphics2D) graphics.create();
