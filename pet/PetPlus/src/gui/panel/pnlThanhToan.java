@@ -2,6 +2,14 @@ package gui.panel;
 
 import java.awt.*;
 import java.text.NumberFormat;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import database.ConnectDB;
+import utils.Auth;
+import java.sql.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
@@ -18,11 +26,14 @@ public class pnlThanhToan extends JPanel {
     private static final Color TEXT = new Color(40, 46, 58);
     private static final Font FONT = new Font("Times New Roman", Font.PLAIN, 13);
     private static final NumberFormat MONEY = NumberFormat.getIntegerInstance(new Locale("vi", "VN"));
-
     private final DefaultTableModel model = new DefaultTableModel(
-            new String[] {"STT", "Tên sản phẩm", "Số lượng", "Đơn giá", "Thành tiền"}, 0) {
-        @Override public boolean isCellEditable(int r, int c) { return false; }
+            new String[] { "STT", "Tên sản phẩm", "Số lượng", "Đơn giá", "Thành tiền" }, 0) {
+        @Override
+        public boolean isCellEditable(int r, int c) {
+            return false;
+        }
     };
+
     private final JTable table = new JTable(model);
     private final JLabel lblSubtotal = valueLabel("0 đ");
     private final JLabel lblDiscount = valueLabel("0 đ");
@@ -33,10 +44,42 @@ public class pnlThanhToan extends JPanel {
     private final JTextField txtOrderCode = field("#DH-20261017-001", false);
     private final JTextField txtOrderDate = field(LocalDateTime.now().format(
             DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")), false);
-    private final JTextField txtEmployee = field("Chưa đăng nhập", false);
+
+    private final JTextField txtEmployee = field("Đang tải nhân viên...", false);
     private final JTextField txtCustomer = field("", true);
     private final JTextField txtPhone = field("", true);
     private final JTextField txtAddress = field("", true);
+    private final JTextField txtMemberType = field("", false);
+    private final JTextField txtPoints = field("0", false);
+
+    // Danh sách khách hàng tìm theo số điện thoại
+    private final JPopupMenu popupKhachHang = new JPopupMenu();
+    private final DefaultListModel<KhachHangItem> modelKhachHang = new DefaultListModel<>();
+    private final JList<KhachHangItem> listKhachHang = new JList<>(modelKhachHang);
+    private boolean dangChonKhachHang = false;
+    private int lanTimKhachHang = 0;
+
+    private static class KhachHangItem {
+        final String ten;
+        final String sdt;
+        final String diaChi;
+        final int hangThanhVien;
+        final int diemTichLuy;
+
+        KhachHangItem(String ten, String sdt, String diaChi, int hangThanhVien, int diemTichLuy) {
+            this.ten = ten;
+            this.sdt = sdt;
+            this.diaChi = diaChi;
+            this.hangThanhVien = hangThanhVien;
+            this.diemTichLuy = diemTichLuy;
+        }
+
+        @Override
+        public String toString() {
+            return sdt + " - " + ten;
+        }
+    }
+
     private final JRadioButton rbCash = new JRadioButton("Tiền mặt", true);
     private final JRadioButton rbQR = new JRadioButton("QR Code");
     private long total = 0;
@@ -51,22 +94,221 @@ public class pnlThanhToan extends JPanel {
         body.add(createTop(), BorderLayout.NORTH);
         body.add(createBottom(), BorderLayout.CENTER);
         add(body, BorderLayout.CENTER);
-
         // Dữ liệu mẫu để xem giao diện; thay bằng dữ liệu giỏ hàng khi tích hợp POS
         addProduct("Thức ăn cho chó Royal Canin 5kg", 2, 450000);
         addProduct("Dây xích dắt chó cao cấp", 1, 250000);
         addProduct("Sữa tắm chó mèo Bioline 500ml", 3, 120000);
         addProduct("Đồ chơi bóng tennis cho chó", 2, 85000);
-
         txtPaid.getDocument().addDocumentListener(new SimpleDocumentListener(this::updateTotals));
         txtDiscount.getDocument().addDocumentListener(new SimpleDocumentListener(this::updateTotals));
         updateTotals();
+        setupTimKhachHang();
+        // Chỉ tra cứu nhân viên khi panel được hiển thị; cập nhật khi quay lại màn
+        // hình.
+        addHierarchyListener(e -> {
+            if ((e.getChangeFlags() & java.awt.event.HierarchyEvent.SHOWING_CHANGED) != 0
+                    && isShowing()) {
+                loadEmployeeFromDatabase();
+            }
+        });
+    }
+
+    /**
+     * Lấy tên nhân viên đang lập hóa đơn từ SQL Server theo phiên đăng nhập.
+     * Không lấy nhân viên bất kỳ (ví dụ SELECT TOP 1), tránh ghi sai người lập.
+     */
+
+    private void loadEmployeeFromDatabase() {
+        if (Auth.user == null) {
+            txtEmployee.setText("Chưa đăng nhập");
+            return;
+        }
+        final String employeeId = Auth.user.getMaNV();
+        if (employeeId == null || employeeId.trim().isEmpty()) {
+            txtEmployee.setText("Không xác định nhân viên");
+            return;
+        }
+        txtEmployee.setText("Đang tải nhân viên...");
+        new SwingWorker<String, Void>() {
+            @Override
+            protected String doInBackground() throws Exception {
+                String sql = "SELECT tenNV FROM NhanVien WHERE maNV = ?";
+                try (Connection con = ConnectDB.getConnection();
+                        PreparedStatement stmt = con.prepareStatement(sql)) {
+                    stmt.setString(1, employeeId);
+                    try (ResultSet rs = stmt.executeQuery()) {
+                        return rs.next() ? rs.getString("tenNV") : null;
+                    }
+                }
+            }
+
+            @Override
+            protected void done() {
+                // Tránh hiển thị dữ liệu của nhân viên cũ nếu phiên đăng nhập đã đổi.
+                if (Auth.user == null || !employeeId.equals(Auth.user.getMaNV())) {
+                    return;
+                }
+                try {
+                    String employeeName = get();
+                    txtEmployee.setText(employeeName == null || employeeName.trim().isEmpty()
+                            ? "Không tìm thấy nhân viên"
+                            : employeeName);
+                } catch (Exception ex) {
+                    txtEmployee.setText("Lỗi tải nhân viên");
+                    JOptionPane.showMessageDialog(pnlThanhToan.this,
+                            "Không thể lấy nhân viên từ SQL Server: " + ex.getMessage(),
+                            "Lỗi cơ sở dữ liệu", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        }.execute();
+    }
+
+    // Tìm khách hàng theo số điện thoại và hiển thị danh sách gợi ý
+
+    private void setupTimKhachHang() {
+        listKhachHang.setFont(FONT);
+        listKhachHang.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+
+        JScrollPane scroll = new JScrollPane(listKhachHang);
+        scroll.setPreferredSize(new Dimension(320, 140));
+        popupKhachHang.add(scroll);
+
+        javax.swing.Timer timer = new javax.swing.Timer(300, e -> timKhachHang(txtPhone.getText().trim()));
+        timer.setRepeats(false);
+
+        txtPhone.getDocument().addDocumentListener(new DocumentListener() {
+            private void capNhat() {
+                if (dangChonKhachHang)
+                    return;
+
+                lanTimKhachHang++;
+                txtCustomer.setText("");
+                txtAddress.setText("");
+                popupKhachHang.setVisible(false);
+                timer.restart();
+            }
+
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                capNhat();
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                capNhat();
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                capNhat();
+            }
+        });
+
+        listKhachHang.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                if (e.getClickCount() >= 1)
+                    chonKhachHang();
+            }
+        });
+
+        listKhachHang.getInputMap().put(KeyStroke.getKeyStroke("ENTER"), "chonKhachHang");
+        listKhachHang.getActionMap().put("chonKhachHang", new AbstractAction() {
+            @Override
+            public void actionPerformed(java.awt.event.ActionEvent e) {
+                chonKhachHang();
+            }
+        });
+    }
+
+    // Lấy thông tin khách hàng từ SQL Server, không chặn giao diện
+
+    private void timKhachHang(String sdt) {
+        final int lanTim = ++lanTimKhachHang;
+        modelKhachHang.clear();
+
+        if (sdt.length() < 2) {
+            popupKhachHang.setVisible(false);
+            return;
+        }
+
+        new SwingWorker<java.util.List<KhachHangItem>, Void>() {
+            @Override
+            protected java.util.List<KhachHangItem> doInBackground() throws Exception {
+                java.util.List<KhachHangItem> ketQua = new java.util.ArrayList<>();
+                String sql = "SELECT tenKH, sdt, diaChi, hangThanhVien, diemTichLuy "
+                        + "FROM KhachHang WHERE sdt LIKE ? ORDER BY sdt";
+
+                try (Connection con = ConnectDB.getConnection();
+                        PreparedStatement stmt = con.prepareStatement(sql)) {
+                    stmt.setString(1, "%" + sdt + "%");
+
+                    try (ResultSet rs = stmt.executeQuery()) {
+                        while (rs.next()) {
+                            ketQua.add(new KhachHangItem(
+                                    rs.getString("tenKH"),
+                                    rs.getString("sdt"),
+                                    rs.getString("diaChi"),
+                                    rs.getInt("hangThanhVien"),
+                                    rs.getInt("diemTichLuy")));
+
+                        }
+                    }
+                }
+                return ketQua;
+            }
+
+            @Override
+            protected void done() {
+                if (lanTim != lanTimKhachHang || !sdt.equals(txtPhone.getText().trim()))
+                    return;
+
+                try {
+                    for (KhachHangItem kh : get())
+                        modelKhachHang.addElement(kh);
+
+                    if (!modelKhachHang.isEmpty() && txtPhone.isShowing()) {
+                        popupKhachHang.show(txtPhone, 0, txtPhone.getHeight());
+                    } else {
+                        popupKhachHang.setVisible(false);
+                    }
+                } catch (Exception ex) {
+                    popupKhachHang.setVisible(false);
+                    JOptionPane.showMessageDialog(pnlThanhToan.this,
+                            "Không thể tìm khách hàng từ SQL Server: " + ex.getMessage(),
+                            "Lỗi cơ sở dữ liệu", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        }.execute();
+    }
+
+    // Chọn số điện thoại và tự điền thông tin khách hàng
+
+    private void chonKhachHang() {
+        KhachHangItem kh = listKhachHang.getSelectedValue();
+        if (kh == null)
+            return;
+
+        dangChonKhachHang = true;
+        lanTimKhachHang++;
+        try {
+            txtCustomer.setText(kh.ten == null ? "" : kh.ten);
+            txtPhone.setText(kh.sdt == null ? "" : kh.sdt);
+            txtAddress.setText(kh.diaChi == null ? "" : kh.diaChi);
+            // Hiển thị loại thành viên và điểm tích lũy
+            // Hiển thị loại thành viên và điểm tích lũy
+            txtMemberType.setText(String.valueOf(kh.hangThanhVien));
+            txtPoints.setText(String.valueOf(kh.diemTichLuy));
+        } finally {
+            dangChonKhachHang = false;
+        }
+        popupKhachHang.setVisible(false);
     }
 
     private JPanel createTitle() {
         JPanel p = new JPanel(new BorderLayout());
         p.setOpaque(false);
-        JLabel title = label("▤  Thanh toán", 22, DARK_PINK, true);
+        JLabel title = label("Thanh toán", 22, DARK_PINK, true);
         p.add(title, BorderLayout.WEST);
         p.setBorder(new CompoundBorder(new MatteBorder(0, 0, 1, 0, PINK), new EmptyBorder(0, 6, 9, 0)));
         return p;
@@ -76,11 +318,12 @@ public class pnlThanhToan extends JPanel {
         JPanel p = new JPanel(new GridLayout(1, 3, 12, 0));
         p.setOpaque(false);
         JPanel order = section("Thông tin đơn hàng");
-        addRows(order, new String[] {"Mã đơn hàng:", "Ngày tạo:", "Nhân viên:"},
-                new JComponent[] {txtOrderCode, txtOrderDate, txtEmployee});
+        addRows(order, new String[] { "Mã đơn hàng:", "Ngày tạo:", "Nhân viên:" },
+                new JComponent[] { txtOrderCode, txtOrderDate, txtEmployee });
         JPanel customer = section("Thông tin khách hàng");
-        addRows(customer, new String[] {"Họ và tên:", "Số điện thoại:", "Địa chỉ:"},
-                new JComponent[] {txtCustomer, txtPhone, txtAddress});
+        addRows(customer,
+                new String[] { "Họ và tên:", "Số điện thoại:", "Địa chỉ:", "Loại thành viên:", "Điểm tích lũy:" },
+                new JComponent[] { txtCustomer, txtPhone, txtAddress, txtMemberType, txtPoints });
         JPanel summary = section("Tạm tính");
         JPanel sumGrid = new JPanel(new GridLayout(3, 2, 6, 9));
         sumGrid.setOpaque(false);
@@ -103,7 +346,7 @@ public class pnlThanhToan extends JPanel {
         p.add(order);
         p.add(customer);
         p.add(summary);
-        p.setPreferredSize(new Dimension(0, 146));
+        p.setPreferredSize(new Dimension(0, 210));
         return p;
     }
 
@@ -119,8 +362,8 @@ public class pnlThanhToan extends JPanel {
         actions.setOpaque(false);
         actions.setBorder(new EmptyBorder(9, 0, 0, 0));
         JButton add = outlineButton("+  Thêm sản phẩm");
-        JButton edit = outlineButton("✎  Sửa sản phẩm");
-        JButton remove = outlineButton("×  Xóa sản phẩm");
+        JButton edit = outlineButton("Sửa sản phẩm");
+        JButton remove = outlineButton("-   Xóa sản phẩm");
         add.addActionListener(e -> promptAdd());
         edit.addActionListener(e -> promptEdit());
         remove.addActionListener(e -> removeSelected());
@@ -128,13 +371,12 @@ public class pnlThanhToan extends JPanel {
         actions.add(edit);
         actions.add(remove);
         items.add(actions, BorderLayout.SOUTH);
-
         JPanel right = new JPanel(new BorderLayout(0, 9));
         right.setOpaque(false);
         JPanel payMethod = section("Phương thức thanh toán");
         JPanel radio = new JPanel(new GridLayout(1, 2));
         radio.setOpaque(false);
-        for (JRadioButton rb : new JRadioButton[]{rbCash, rbQR}) {
+        for (JRadioButton rb : new JRadioButton[] { rbCash, rbQR }) {
             rb.setOpaque(false);
             rb.setFont(FONT);
             rb.setForeground(TEXT);
@@ -145,7 +387,6 @@ public class pnlThanhToan extends JPanel {
         group.add(rbQR);
         payMethod.add(radio, BorderLayout.CENTER);
         payMethod.setPreferredSize(new Dimension(0, 84));
-
         JPanel payment = section("Khách hàng đưa tiền");
         JPanel paymentContent = new JPanel();
         paymentContent.setOpaque(false);
@@ -161,7 +402,7 @@ public class pnlThanhToan extends JPanel {
         paymentContent.add(Box.createVerticalStrut(12));
         JPanel amounts = new JPanel(new GridLayout(1, 3, 6, 0));
         amounts.setOpaque(false);
-        for (long amount : new long[]{1500000, 1600000, 2000000}) {
+        for (long amount : new long[] { 1500000, 1600000, 2000000 }) {
             JButton b = outlineButton(MONEY.format(amount));
             b.addActionListener(e -> txtPaid.setText(MONEY.format(amount)));
             amounts.add(b);
@@ -177,17 +418,15 @@ public class pnlThanhToan extends JPanel {
         changeLine.add(lblChange, BorderLayout.EAST);
         paymentContent.add(changeLine);
         payment.add(paymentContent, BorderLayout.CENTER);
-
         JPanel footer = new JPanel(new GridLayout(2, 1, 0, 7));
         footer.setOpaque(false);
-        JButton confirm = primaryButton("✓ Xác nhận thanh toán");
-        JButton cancel = outlineButton("⊗ Hủy thanh toán");
+        JButton confirm = primaryButton("Xác nhận thanh toán");
+        JButton cancel = outlineButton("Hủy thanh toán");
         confirm.addActionListener(e -> confirmPayment());
         cancel.addActionListener(e -> cancelPayment());
         footer.add(confirm);
         footer.add(cancel);
         footer.setPreferredSize(new Dimension(0, 82));
-
         right.add(payMethod, BorderLayout.NORTH);
         right.add(payment, BorderLayout.CENTER);
         right.add(footer, BorderLayout.SOUTH);
@@ -212,8 +451,8 @@ public class pnlThanhToan extends JPanel {
         p.add(inner, BorderLayout.CENTER);
         return p;
     }
-
     // Gắn form 3 dòng vào vùng nội dung của panel
+
     private void addRows(JPanel section, String[] names, JComponent[] controls) {
         JPanel grid = new JPanel(new GridBagLayout());
         grid.setOpaque(false);
@@ -244,8 +483,9 @@ public class pnlThanhToan extends JPanel {
         header.setFont(new Font("Times New Roman", Font.BOLD, 12));
         header.setBackground(LIGHT_PINK);
         header.setPreferredSize(new Dimension(0, 30));
-        int[] widths = {38, 230, 65, 95, 105};
-        for (int i = 0; i < widths.length; i++) table.getColumnModel().getColumn(i).setPreferredWidth(widths[i]);
+        int[] widths = { 38, 230, 65, 95, 105 };
+        for (int i = 0; i < widths.length; i++)
+            table.getColumnModel().getColumn(i).setPreferredWidth(widths[i]);
         DefaultTableCellRenderer right = new DefaultTableCellRenderer();
         right.setHorizontalAlignment(SwingConstants.RIGHT);
         table.getColumnModel().getColumn(2).setCellRenderer(right);
@@ -262,7 +502,7 @@ public class pnlThanhToan extends JPanel {
 
     private void addProduct(String name, int qty, long price) {
         // Lưu số nguyên trong model để tính tiền chính xác
-        model.addRow(new Object[]{model.getRowCount() + 1, name, qty, price, qty * price});
+        model.addRow(new Object[] { model.getRowCount() + 1, name, qty, price, qty * price });
         updateTotals();
     }
 
@@ -270,13 +510,16 @@ public class pnlThanhToan extends JPanel {
         JTextField name = new JTextField();
         JTextField qty = new JTextField("1");
         JTextField price = new JTextField();
-        Object[] fields = {"Tên sản phẩm:", name, "Số lượng:", qty, "Đơn giá (đ):", price};
-        if (JOptionPane.showConfirmDialog(this, fields, "Thêm sản phẩm", JOptionPane.OK_CANCEL_OPTION) != JOptionPane.OK_OPTION) return;
+        Object[] fields = { "Tên sản phẩm:", name, "Số lượng:", qty, "Đơn giá (đ):", price };
+        if (JOptionPane.showConfirmDialog(this, fields, "Thêm sản phẩm",
+                JOptionPane.OK_CANCEL_OPTION) != JOptionPane.OK_OPTION)
+            return;
         try {
             String title = name.getText().trim();
             int count = Integer.parseInt(qty.getText().trim());
             long amount = parseMoney(price.getText());
-            if (title.isEmpty() || count <= 0 || amount < 0) throw new IllegalArgumentException();
+            if (title.isEmpty() || count <= 0 || amount < 0)
+                throw new IllegalArgumentException();
             for (int r = 0; r < model.getRowCount(); r++) {
                 if (title.equalsIgnoreCase(String.valueOf(model.getValueAt(r, 1)))) {
                     int existing = (int) model.getValueAt(r, 2);
@@ -293,16 +536,21 @@ public class pnlThanhToan extends JPanel {
 
     private void promptEdit() {
         int r = table.getSelectedRow();
-        if (r < 0) { JOptionPane.showMessageDialog(this, "Hãy chọn một sản phẩm."); return; }
+        if (r < 0) {
+            JOptionPane.showMessageDialog(this, "Hãy chọn một sản phẩm.");
+            return;
+        }
         int row = table.convertRowIndexToModel(r);
         JTextField qty = new JTextField(String.valueOf(model.getValueAt(row, 2)));
         JTextField price = new JTextField(MONEY.format((long) model.getValueAt(row, 3)));
-        if (JOptionPane.showConfirmDialog(this, new Object[]{"Số lượng:", qty, "Đơn giá:", price},
-                "Sửa sản phẩm", JOptionPane.OK_CANCEL_OPTION) != JOptionPane.OK_OPTION) return;
+        if (JOptionPane.showConfirmDialog(this, new Object[] { "Số lượng:", qty, "Đơn giá:", price },
+                "Sửa sản phẩm", JOptionPane.OK_CANCEL_OPTION) != JOptionPane.OK_OPTION)
+            return;
         try {
             int count = Integer.parseInt(qty.getText().trim());
             long amount = parseMoney(price.getText());
-            if (count <= 0 || amount < 0) throw new IllegalArgumentException();
+            if (count <= 0 || amount < 0)
+                throw new IllegalArgumentException();
             model.setValueAt(count, row, 2);
             model.setValueAt(amount, row, 3);
             updateTotals();
@@ -313,9 +561,13 @@ public class pnlThanhToan extends JPanel {
 
     private void removeSelected() {
         int r = table.getSelectedRow();
-        if (r < 0) { JOptionPane.showMessageDialog(this, "Hãy chọn một sản phẩm cần xóa."); return; }
+        if (r < 0) {
+            JOptionPane.showMessageDialog(this, "Hãy chọn một sản phẩm cần xóa.");
+            return;
+        }
         model.removeRow(table.convertRowIndexToModel(r));
-        for (int i = 0; i < model.getRowCount(); i++) model.setValueAt(i + 1, i, 0);
+        for (int i = 0; i < model.getRowCount(); i++)
+            model.setValueAt(i + 1, i, 0);
         updateTotals();
     }
 
@@ -329,8 +581,11 @@ public class pnlThanhToan extends JPanel {
             subtotal += line;
         }
         double discountRate;
-        try { discountRate = Double.parseDouble(txtDiscount.getText().replace(',', '.').trim()); }
-        catch (Exception e) { discountRate = 0; }
+        try {
+            discountRate = Double.parseDouble(txtDiscount.getText().replace(',', '.').trim());
+        } catch (Exception e) {
+            discountRate = 0;
+        }
         discountRate = Math.max(0, Math.min(100, discountRate));
         long discount = Math.round(subtotal * discountRate / 100);
         total = subtotal - discount;
@@ -338,21 +593,33 @@ public class pnlThanhToan extends JPanel {
         lblDiscount.setText("-" + MONEY.format(discount) + " đ");
         lblTotal.setText(MONEY.format(total) + " đ");
         long paid;
-        try { paid = parseMoney(txtPaid.getText()); }
-        catch (Exception e) { paid = 0; }
+        try {
+            paid = parseMoney(txtPaid.getText());
+        } catch (Exception e) {
+            paid = 0;
+        }
         lblChange.setText(MONEY.format(Math.max(0, paid - total)) + " đ");
     }
 
     private void confirmPayment() {
-        if (model.getRowCount() == 0) { JOptionPane.showMessageDialog(this, "Chưa có sản phẩm trong đơn hàng."); return; }
-        if (txtCustomer.getText().trim().isEmpty()) { JOptionPane.showMessageDialog(this, "Hãy nhập tên khách hàng."); return; }
+        if (model.getRowCount() == 0) {
+            JOptionPane.showMessageDialog(this, "Chưa có sản phẩm trong đơn hàng.");
+            return;
+        }
+        if (txtCustomer.getText().trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Hãy nhập tên khách hàng.");
+            return;
+        }
         if (rbCash.isSelected()) {
             try {
                 if (parseMoney(txtPaid.getText()) < total) {
                     JOptionPane.showMessageDialog(this, "Số tiền khách đưa chưa đủ để thanh toán.");
                     return;
                 }
-            } catch (Exception e) { JOptionPane.showMessageDialog(this, "Số tiền khách đưa không hợp lệ."); return; }
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(this, "Số tiền khách đưa không hợp lệ.");
+                return;
+            }
         }
         JOptionPane.showMessageDialog(this,
                 "Giao diện đã kiểm tra thông tin thanh toán.\nChưa ghi hóa đơn hoặc trừ tồn kho trong SQL Server.",
@@ -361,7 +628,8 @@ public class pnlThanhToan extends JPanel {
 
     private void cancelPayment() {
         if (JOptionPane.showConfirmDialog(this, "Xóa danh sách sản phẩm và thông tin đang nhập?",
-                "Hủy thanh toán", JOptionPane.YES_NO_OPTION) != JOptionPane.YES_OPTION) return;
+                "Hủy thanh toán", JOptionPane.YES_NO_OPTION) != JOptionPane.YES_OPTION)
+            return;
         model.setRowCount(0);
         txtCustomer.setText("");
         txtPhone.setText("");
@@ -372,7 +640,8 @@ public class pnlThanhToan extends JPanel {
 
     private static long parseMoney(String value) {
         String cleaned = value.replace(".", "").replace(",", "").replace(" ", "").replace("đ", "").trim();
-        if (cleaned.isEmpty()) return 0;
+        if (cleaned.isEmpty())
+            return 0;
         return Long.parseLong(cleaned);
     }
 
@@ -417,16 +686,31 @@ public class pnlThanhToan extends JPanel {
         return b;
     }
 
-    private interface Callback { void run(); }
-    private static class SimpleDocumentListener implements javax.swing.event.DocumentListener {
-        private final Callback callback;
-        SimpleDocumentListener(Callback callback) { this.callback = callback; }
-        public void insertUpdate(javax.swing.event.DocumentEvent e) { callback.run(); }
-        public void removeUpdate(javax.swing.event.DocumentEvent e) { callback.run(); }
-        public void changedUpdate(javax.swing.event.DocumentEvent e) { callback.run(); }
+    private interface Callback {
+        void run();
     }
 
+    private static class SimpleDocumentListener implements javax.swing.event.DocumentListener {
+        private final Callback callback;
+
+        SimpleDocumentListener(Callback callback) {
+            this.callback = callback;
+        }
+
+        public void insertUpdate(javax.swing.event.DocumentEvent e) {
+            callback.run();
+        }
+
+        public void removeUpdate(javax.swing.event.DocumentEvent e) {
+            callback.run();
+        }
+
+        public void changedUpdate(javax.swing.event.DocumentEvent e) {
+            callback.run();
+        }
+    }
     // Chạy riêng để xem giao diện, không cần SQL Server
+
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             JFrame frame = new JFrame("PetPlus - Thanh toán");
