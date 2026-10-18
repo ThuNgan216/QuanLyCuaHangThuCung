@@ -57,18 +57,13 @@ public class MainFrame extends JFrame {
     // Menu con theo từng nhóm chức năng
     private final String[][] SUB_MENUS = {
             {},
-            // Hệ thống
-            { "Đổi mật khẩu", "Cài đặt" },
-            // Danh mục
-            { "Loại sản phẩm", "Nhà cung cấp", "Dịch vụ", "Ca làm việc" },
-            // Cập nhật
-            { "Sản phẩm", "Khách hàng", "Thú cưng", "Tích điểm", "Nhân viên", "Lịch hẹn", "Khuyến mãi", "Quản lý hóa đơn" },
-            // Tìm kiếm
-            { "Sản phẩm", "Khách hàng", "Hóa đơn", "Phiếu nhập", "Lịch hẹn" },
-            // Xử lý
-            { "Tạo đơn hàng", "Thanh toán", "Nhập hàng", "Quét mã vạch", "Đặt lịch dịch vụ" },
-            // Báo biểu
-            { "Thống kê doanh thu", "Tồn kho", "Sản phẩm bán chạy", "Báo cáo nhập hàng" }
+            // Chỉ hiển thị các màn hình đã có giao diện trong project.
+            { "Nhân viên" },
+            { "Sản phẩm", "Dịch vụ", "Thú cưng" },
+            { "Sản phẩm", "Khách hàng", "Thú cưng", "Tích điểm", "Lịch hẹn", "Quản lý hóa đơn" },
+            { "Sản phẩm", "Khách hàng", "Hóa đơn", "Lịch hẹn" },
+            { "Tạo đơn hàng", "Thanh toán", "Quét mã vạch", "Đặt lịch dịch vụ" },
+            { "Thống kê doanh thu", "Tồn kho", "Sản phẩm bán chạy" }
     };
     private final JButton[] menuButtons = new JButton[MENU_ITEMS.length];
     private final java.util.Set<String> registeredCards = new HashSet<>();
@@ -268,7 +263,7 @@ public class MainFrame extends JFrame {
         setActiveButton(menuButtons[index]);
         toolbarPanel.removeAll();
         if (index == 0) {
-            String[] shortcuts = { "Tạo đơn hàng", "Thanh toán", "Nhập hàng", "Quét mã vạch", "Đặt lịch dịch vụ" };
+            String[] shortcuts = { "Tạo đơn hàng", "Thanh toán", "Quét mã vạch", "Đặt lịch dịch vụ" };
             for (String action : shortcuts) {
                 toolbarPanel.add(createToolbarButton(action));
             }
@@ -308,9 +303,15 @@ public class MainFrame extends JFrame {
             return;
         }
 
-        // Tạo đơn hàng và Thanh toán dùng chung giao diện
+        // Các nhãn menu cũ dùng chung màn hình đã được triển khai.
         if ("Thanh toán".equals(action)) {
             action = "Tạo đơn hàng";
+        } else if ("Đặt lịch dịch vụ".equals(action)) {
+            action = "Lịch hẹn";
+        } else if ("Thống kê doanh thu".equals(action) || "Sản phẩm bán chạy".equals(action)) {
+            action = "Trang chủ";
+        } else if ("Tồn kho".equals(action)) {
+            action = "Sản phẩm";
         }
 
         // Hiển thị giao diện chức năng
