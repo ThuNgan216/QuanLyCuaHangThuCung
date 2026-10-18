@@ -13,6 +13,7 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import gui.panel.pnlQuanLyHoaDon;
+import gui.panel.pnlNhanVien;
 import utils.Auth;
 import dao.HoaDonDAO;
 import dao.SanPhamDAO;
@@ -290,7 +291,7 @@ public class MainFrame extends JFrame {
     private JPanel createExistingPanel(String name) {
         try {
             if ("Nhân viên".equals(name))
-                return new QuanLyNhanVienPanel();
+                return new pnlNhanVien();
             if ("Hóa đơn".equals(name))
                 return new pnlQuanLyHoaDon();
             if ("Thanh toán".equals(name))
