@@ -8,5 +8,10 @@
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="lib" path="lib/sqljdbc42.jar"/>
+	<classpathentry kind="lib" path="lib/webcam-capture-0.3.12.jar"/>
+	<classpathentry kind="lib" path="lib/bridj-0.7.0.jar"/>
+	<classpathentry kind="lib" path="lib/slf4j-api-1.7.2.jar"/>
+	<classpathentry kind="lib" path="lib/core-3.5.4.jar"/>
+	<classpathentry kind="lib" path="lib/javase-3.5.4.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

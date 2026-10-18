@@ -19,7 +19,7 @@ public class pnlChiTietHoaDon extends JPanel {
     private static final Color PINK_LIGHT = new Color(0xFD, 0xEC, 0xF1);
     private static final Color FIELD_BG = new Color(0xF3, 0xF4, 0xF6);
     private static final Color RED = new Color(0xD3, 0x2F, 0x2F);
-    private static final String[] COLUMNS = { "STT", "Tên sản phẩm", "Số lượng", "Đơn giá", "Thành tiền" };
+    private static final String[] COLUMNS = { "STT", "Sản phẩm / Dịch vụ", "Số lượng", "Đơn giá", "Thành tiền" };
     private static final DecimalFormat MONEY = new DecimalFormat("#,###", DecimalFormatSymbols.getInstance(Locale.US));
 
     // Thông tin đơn hàng / khách hàng
@@ -168,21 +168,48 @@ public class pnlChiTietHoaDon extends JPanel {
                 return lbl;
             }
         };
+
         DefaultTableCellRenderer center = new DefaultTableCellRenderer();
         center.setHorizontalAlignment(SwingConstants.CENTER);
-        DefaultTableCellRenderer left = new DefaultTableCellRenderer();
-        left.setBorder(new EmptyBorder(0, 10, 0, 0));
-        DefaultTableCellRenderer right = new DefaultTableCellRenderer();
-        right.setHorizontalAlignment(SwingConstants.RIGHT);
-        right.setBorder(new EmptyBorder(0, 0, 0, 10));
+
+        // Căn trái, cách lề trái 10px (border đặt SAU super để không bị ghi đè)
+        DefaultTableCellRenderer left = new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable t, Object v, boolean s, boolean f, int r, int c) {
+                JLabel lbl = (JLabel) super.getTableCellRendererComponent(t, v, s, f, r, c);
+                lbl.setHorizontalAlignment(SwingConstants.LEFT);
+                lbl.setBorder(new EmptyBorder(0, 10, 0, 0));
+                return lbl;
+            }
+        };
+
+        // Căn phải, cách lề phải 16px (muốn xa hơn thì tăng số 16)
+        DefaultTableCellRenderer right = new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable t, Object v, boolean s, boolean f, int r, int c) {
+                JLabel lbl = (JLabel) super.getTableCellRendererComponent(t, v, s, f, r, c);
+                lbl.setHorizontalAlignment(SwingConstants.RIGHT);
+                lbl.setBorder(new EmptyBorder(0, 0, 0, 16));
+                return lbl;
+            }
+        };
 
         DefaultTableCellRenderer[] cell = { center, left, center, right, right };
-        int[] widths = { 50, 260, 80, 110, 120 };
+        int[] widths = { 50, 260, 80, 120, 130 };
         for (int i = 0; i < COLUMNS.length; i++) {
             table.getColumnModel().getColumn(i).setHeaderRenderer(headerRenderer);
             table.getColumnModel().getColumn(i).setCellRenderer(cell[i]);
             table.getColumnModel().getColumn(i).setPreferredWidth(widths[i]);
         }
+
+        // Cố định kích thước: mọi cột trừ cột "Sản phẩm/Dịch vụ" (index 1)
+        for (int i = 0; i < COLUMNS.length; i++) {
+            if (i == 1)
+                continue;
+            table.getColumnModel().getColumn(i).setMinWidth(widths[i]);
+            table.getColumnModel().getColumn(i).setMaxWidth(widths[i]);
+        }
+        th.setResizingAllowed(false); // không cho kéo đổi độ rộng cột
 
         JScrollPane scroll = new JScrollPane(table);
         scroll.setBorder(new EmptyBorder(12, 12, 12, 12));
@@ -388,7 +415,7 @@ public class pnlChiTietHoaDon extends JPanel {
         java.math.BigDecimal tamTinh = java.math.BigDecimal.ZERO;
         List<Object[]> rows = new java.util.ArrayList<>();
         for (dao.ChiTietHoaDonDAO.Dong d : v.dong) {
-            rows.add(new Object[] { d.tenDV, d.soLuong, d.donGia.longValue() });
+            rows.add(new Object[] { d.tenMuc, d.soLuong, d.donGia.longValue() });
             tamTinh = tamTinh.add(d.donGia.multiply(java.math.BigDecimal.valueOf(d.soLuong)));
         }
         setSanPham(rows);

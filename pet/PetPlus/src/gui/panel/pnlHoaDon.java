@@ -62,6 +62,8 @@ public class pnlHoaDon extends JPanel {
     private ButtonGroup priceGroup = new ButtonGroup();
     private JToggleButton btnTang, btnGiam;
     private ButtonGroup sortGroup = new ButtonGroup();
+    private boolean dangReset = false;
+    private final javax.swing.Timer timerTim = new javax.swing.Timer(300, e -> applyFilter());
 
     public pnlHoaDon() {
         setLayout(new BorderLayout());
@@ -85,7 +87,7 @@ public class pnlHoaDon extends JPanel {
         header.setBackground(PINK_LIGHT);
         header.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, AppColors.BORDER));
 
-        JLabel lblTitle = new JLabel("Quản lý đơn hàng");
+        JLabel lblTitle = new JLabel("Quản lý hóa đơn");
         lblTitle.setFont(new Font("Arial", Font.BOLD, 24));
         lblTitle.setForeground(AppColors.PRIMARY_DARK);
 
@@ -205,6 +207,7 @@ public class pnlHoaDon extends JPanel {
     }
 
     // ================= THAO TÁC (PHẢI) =================
+    // ================= THAO TÁC (PHẢI) =================
     private JPanel createActionPanel() {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(AppColors.WHITE);
@@ -240,6 +243,28 @@ public class pnlHoaDon extends JPanel {
         txtSearch.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(AppColors.BORDER),
                 new EmptyBorder(5, 8, 5, 8)));
         txtSearch.addActionListener(e -> applyFilter());
+        timerTim.setRepeats(false);
+        txtSearch.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            private void thayDoi() {
+                if (!dangReset)
+                    timerTim.restart();
+            }
+
+            @Override
+            public void insertUpdate(javax.swing.event.DocumentEvent e) {
+                thayDoi();
+            }
+
+            @Override
+            public void removeUpdate(javax.swing.event.DocumentEvent e) {
+                thayDoi();
+            }
+
+            @Override
+            public void changedUpdate(javax.swing.event.DocumentEvent e) {
+                thayDoi();
+            }
+        });
 
         JButton btnSearchSmall = createPinkButton("Tìm kiếm", false);
         btnSearchSmall.addActionListener(e -> applyFilter());
@@ -255,11 +280,17 @@ public class pnlHoaDon extends JPanel {
         JPanel dateRow = new JPanel(new GridLayout(1, 3, 8, 0));
         dateRow.setBackground(AppColors.WHITE);
         dateRow.setAlignmentX(Component.LEFT_ALIGNMENT);
-        dateRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 60));
+        dateRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 34));
 
         cboNgay = new JComboBox<>(buildRange("Ngày", 1, 31));
         cboThang = new JComboBox<>(buildRange("Tháng", 1, 12));
         cboNam = new JComboBox<>(buildRange("Năm", 2024, 2026));
+        for (JComboBox<String> c : java.util.List.of(cboNgay, cboThang, cboNam)) {
+            c.addActionListener(e -> {
+                if (!dangReset)
+                    applyFilter();
+            });
+        }
         dateRow.add(wrapCombo(cboNgay));
         dateRow.add(wrapCombo(cboThang));
         dateRow.add(wrapCombo(cboNam));
@@ -295,14 +326,31 @@ public class pnlHoaDon extends JPanel {
         content.add(sortRow);
         content.add(Box.createVerticalStrut(25));
 
-        // --- Nút Tìm kiếm lớn ---
-        JButton btnSearch = createPinkButton("Tìm kiếm", true);
-        btnSearch.setAlignmentX(Component.CENTER_ALIGNMENT);
-        btnSearch.addActionListener(e -> applyFilter());
-        content.add(btnSearch);
+        // --- Nút Refresh lớn (thay cho nút Tìm kiếm lớn cũ) ---
+        JButton btnRefresh = createPinkButton("Refresh", true);
+        btnRefresh.setAlignmentX(Component.CENTER_ALIGNMENT);
+        btnRefresh.addActionListener(e -> lamMoi());
+        content.add(btnRefresh);
 
         panel.add(content, BorderLayout.CENTER);
         return panel;
+    }
+
+    // Xóa hết bộ lọc rồi tải lại toàn bộ danh sách
+    private void lamMoi() {
+        dangReset = true;
+        try {
+            timerTim.stop();
+            txtSearch.setText("");
+            cboNgay.setSelectedIndex(0);
+            cboThang.setSelectedIndex(0);
+            cboNam.setSelectedIndex(0);
+            priceGroup.clearSelection();
+            sortGroup.clearSelection();
+        } finally {
+            dangReset = false;
+        }
+        applyFilter();
     }
 
     // ================= LỌC / SẮP XẾP DỮ LIỆU (TRUY VẤN SQL) =================
@@ -396,6 +444,13 @@ public class pnlHoaDon extends JPanel {
     private JPanel wrapCombo(JComboBox<String> cbo) {
         cbo.setFont(new Font("Arial", Font.PLAIN, 13));
         cbo.setBackground(AppColors.WHITE);
+
+        // Căn giữa chữ trong ô chọn và trong danh sách xổ xuống
+        javax.swing.DefaultListCellRenderer r = new javax.swing.DefaultListCellRenderer();
+        r.setHorizontalAlignment(SwingConstants.CENTER);
+        cbo.setRenderer(r);
+
+        cbo.setPreferredSize(new Dimension(0, 30));
         JPanel p = new JPanel(new BorderLayout());
         p.setBackground(AppColors.WHITE);
         p.add(cbo, BorderLayout.CENTER);
@@ -433,6 +488,9 @@ public class pnlHoaDon extends JPanel {
                             sel ? 2 : 1));
                 }
             }
+            if (e.getStateChange() == java.awt.event.ItemEvent.SELECTED && !dangReset)
+                applyFilter();
+
         });
 
         card.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -478,6 +536,8 @@ public class pnlHoaDon extends JPanel {
                             BorderFactory.createLineBorder(sel ? AppColors.PRIMARY : AppColors.BORDER, sel ? 2 : 1));
                 }
             }
+            if (e.getStateChange() == java.awt.event.ItemEvent.SELECTED && !dangReset)
+                applyFilter();
         });
         return btn;
     }
