@@ -14,7 +14,7 @@ import database.ConnectDB;
 public class ChiTietHoaDonDAO {
 
     public static class Dong {
-        public String tenDV;
+        public String tenMuc;
         public int soLuong;
         public BigDecimal donGia;
     }
@@ -28,8 +28,8 @@ public class ChiTietHoaDonDAO {
     }
 
     // ===== SQL: chỉ cần sửa tên bảng/cột ở đây nếu khác =====
-    private static final String SQL_HOADON = "SELECT hd.maHoaDon, hd.ngayLapHD, hd.tienKhachDua, "
-            + "       nv.tenNV, kh.tenKH, kh.soDienThoai, kh.diaChi, "
+    private static final String SQL_HOADON = "SELECT hd.maHoaDon, hd.ngayLapHD, "
+            + "       nv.tenNV, kh.tenKH, kh.sdt, kh.diaChi, "
             + "       km.maKhuyenMai, km.phanTramGiam, pt.tenPTTT "
             + "FROM HoaDon hd "
             + "JOIN NhanVien nv ON hd.maNV = nv.maNV "
@@ -38,8 +38,11 @@ public class ChiTietHoaDonDAO {
             + "LEFT JOIN PhuongThucThanhToan pt ON hd.maPTTT = pt.maPTTT "
             + "WHERE hd.maHoaDon = ?";
 
-    private static final String SQL_CHITIET = "SELECT dv.tenDichVu, ct.soLuong, ct.donGia "
-            + "FROM ChiTietHoaDon ct JOIN DichVu dv ON ct.maDichVu = dv.maDichVu "
+    private static final String SQL_CHITIET = "SELECT COALESCE(dv.tenDichVu, sp.tenSP) AS tenMuc, "
+            + "       ct.soLuong, ct.donGia, ct.tienKhachDua "
+            + "FROM ChiTietHoaDon ct "
+            + "LEFT JOIN DichVu dv ON ct.maDichVu = dv.maDichVu "
+            + "LEFT JOIN SanPham sp ON ct.maSP = sp.maSP "
             + "WHERE ct.maHoaDon = ?";
 
     /* Trả về null nếu không tìm thấy hóa đơn */
@@ -58,16 +61,13 @@ public class ChiTietHoaDonDAO {
                 v.ngayLap = d == null ? null : d.toLocalDate();
                 v.tenNV = rs.getString("tenNV");
                 v.tenKH = rs.getString("tenKH");
-                v.sdt = rs.getString("soDienThoai");
+                v.sdt = rs.getString("sdt");
                 v.diaChi = rs.getString("diaChi");
                 v.maKhuyenMai = rs.getString("maKhuyenMai");
                 v.tenPTTT = rs.getString("tenPTTT");
                 BigDecimal pt = rs.getBigDecimal("phanTramGiam");
                 if (pt != null)
                     v.phanTramGiam = pt;
-                BigDecimal kd = rs.getBigDecimal("tienKhachDua");
-                if (kd != null)
-                    v.tienKhachDua = kd;
             }
         }
         try (PreparedStatement ps = con.prepareStatement(SQL_CHITIET)) {
@@ -75,10 +75,13 @@ public class ChiTietHoaDonDAO {
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     Dong d = new Dong();
-                    d.tenDV = rs.getString("tenDichVu");
+                    d.tenMuc = rs.getString("tenMuc");
                     d.soLuong = rs.getInt("soLuong");
                     d.donGia = rs.getBigDecimal("donGia");
                     v.dong.add(d);
+                    BigDecimal kd = rs.getBigDecimal("tienKhachDua");
+                    if (kd != null && kd.compareTo(v.tienKhachDua) > 0)
+                        v.tienKhachDua = kd;
                 }
             }
         } catch (SQLException e) {
