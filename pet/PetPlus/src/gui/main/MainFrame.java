@@ -41,6 +41,8 @@ public class MainFrame extends JFrame {
     private JPanel menuPanel;
     private JPanel toolbarPanel;
     private JPanel homePage;
+    private JLabel pageTitle;
+    private pnlNhanVien employeePanel;
     private JLabel lblName;
     private JLabel lblRole;
     private JLabel lblDate;
@@ -57,13 +59,12 @@ public class MainFrame extends JFrame {
     // Menu con theo từng nhóm chức năng
     private final String[][] SUB_MENUS = {
             {},
-            // Chỉ hiển thị các màn hình đã có giao diện trong project.
-            { "Nhân viên" },
-            { "Sản phẩm", "Dịch vụ", "Thú cưng" },
-            { "Sản phẩm", "Khách hàng", "Thú cưng", "Tích điểm", "Lịch hẹn", "Quản lý hóa đơn" },
-            { "Sản phẩm", "Khách hàng", "Hóa đơn", "Lịch hẹn" },
-            { "Tạo đơn hàng", "Thanh toán", "Quét mã vạch", "Đặt lịch dịch vụ" },
-            { "Thống kê doanh thu", "Tồn kho", "Sản phẩm bán chạy" }
+            { "Đổi mật khẩu", "Phân quyền" },
+            { "Sản phẩm", "Dịch vụ", "Nhà cung cấp", "Khuyến mãi", "Ca làm việc" },
+            { "Nhân viên", "Khách hàng", "Thú cưng", "Đơn hàng", "Lịch hẹn", "Xếp lịch làm việc" },
+            { "Bán hàng", "Nhập hàng", "Cảnh báo tồn kho" },
+            { "Sản phẩm", "Khách hàng", "Hóa đơn", "Lịch hẹn", "Nhân viên", "Dịch vụ", "Phiếu nhập" },
+            { "Doanh thu", "Lợi nhuận", "Nhập hàng", "Tồn kho", "Dịch vụ" }
     };
     private final JButton[] menuButtons = new JButton[MENU_ITEMS.length];
     private final java.util.Set<String> registeredCards = new HashSet<>();
@@ -198,7 +199,7 @@ public class MainFrame extends JFrame {
         JPanel headerPanel = new JPanel(new BorderLayout());
         headerPanel.setBackground(WHITE);
         headerPanel.setBorder(new EmptyBorder(12, 18, 7, 22));
-        JLabel pageTitle = label("Trang chủ", 19, TEXT, true);
+        pageTitle = label("Trang chủ", 19, TEXT, true);
         // Icon lịch ngày giờ
         lblDate = label("", 13, TEXT, false);
         ImageIcon calendarIcon = loadIcon("Calendar.png", 24, 24);
@@ -220,7 +221,8 @@ public class MainFrame extends JFrame {
         add(rightSide, BorderLayout.CENTER);
 
         // 4. KHỞI TẠO CÁC PANEL CÓ SẴN
-        registerCard("Nhân viên", createExistingPanel("Nhân viên"));
+        employeePanel = new pnlNhanVien();
+        registerCard("Nhân viên", employeePanel);
 
         // Giao diện tạo đơn hàng kết hợp thanh toán
         // Khởi tạo giao diện tạo đơn hàng
@@ -265,23 +267,23 @@ public class MainFrame extends JFrame {
         if (index == 0) {
             String[] shortcuts = { "Tạo đơn hàng", "Thanh toán", "Quét mã vạch", "Đặt lịch dịch vụ" };
             for (String action : shortcuts) {
-                toolbarPanel.add(createToolbarButton(action));
+                toolbarPanel.add(createToolbarButton(action, index));
             }
-            cardLayout.show(cardPanel, "Trang chủ");
+            showAction("Trang chủ", index);
         } else {
             for (String action : SUB_MENUS[index]) {
-                toolbarPanel.add(createToolbarButton(action));
+                toolbarPanel.add(createToolbarButton(action, index));
             }
             if (toolbarPanel.getComponentCount() > 0) {
                 JButton first = (JButton) toolbarPanel.getComponent(0);
-                showAction(first.getText());
+                showAction(first.getText(), index);
             }
         }
         toolbarPanel.revalidate();
         toolbarPanel.repaint();
     }
 
-    private JButton createToolbarButton(String text) {
+    private JButton createToolbarButton(String text, int menuIndex) {
         JButton btn = new JButton(text);
         btn.setFont(new Font("Times New Roman", Font.PLAIN, 13));
         btn.setFocusPainted(false);
@@ -290,12 +292,33 @@ public class MainFrame extends JFrame {
         btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         btn.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(BORDER, 1, true), new EmptyBorder(10, 17, 10, 17)));
-        btn.addActionListener(e -> showAction(text));
+        if (menuIndex == 0) {
+            String iconName = null;
+            if ("Tạo đơn hàng".equals(text)) {
+                iconName = "top_cart.png";
+            } else if ("Thanh toán".equals(text)) {
+                iconName = "top_payment.png";
+            } else if ("Quét mã vạch".equals(text)) {
+                iconName = "top_barcode.png";
+            } else if ("Đặt lịch dịch vụ".equals(text)) {
+                iconName = "top_booking.png";
+            }
+            if (iconName != null) {
+                ImageIcon icon = loadIcon(iconName, 18, 18);
+                if (icon != null) {
+                    btn.setIcon(icon);
+                    btn.setIconTextGap(8);
+                }
+            }
+        }
+        btn.addActionListener(e -> showAction(text, menuIndex));
         return btn;
     }
 
     // Xử lý khi chọn chức năng trên menu
-    private void showAction(String action) {
+    private void showAction(String action, int menuIndex) {
+        String title = action;
+        String cardName = action;
 
         // Mở giao diện quét mã vạch
         if ("Quét mã vạch".equals(action)) {
@@ -303,23 +326,36 @@ public class MainFrame extends JFrame {
             return;
         }
 
-        // Các nhãn menu cũ dùng chung màn hình đã được triển khai.
-        if ("Thanh toán".equals(action)) {
-            action = "Tạo đơn hàng";
+        // Các mục menu có giao diện hiện có được mở trên màn hình tương ứng.
+        if ("Thanh toán".equals(action) || "Bán hàng".equals(action)) {
+            cardName = "Tạo đơn hàng";
         } else if ("Đặt lịch dịch vụ".equals(action)) {
-            action = "Lịch hẹn";
-        } else if ("Thống kê doanh thu".equals(action) || "Sản phẩm bán chạy".equals(action)) {
-            action = "Trang chủ";
+            cardName = "Lịch hẹn";
+        } else if ("Đơn hàng".equals(action)) {
+            cardName = "Hóa đơn";
+        } else if ("Doanh thu".equals(action)) {
+            cardName = "Trang chủ";
         } else if ("Tồn kho".equals(action)) {
-            action = "Sản phẩm";
+            cardName = "Sản phẩm";
+        } else if ("Thống kê doanh thu".equals(action) || "Sản phẩm bán chạy".equals(action)) {
+            cardName = "Trang chủ";
+        } else if ("Phân quyền".equals(action)) {
+            cardName = "Nhân viên";
+        } else if (menuIndex == 6 && "Dịch vụ".equals(action)) {
+            // Mục báo biểu dịch vụ chưa có màn hình báo cáo riêng.
+            cardName = "Báo cáo dịch vụ";
         }
 
         // Hiển thị giao diện chức năng
-        if (!registeredCards.contains(action)) {
-            registerCard(action, placeholder(action));
+        if (!registeredCards.contains(cardName)) {
+            registerCard(cardName, placeholder(title));
         }
 
-        cardLayout.show(cardPanel, action);
+        if ("Nhân viên".equals(cardName) && employeePanel != null) {
+            employeePanel.chonTab("Phân quyền".equals(action) ? "Phân quyền" : "Nhân viên");
+        }
+        pageTitle.setText(title);
+        cardLayout.show(cardPanel, cardName);
     }
 
     private void registerCard(String name, JPanel page) {
@@ -390,19 +426,19 @@ public class MainFrame extends JFrame {
         // Biểu đồ doanh thu
         charts.add(createSection(
                 "Doanh thu 7 ngày gần nhất",
-                "icon_revenue_chart.png",
+                "chart.png",
                 new RevenueChart()));
         // Sản phẩm bán chạy
         charts.add(createSection(
                 "Sản phẩm bán chạy",
-                "icon_best_selling.png",
+                "crown.png",
                 createTopProducts()));
         content.add(charts);
         content.add(Box.createVerticalStrut(16));
         // Đơn hàng gần đây
         JPanel recent = createSection(
                 "Đơn hàng gần đây",
-                "icon_recent_orders.png",
+                "cart.png",
                 createRecentOrders());
         recent.setMaximumSize(new Dimension(Integer.MAX_VALUE, 300));
         content.add(recent);
@@ -852,8 +888,35 @@ public class MainFrame extends JFrame {
 
     private ImageIcon loadIcon(String name, int w, int h) {
         URL url = getClass().getResource("/icons/" + name);
-        if (url == null)
+        if (url == null) {
+            url = getClass().getResource("/resources/icons/" + name);
+        }
+        if (url == null) {
+            java.nio.file.Path directory = java.nio.file.Paths.get(System.getProperty("user.dir"))
+                    .toAbsolutePath().normalize();
+            while (directory != null && url == null) {
+                java.nio.file.Path[] candidates = {
+                        directory.resolve("resources").resolve("icons").resolve(name),
+                        directory.resolve("pet").resolve("PetPlus").resolve("resources").resolve("icons")
+                                .resolve(name)
+                };
+                for (java.nio.file.Path candidate : candidates) {
+                    if (java.nio.file.Files.isRegularFile(candidate)) {
+                        try {
+                            url = candidate.toUri().toURL();
+                        } catch (java.net.MalformedURLException ex) {
+                            System.err.println("Không thể mở icon " + name + ": " + ex.getMessage());
+                        }
+                        break;
+                    }
+                }
+                directory = directory.getParent();
+            }
+        }
+        if (url == null) {
+            System.err.println("Không tìm thấy icon: " + name);
             return null;
+        }
         Image img = new ImageIcon(url).getImage().getScaledInstance(w, h, Image.SCALE_SMOOTH);
         return new ImageIcon(img);
     }

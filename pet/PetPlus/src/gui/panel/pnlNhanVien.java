@@ -34,6 +34,7 @@ public class pnlNhanVien extends JPanel {
     private final DefaultTableModel modelNV;
     private final DefaultTableModel modelTK;
     private final DefaultTableModel modelQuyen;
+    private final JTabbedPane tabs = new JTabbedPane();
     private final JLabel lblCountNV = countLabel();
     private final JLabel lblCountTK = countLabel();
     private final JLabel lblCountQuyen = countLabel();
@@ -64,7 +65,6 @@ public class pnlNhanVien extends JPanel {
         PetPlusUI.styleTable(tblTK);
         PetPlusUI.styleTable(tblQuyen);
 
-        JTabbedPane tabs = new JTabbedPane();
         tabs.setFont(PetPlusUI.font(Font.BOLD, 14));
         tabs.setForeground(PetPlusUI.PRIMARY_DARK);
         tabs.setBackground(PetPlusUI.WHITE);
@@ -73,6 +73,15 @@ public class pnlNhanVien extends JPanel {
         tabs.addTab("Phân quyền", trangPhanQuyen());
         add(tabs, BorderLayout.CENTER);
         taiDanhSach();
+    }
+
+    public void chonTab(String tenTab) {
+        for (int i = 0; i < tabs.getTabCount(); i++) {
+            if (tenTab.equals(tabs.getTitleAt(i))) {
+                tabs.setSelectedIndex(i);
+                return;
+            }
+        }
     }
 
     private static DefaultTableModel model(String... titles) {

@@ -1,4 +1,8 @@
 {
+    "java.project.sourcePaths": [
+        "pet/PetPlus/src",
+        "pet/PetPlus/resources"
+    ],
     "java.project.referencedLibraries": [
         "pet/PetPlus/lib/**/*.jar"
     ]
