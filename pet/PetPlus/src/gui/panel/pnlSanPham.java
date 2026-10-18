@@ -252,7 +252,7 @@ public class pnlSanPham extends JPanel {
         row.add(label(title, 13, DARK, false), BorderLayout.NORTH);
         field.setFont(FONT);
         if (!(field instanceof JScrollPane))
-            field.setPreferredSize(new Dimension(100, 29));
+            field.setPreferredSize(new Dimension(200, 29));
         row.add(field, BorderLayout.CENTER);
         gc.gridy = index;
         parent.add(row, gc);
