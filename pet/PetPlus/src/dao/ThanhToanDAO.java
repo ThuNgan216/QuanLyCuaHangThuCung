@@ -166,4 +166,102 @@ public class ThanhToanDAO {
             ps.executeUpdate();
         }
     }
+
+    // Sinh mã hóa đơn dạng HD001, HD002...
+    public String taoMaHoaDon(Connection con) throws SQLException {
+        String sql = "SELECT TOP 1 maHoaDon FROM HoaDon ORDER BY LEN(maHoaDon) DESC, maHoaDon DESC";
+        String last = null;
+        try (Statement st = con.createStatement(); ResultSet rs = st.executeQuery(sql)) {
+            if (rs.next())
+                last = rs.getString(1);
+        }
+        if (last == null)
+            return "HD001";
+        Matcher m = Pattern.compile("^(\\D*)(\\d+)$").matcher(last.trim());
+        if (!m.matches())
+            throw new SQLException("Không tạo được mã hóa đơn từ: " + last);
+        String digits = m.group(2);
+        return m.group(1) + String.format("%0" + digits.length() + "d", Long.parseLong(digits) + 1);
+    }
+
+    // Tìm mã phương thức thanh toán theo tên ("Tiền mặt", "QR Code")
+    public String layMaPTTT(Connection con, String tenPTTT) throws SQLException {
+        String sql = "SELECT maPTTT FROM PhuongThucThanhToan WHERE tenPTTT = ?";
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, tenPTTT);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next())
+                    return rs.getString(1);
+            }
+        }
+        throw new SQLException("Không tìm thấy phương thức thanh toán: " + tenPTTT);
+    }
+
+    public void themHoaDon(Connection con, String maHD, String maNV, String maKH,
+            String maPTTT) throws SQLException {
+        String sql = "INSERT INTO HoaDon (maHoaDon, ngayLapHD, maNV, maKH, maKhuyenMai, maPTTT) "
+                + "VALUES (?, ?, ?, ?, NULL, ?)";
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, maHD);
+            ps.setDate(2, java.sql.Date.valueOf(java.time.LocalDate.now()));
+            ps.setString(3, maNV);
+            ps.setString(4, maKH);
+            ps.setString(5, maPTTT);
+            ps.executeUpdate();
+        }
+    }
+
+    public void themChiTiet(Connection con, String maHD, List<Object[]> dong, long tienKhachDua)
+            throws SQLException {
+        String sql = "INSERT INTO ChiTietHoaDon (maHoaDon, maSP, maDichVu, soLuong, donGia, tienKhachDua) "
+                + "VALUES (?, ?, ?, ?, ?, ?)";
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            for (Object[] r : dong) {
+                boolean laSP = "Sản phẩm".equals(r[0]);
+                String ma = String.valueOf(r[1]);
+                ps.setString(1, maHD);
+                if (laSP) {
+                    ps.setString(2, ma);
+                    ps.setNull(3, Types.VARCHAR);
+                } else {
+                    ps.setNull(2, Types.VARCHAR);
+                    ps.setString(3, ma);
+                }
+                ps.setInt(4, ((Number) r[3]).intValue());
+                ps.setBigDecimal(5, BigDecimal.valueOf(((Number) r[4]).longValue()));
+                ps.setBigDecimal(6, BigDecimal.valueOf(tienKhachDua));
+                ps.addBatch();
+            }
+            ps.executeBatch();
+        }
+    }
+
+    // Trừ tồn kho sản phẩm (bỏ nếu SanPham không có cột soLuongTon)
+    public void truTonKho(Connection con, List<Object[]> dong) throws SQLException {
+        String sql = "UPDATE SanPham SET soLuongTon = soLuongTon - ? WHERE maSP = ? AND soLuongTon >= ?";
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            for (Object[] r : dong) {
+                if (!"Sản phẩm".equals(r[0]))
+                    continue;
+                int sl = ((Number) r[3]).intValue();
+                ps.setInt(1, sl);
+                ps.setString(2, String.valueOf(r[1]));
+                ps.setInt(3, sl);
+                if (ps.executeUpdate() == 0)
+                    throw new SQLException("Sản phẩm " + r[2] + " không đủ tồn kho.");
+            }
+        }
+    }
+
+    // Cập nhật điểm: trừ điểm đã dùng, cộng điểm mới (ví dụ 1 điểm / 10.000 đ)
+    public void capNhatDiem(Connection con, String maKH, int diemDung, long tongTien) throws SQLException {
+        int diemCong = (int) (tongTien / 10000);
+        String sql = "UPDATE KhachHang SET diemTichLuy = diemTichLuy - ? + ? WHERE maKH = ?";
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, diemDung);
+            ps.setInt(2, diemCong);
+            ps.setString(3, maKH);
+            ps.executeUpdate();
+        }
+    }
 }
