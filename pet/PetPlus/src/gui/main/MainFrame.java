@@ -21,6 +21,8 @@ import dao.SanPhamDAO;
 import gui.dialogs.dlgQuetMaVach;
 import gui.panel.pnlSanPham;
 import gui.panel.pnlThanhToan;
+import gui.panel.pnlXemLichLamViec;
+import gui.panel.pnlXepLichLamViec;
 
 public class MainFrame extends JFrame {
     private static final Color PRIMARY = new Color(250, 48, 115);
@@ -41,6 +43,8 @@ public class MainFrame extends JFrame {
     private JLabel lblDichVuHomNay;
     private JLabel lblSanPhamHomNay;
     private JLabel lblDoanhThuHomNay;
+    private pnlXemLichLamViec xemLichPanel;
+    private pnlXepLichLamViec xepLichPanel;
 
     // Thanh menu ngang
     private final String[] MENU_ITEMS = { "1. Hệ thống", "2. Danh mục", "3. Cập nhật", "4. Xử lý", "5. Tìm kiếm",
@@ -132,6 +136,22 @@ public class MainFrame extends JFrame {
 >>>>>>> d055916 (xxxx)
         registerCard("Đổi mật khẩu", placeholder("Đổi mật khẩu"));
         registerCard("Xuất hóa đơn", new pnlXuatHoaDon());
+        xemLichPanel = new pnlXemLichLamViec();
+        xepLichPanel = new pnlXepLichLamViec();
+
+        xepLichPanel.setOnChanged(
+                () -> xemLichPanel.chuyenDenTuan(xepLichPanel.getDauTuan()));
+
+        registerCard("Lịch làm việc", xemLichPanel);
+        registerCard("Xếp lịch làm việc", xepLichPanel);
+
+        // Đăng ký các panel Kho
+registerCard("Nhà cung cấp", new pnlNhaCungCap());
+registerCard("Khuyến mãi", new pnlKhuyenMai());
+registerCard("Nhập hàng", new pnlNhapHang());
+registerCard("Cảnh báo tồn kho", new pnlTonKho());
+registerCard("Tìm kiếm phiếu nhập", new pnlTimKiemPhieuNhap());
+registerCard("Báo biểu nhập hàng", new pnlBaoBieuNhapHang());
 
         // 5. HIỂN THỊ THÔNG TIN TÀI KHOẢN (trên tiêu đề cửa sổ)
         updateAccountInfo();
@@ -250,7 +270,7 @@ public class MainFrame extends JFrame {
         }
 
         // Các mục menu có giao diện hiện có được mở trên màn hình tương ứng.
-        if ("Thanh toán".equals(action)) {
+       if ("Thanh toán".equals(action)) {
             cardName = "Bán hàng và dịch vụ";
         } else if ("Đặt lịch dịch vụ".equals(action)) {
             cardName = "Lịch hẹn";
@@ -259,7 +279,20 @@ public class MainFrame extends JFrame {
         } else if ("Doanh thu".equals(action)) {
             cardName = "Trang chủ";
         } else if ("Tồn kho".equals(action)) {
-            cardName = "Sản phẩm";
+            cardName = "Cảnh báo tồn kho"; // pnlTonKho
+        } else if ("Nhà cung cấp".equals(action)) {
+            cardName = "Nhà cung cấp"; // pnlNhaCungCap
+        } else if ("Khuyến mãi".equals(action)) {
+            cardName = "Khuyến mãi"; // pnlKhuyenMai
+        } else if ("Nhập hàng".equals(action)) {
+            // Phân biệt: Nếu thuộc nhóm Báo biểu (menuIndex == 5) thì trỏ tới báo biểu nhập hàng, ngược lại trỏ tới màn hình nhập hàng xử lý
+            if (menuIndex == 5) {
+                cardName = "Báo biểu nhập hàng";
+            } else {
+                cardName = "Nhập hàng"; // pnlNhapHang
+            }
+        } else if ("Phiếu nhập".equals(action)) {
+            cardName = "Tìm kiếm phiếu nhập";    
         } else if ("Thống kê doanh thu".equals(action) || "Sản phẩm bán chạy".equals(action)) {
             cardName = "Trang chủ";
         } else if ("Đổi mật khẩu tài khoản".equals(action)) {
@@ -267,10 +300,8 @@ public class MainFrame extends JFrame {
         } else if ("Phân quyền vai trò".equals(action)) {
             cardName = "Nhân viên";
         } else if (menuIndex == 5 && "Dịch vụ".equals(action)) {
-            // Mục báo biểu dịch vụ chưa có màn hình báo cáo riêng.
             cardName = "Báo cáo dịch vụ";
         }
-
         // Hiển thị giao diện chức năng
         if (!registeredCards.contains(cardName)) {
             registerCard(cardName, placeholder(title));
@@ -281,6 +312,13 @@ public class MainFrame extends JFrame {
         }
         pageTitle.setText(title);
         cardLayout.show(cardPanel, cardName);
+        if ("Lịch làm việc".equals(cardName) && xemLichPanel != null) {
+            xemLichPanel.taiLich();
+        }
+
+        if ("Xếp lịch làm việc".equals(cardName) && xepLichPanel != null) {
+            xepLichPanel.lamMoi();
+        }
     }
 
     private void registerCard(String name, JPanel page) {

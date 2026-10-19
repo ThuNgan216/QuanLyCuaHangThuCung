@@ -1,0 +1,109 @@
+package dao;
+
+import database.ConnectDB;
+import entity.NhaCungCap;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+public class NhaCungCapDAO {
+
+    public List<NhaCungCap> layDanhSach() {
+        List<NhaCungCap> ds = new ArrayList<>();
+        String sql = "SELECT maNCC, tenNCC, soDienThoai, diaChi, email FROM dbo.NhaCungCap";
+
+        try (Connection con = ConnectDB.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                NhaCungCap ncc = new NhaCungCap();
+                ncc.setMaNCC(rs.getString("maNCC"));
+                ncc.setTenNCC(rs.getString("tenNCC"));
+                ncc.setSoDienThoai(rs.getString("soDienThoai"));
+                ncc.setDiaChi(rs.getString("diaChi"));
+                ncc.setEmail(rs.getString("email"));
+                ds.add(ncc);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return ds;
+    }
+
+    public NhaCungCap timTheoMa(String maNCC) {
+        String sql = "SELECT * FROM dbo.NhaCungCap WHERE maNCC = ?";
+        try (Connection con = ConnectDB.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setString(1, maNCC);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    NhaCungCap ncc = new NhaCungCap();
+                    ncc.setMaNCC(rs.getString("maNCC"));
+                    ncc.setTenNCC(rs.getString("tenNCC"));
+                    ncc.setSoDienThoai(rs.getString("soDienThoai"));
+                    ncc.setDiaChi(rs.getString("diaChi"));
+                    ncc.setEmail(rs.getString("email"));
+                    return ncc;
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public boolean them(NhaCungCap ncc) {
+        String sql = "INSERT INTO dbo.NhaCungCap (maNCC, tenNCC, soDienThoai, diaChi, email) VALUES (?, ?, ?, ?, ?)";
+        try (Connection con = ConnectDB.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setString(1, ncc.getMaNCC());
+            ps.setString(2, ncc.getTenNCC());
+            ps.setString(3, ncc.getSoDienThoai());
+            ps.setString(4, ncc.getDiaChi());
+            ps.setString(5, ncc.getEmail());
+
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public boolean capNhat(NhaCungCap ncc) {
+        String sql = "UPDATE dbo.NhaCungCap SET tenNCC = ?, soDienThoai = ?, diaChi = ?, email = ? WHERE maNCC = ?";
+        try (Connection con = ConnectDB.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setString(1, ncc.getTenNCC());
+            ps.setString(2, ncc.getSoDienThoai());
+            ps.setString(3, ncc.getDiaChi());
+            ps.setString(4, ncc.getEmail());
+            ps.setString(5, ncc.getMaNCC());
+
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public boolean xoa(String maNCC) {
+        String sql = "DELETE FROM dbo.NhaCungCap WHERE maNCC = ?";
+        try (Connection con = ConnectDB.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setString(1, maNCC);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+}

@@ -1,24 +1,24 @@
 package gui.panel;
 
+import dao.MaVachDAO;
+import dao.SanPhamDAO;
+import entity.SanPham;
 import java.awt.*;
-import javax.swing.*;
-import javax.swing.border.*;
-import javax.swing.table.*;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
-import java.util.ArrayList;
-import java.util.List;
+import java.awt.image.BufferedImage;
 import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.HashMap;
-import java.util.HashSet;
-import dao.SanPhamDAO;
-import entity.SanPham;
-import dao.MaVachDAO;
+import javax.swing.*;
+import javax.swing.border.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.table.*;
 import utils.BarcodeUtils;
-import java.awt.image.BufferedImage;
 
 // Giao diện danh sách sản phẩm lấy dữ liệu từ SQL Server
 public class pnlSanPham extends JPanel {
@@ -93,10 +93,15 @@ public class pnlSanPham extends JPanel {
         JPanel header = new JPanel(new BorderLayout());
         header.setOpaque(false);
         header.add(label("Danh sách sản phẩm", 25, PINK, true), BorderLayout.WEST);
-        JButton btnAdd = button("+ Thêm sản phẩm", true);
-        btnAdd.setPreferredSize(new Dimension(145, 30));
-        btnAdd.setFont(new Font("Times New Roman", Font.BOLD, 14));
-        btnAdd.addActionListener(e -> notice("Thêm sản phẩm"));
+       JButton btnAdd = button("+ Thêm sản phẩm", true);
+btnAdd.setPreferredSize(new Dimension(145, 30));
+btnAdd.setFont(new Font("Times New Roman", Font.BOLD, 14));
+btnAdd.addActionListener(e -> {
+    gui.dialogs.dlgSanPham dlg = new gui.dialogs.dlgSanPham(SwingUtilities.getWindowAncestor(this), null);
+    dlg.setVisible(true);
+    if (dlg.isDaLuu()) {
+        loadSanPhamFromDB(); // Tải lại bảng sau khi thêm thành công
+    }});
         JPanel buttonWrapper = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
         buttonWrapper.setOpaque(false);
         buttonWrapper.add(btnAdd);
@@ -187,8 +192,20 @@ public class pnlSanPham extends JPanel {
         JPanel top = new JPanel(new BorderLayout());
         top.setOpaque(false);
         top.add(label("Thông tin sản phẩm", 19, PINK, true), BorderLayout.WEST);
-        JButton btnEdit = button("Chỉnh sửa", false);
-        btnEdit.addActionListener(e -> notice("Chỉnh sửa sản phẩm"));
+       JButton btnEdit = button("Chỉnh sửa", false);
+btnEdit.addActionListener(e -> {
+    int selectedRow = table.getSelectedRow();
+    if (selectedRow < 0) {
+        JOptionPane.showMessageDialog(this, "Vui lòng chọn sản phẩm cần chỉnh sửa trên bảng.", "Thông báo", JOptionPane.WARNING_MESSAGE);
+        return;
+    }
+    SanPham spDangChon = sanPhamDangHienThi.get(selectedRow);
+    gui.dialogs.dlgSanPham dlg = new gui.dialogs.dlgSanPham(SwingUtilities.getWindowAncestor(this), spDangChon);
+    dlg.setVisible(true);
+    if (dlg.isDaLuu()) {
+        loadSanPhamFromDB(); // Tải lại bảng sau khi cập nhật
+    }
+});
         top.add(btnEdit, BorderLayout.EAST);
         panel.add(top, BorderLayout.NORTH);
 
