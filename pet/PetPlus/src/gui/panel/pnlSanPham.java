@@ -146,7 +146,7 @@ btnAdd.addActionListener(e -> {
     private JSplitPane createContent() {
         JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, createTablePanel(), createDetailPanel());
         split.setResizeWeight(0.57);
-        split.setDividerSize(10);
+        split.setDividerSize(0); // Ẩn thanh chia giữa danh sách và thông tin sản phẩm.
         split.setBorder(null);
         SwingUtilities.invokeLater(() -> split.setDividerLocation(0.57));
         return split;

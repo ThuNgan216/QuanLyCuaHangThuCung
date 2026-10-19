@@ -29,6 +29,20 @@ public class TaiKhoanDAO {
         return null;
     }
 
+    /** Đổi mật khẩu của tài khoản đang đăng nhập sau khi xác minh mật khẩu hiện tại. */
+    public boolean doiMatKhau(String maTK, String matKhauCu, String matKhauMoi) throws SQLException {
+        if (maTK == null || matKhauCu == null || matKhauMoi == null)
+            throw new IllegalArgumentException("Thông tin đổi mật khẩu không hợp lệ.");
+
+        String sql = "UPDATE TaiKhoan SET matKhau=? " +
+                     "WHERE maTK=? AND matKhau=? AND trangThai=N'Hoạt động'";
+        try (Connection conn = ConnectDB.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, matKhauMoi);
+            ps.setString(2, maTK);
+            ps.setString(3, matKhauCu);
+            return ps.executeUpdate() > 0;
+        }
+    }
     /** Sửa tài khoản. matKhauMoi null => giữ nguyên; tuyệt đối không tải mật khẩu vào form. */
     public boolean capNhatTaiKhoan(String maTK, String tenDangNhap, String matKhauMoi,
                                    String vaiTro, String trangThai) throws SQLException {
