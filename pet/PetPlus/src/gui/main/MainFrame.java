@@ -60,7 +60,7 @@ public class MainFrame extends JFrame {
                     "Đăng xuất tài khoản", "Thoát ứng dụng" },
             { "Sản phẩm", "Dịch vụ", "Nhà cung cấp", "Khuyến mãi", "Ca làm việc" },
             { "Nhân viên", "Khách hàng", "Thú cưng", "Đơn hàng", "Lịch hẹn", "Xếp lịch làm việc" },
-            { "Tạo đơn hàng", "Thanh toán", "Quét mã vạch", "Đặt lịch dịch vụ", "Nhập hàng",
+            { "Bán hàng và dịch vụ", "Thanh toán", "Quét mã vạch", "Đặt lịch dịch vụ", "Nhập hàng",
                     "Cảnh báo tồn kho" },
             { "Sản phẩm", "Khách hàng", "Hóa đơn", "Lịch hẹn", "Nhân viên", "Dịch vụ", "Phiếu nhập" },
             { "Doanh thu", "Lợi nhuận", "Nhập hàng", "Tồn kho", "Dịch vụ" }
@@ -124,8 +124,8 @@ public class MainFrame extends JFrame {
         registerCard("Nhân viên", employeePanel);
 
         // Khởi tạo giao diện tạo đơn hàng
-        pnlThanhToan panelPOS = new pnlThanhToan();
-        registerCard("Tạo đơn hàng", panelPOS);
+        // Giao diện bán hàng và dịch vụ
+        registerCard("Bán hàng và dịch vụ", new pnlThanhToan());
 
         // Đăng ký trang quản lý hóa đơn
         registerCard("Quản lý hóa đơn", new pnlHoaDon());
@@ -255,7 +255,7 @@ public class MainFrame extends JFrame {
 
         // Các mục menu có giao diện hiện có được mở trên màn hình tương ứng.
         if ("Thanh toán".equals(action)) {
-            cardName = "Tạo đơn hàng";
+            cardName = "Bán hàng và dịch vụ";
         } else if ("Đặt lịch dịch vụ".equals(action)) {
             cardName = "Lịch hẹn";
         } else if ("Đơn hàng".equals(action)) {
