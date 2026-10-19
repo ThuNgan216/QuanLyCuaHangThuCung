@@ -61,7 +61,7 @@ public class pnlKhachHang extends JPanel {
 
         pnlTimKiem.setBackground(Color.WHITE);
 
-        pnlTimKiem.add(new JLabel("Mã / Tên / SĐT:"));
+        pnlTimKiem.add(new JLabel("Tên / SĐT:"));
         pnlTimKiem.add(txtTimKiem);
         pnlTimKiem.add(btnTimKiem);
         pnlTimKiem.add(btnLamMoi);
