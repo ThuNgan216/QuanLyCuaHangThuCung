@@ -29,6 +29,8 @@ import dao.SanPhamDAO;
 import gui.dialogs.dlgQuetMaVach;
 import gui.panel.pnlSanPham;
 import gui.panel.pnlThanhToan;
+import gui.panel.pnlXemLichLamViec;
+import gui.panel.pnlXepLichLamViec;
 
 public class MainFrame extends JFrame {
     private static final Color PRIMARY = new Color(250, 48, 115);
@@ -49,6 +51,8 @@ public class MainFrame extends JFrame {
     private JLabel lblDichVuHomNay;
     private JLabel lblSanPhamHomNay;
     private JLabel lblDoanhThuHomNay;
+    private pnlXemLichLamViec xemLichPanel;
+    private pnlXepLichLamViec xepLichPanel;
 
     // Thanh menu ngang
     private final String[] MENU_ITEMS = { "1. Hệ thống", "2. Danh mục", "3. Cập nhật", "4. Xử lý", "5. Tìm kiếm",
@@ -136,6 +140,14 @@ public class MainFrame extends JFrame {
         registerCard("Lịch hẹn", new pnlLichHen());
         registerCard("Đổi mật khẩu", placeholder("Đổi mật khẩu"));
         registerCard("Xuất hóa đơn", new pnlXuatHoaDon());
+        xemLichPanel = new pnlXemLichLamViec();
+        xepLichPanel = new pnlXepLichLamViec();
+
+        xepLichPanel.setOnChanged(
+                () -> xemLichPanel.chuyenDenTuan(xepLichPanel.getDauTuan()));
+
+        registerCard("Lịch làm việc", xemLichPanel);
+        registerCard("Xếp lịch làm việc", xepLichPanel);
 
         // 5. HIỂN THỊ THÔNG TIN TÀI KHOẢN (trên tiêu đề cửa sổ)
         updateAccountInfo();
@@ -285,6 +297,13 @@ public class MainFrame extends JFrame {
         }
         pageTitle.setText(title);
         cardLayout.show(cardPanel, cardName);
+        if ("Lịch làm việc".equals(cardName) && xemLichPanel != null) {
+            xemLichPanel.taiLich();
+        }
+
+        if ("Xếp lịch làm việc".equals(cardName) && xepLichPanel != null) {
+            xepLichPanel.lamMoi();
+        }
     }
 
     private void registerCard(String name, JPanel page) {
