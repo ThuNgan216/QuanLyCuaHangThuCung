@@ -9,6 +9,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.event.MenuEvent;
+import javax.swing.event.MenuListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
@@ -30,48 +32,54 @@ public class MainFrame extends JFrame {
     private static final Color WHITE = Color.WHITE;
     private CardLayout cardLayout;
     private JPanel cardPanel;
-    private JPanel sidebarPanel;
-    private JPanel menuPanel;
     private JPanel homePage;
     private JLabel pageTitle;
     private pnlNhanVien employeePanel;
-    private JLabel lblName;
-    private JLabel lblRole;
     private JLabel lblDate;
     // Các chỉ số thống kê trên Dashboard
     private JLabel lblDonHangHomNay;
     private JLabel lblDichVuHomNay;
     private JLabel lblSanPhamHomNay;
     private JLabel lblDoanhThuHomNay;
-    private JButton activeButton;
-    private final String[] MENU_ITEMS = { "Trang chủ", "Hệ thống", "Danh mục", "Cập nhật", "Tìm kiếm", "Xử lý",
-            "Báo biểu" };
-    private final String[] MENU_ICONS = { "home.png", "settings.png", "box.png", "employee.png", "search.png",
-            "cart.png", "chart.png" };
-    // Menu con theo từng nhóm chức năng (sổ xuống khi bấm vào nhóm)
+
+    // Thanh menu ngang
+    private final String[] MENU_ITEMS = { "1. Hệ thống", "2. Danh mục", "3. Cập nhật",
+            "4. Xử lý", "5. Tìm kiếm", "6. Báo biểu" };
+    private final String[] MENU_ICONS = { "settings.png", "box.png", "employee.png",
+            "cart.png", "search.png", "chart.png" };
+    // Menu con theo từng nhóm chức năng (thả xuống khi bấm vào nhóm)
     private final String[][] SUB_MENUS = {
-            { "Tạo đơn hàng", "Thanh toán", "Quét mã vạch", "Đặt lịch dịch vụ" },
-            { "Đổi mật khẩu", "Phân quyền" },
+            { "Đổi mật khẩu tài khoản", "Phân quyền vai trò", "Bàn giao ca / Chốt két",
+                    "Đăng xuất tài khoản", "Thoát ứng dụng" },
             { "Sản phẩm", "Dịch vụ", "Nhà cung cấp", "Khuyến mãi", "Ca làm việc" },
             { "Nhân viên", "Khách hàng", "Thú cưng", "Đơn hàng", "Lịch hẹn", "Xếp lịch làm việc" },
+            { "Tạo đơn hàng", "Thanh toán", "Quét mã vạch", "Đặt lịch dịch vụ", "Nhập hàng",
+                    "Cảnh báo tồn kho" },
             { "Sản phẩm", "Khách hàng", "Hóa đơn", "Lịch hẹn", "Nhân viên", "Dịch vụ", "Phiếu nhập" },
-            { "Bán hàng", "Nhập hàng", "Cảnh báo tồn kho" },
             { "Doanh thu", "Lợi nhuận", "Nhập hàng", "Tồn kho", "Dịch vụ" }
     };
-    private final JButton[] menuButtons = new JButton[MENU_ITEMS.length];
-    private final JPanel[] subPanels = new JPanel[MENU_ITEMS.length];
-    private final JButton[][] subButtons = new JButton[MENU_ITEMS.length][];
-    private JButton activeSubButton;
+
+    // Phím tắt hiển thị bên phải mục menu
+    private static final java.util.Map<String, KeyStroke> SHORTCUTS = new HashMap<>();
+    static {
+        SHORTCUTS.put("Đổi mật khẩu tài khoản", KeyStroke.getKeyStroke(KeyEvent.VK_M, InputEvent.CTRL_DOWN_MASK));
+        SHORTCUTS.put("Phân quyền vai trò", KeyStroke.getKeyStroke(KeyEvent.VK_P, InputEvent.CTRL_DOWN_MASK));
+        SHORTCUTS.put("Bàn giao ca / Chốt két", KeyStroke.getKeyStroke(KeyEvent.VK_G, InputEvent.CTRL_DOWN_MASK));
+        SHORTCUTS.put("Đăng xuất tài khoản", KeyStroke.getKeyStroke(KeyEvent.VK_Q, InputEvent.CTRL_DOWN_MASK));
+        SHORTCUTS.put("Thoát ứng dụng", KeyStroke.getKeyStroke(KeyEvent.VK_F4, InputEvent.ALT_DOWN_MASK));
+    }
+
     private final java.util.Set<String> registeredCards = new HashSet<>();
 
     public MainFrame() {
-        setTitle("PetPlus - Quản lý cửa hàng thú cưng");
+        setTitle("HỆ THỐNG QUẢN LÝ CỬA HÀNG THÚ CƯNG");
         setSize(1100, 700); // Kích thước form chính
         setMinimumSize(new Dimension(1000, 650)); // Kích thước tối thiểu
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setLayout(new BorderLayout());
         getContentPane().setBackground(BG);
+
         // 1. VÙNG NỘI DUNG CHÍNH
         cardLayout = new CardLayout();
         cardPanel = new JPanel(cardLayout);
@@ -80,130 +88,10 @@ public class MainFrame extends JFrame {
         // Tải dữ liệu thống kê khi mở Dashboard
         loadDashboardStats();
         registerCard("Trang chủ", homePage);
-        // 2. THANH SIDEBAR
-        sidebarPanel = new JPanel(new BorderLayout());
-        sidebarPanel.setBackground(new Color(255, 247, 250));
-        sidebarPanel.setPreferredSize(new Dimension(230, 0));
-        sidebarPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, BORDER));
-        // 2.1 TOP SIDEBAR: Logo & Tên cửa hàng
-        JPanel topPanel = new JPanel();
-        topPanel.setOpaque(false);
-        topPanel.setLayout(new BoxLayout(topPanel, BoxLayout.X_AXIS));
-        topPanel.setBorder(new EmptyBorder(20, 18, 25, 18));
-        // Cột trái: Icon Logo Paw
-        JLabel lblIcon = new JLabel();
-        URL pawIconUrl = getClass().getResource("/icons/paw.png");
-        if (pawIconUrl != null) {
-            ImageIcon originalIcon = new ImageIcon(pawIconUrl);
-            Image scaledImage = originalIcon.getImage()
-                    .getScaledInstance(45, 45, Image.SCALE_SMOOTH);
-            lblIcon.setIcon(new ImageIcon(scaledImage));
-        }
-        // Cột phải: Logo & Tên cửa hàng
-        JPanel logoText = new JPanel();
-        logoText.setOpaque(false);
-        logoText.setLayout(new BoxLayout(logoText, BoxLayout.Y_AXIS));
-        JLabel logoTitle = label("PetPlus", 27, PRIMARY_DARK, true);
-        JLabel logoSub = label("Quản lý cửa hàng thú cưng", 11, MUTED, false);
-        logoText.add(logoTitle);
-        logoText.add(Box.createVerticalStrut(3));
-        logoText.add(logoSub);
-        // Ráp Logo và Cột Text vào Top Panel
-        topPanel.add(lblIcon);
-        topPanel.add(Box.createHorizontalStrut(10));
-        topPanel.add(logoText);
-        sidebarPanel.add(topPanel, BorderLayout.NORTH);
-        // 2.2 CENTER: Menu dọc, bấm vào nhóm thì sổ xuống các mục con
-        menuPanel = new JPanel();
-        menuPanel.setOpaque(false);
-        menuPanel.setLayout(new BoxLayout(menuPanel, BoxLayout.Y_AXIS));
-        menuPanel.setBorder(new EmptyBorder(6, 13, 10, 13));
-        for (int i = 0; i < MENU_ITEMS.length; i++) {
-            final int index = i;
-            JButton button = createSidebarButton(MENU_ITEMS[i], MENU_ICONS[i]);
-            menuButtons[i] = button;
-            menuPanel.add(button);
 
-            // Panel chứa các mục con, mặc định ẩn
-            JPanel sub = new JPanel();
-            sub.setOpaque(false);
-            sub.setLayout(new BoxLayout(sub, BoxLayout.Y_AXIS));
-            sub.setAlignmentX(Component.LEFT_ALIGNMENT);
-            sub.setVisible(false);
-            subButtons[i] = new JButton[SUB_MENUS[i].length];
-            for (int j = 0; j < SUB_MENUS[i].length; j++) {
-                JButton sb = createSubButton(SUB_MENUS[i][j], i);
-                subButtons[i][j] = sb;
-                sub.add(sb);
-            }
-            subPanels[i] = sub;
-            menuPanel.add(sub);
+        // 2. THANH MENU NGANG
+        setJMenuBar(createMenuBar());
 
-            menuPanel.add(Box.createVerticalStrut(8));
-            button.addActionListener(e -> selectMenu(index));
-        }
-        JPanel menuHolder = new JPanel(new BorderLayout());
-        menuHolder.setOpaque(false);
-        menuHolder.add(menuPanel, BorderLayout.NORTH);
-        sidebarPanel.add(new JScrollPane(menuHolder,
-                JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
-                JScrollPane.HORIZONTAL_SCROLLBAR_NEVER) {
-            {
-                setBorder(null);
-                setOpaque(false);
-                getViewport().setOpaque(false);
-            }
-        }, BorderLayout.CENTER);
-        // 2.3 BOTTOM SIDEBAR: Thông tin User & Đăng xuất
-        JPanel bottomPanel = new JPanel(new BorderLayout(0, 10));
-        bottomPanel.setOpaque(false);
-        bottomPanel.setBorder(new EmptyBorder(14, 15, 21, 15));
-        bottomPanel.add(new JSeparator(), BorderLayout.NORTH);
-        JPanel profile = new JPanel(new BorderLayout(10, 0));
-        profile.setOpaque(false);
-        // Avatar tài khoản hình tròn
-        JLabel avatar = new JLabel("A", SwingConstants.CENTER) {
-            @Override
-            protected void paintComponent(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(
-                        RenderingHints.KEY_ANTIALIASING,
-                        RenderingHints.VALUE_ANTIALIAS_ON);
-                // Vẽ nền hình tròn màu hồng
-                g2.setColor(PRIMARY);
-                g2.fillOval(0, 0, getWidth() - 1, getHeight() - 1);
-                g2.dispose();
-                // Vẽ chữ A lên trên hình tròn
-                super.paintComponent(g);
-            }
-        };
-        avatar.setPreferredSize(new Dimension(48, 48));
-        avatar.setOpaque(false);
-        avatar.setForeground(WHITE);
-        avatar.setFont(new Font("Times New Roman", Font.BOLD, 20));
-        JPanel profileText = new JPanel(new GridLayout(2, 1, 0, 3));
-        profileText.setOpaque(false);
-        lblName = label("Chưa đăng nhập", 14, TEXT, true);
-        lblRole = label("", 12, MUTED, false);
-        profileText.add(lblName);
-        profileText.add(lblRole);
-        profile.add(avatar, BorderLayout.WEST);
-        profile.add(profileText, BorderLayout.CENTER);
-        JButton logout = new JButton("Đăng xuất");
-        logout.setBackground(WHITE);
-        logout.setForeground(PRIMARY);
-        logout.setFont(new Font("Times New Roman", Font.BOLD, 14));
-        logout.setFocusPainted(false);
-        logout.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        logout.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(PRIMARY, 1, true), new EmptyBorder(10, 12, 10, 12)));
-        logout.addActionListener(e -> logout());
-        JPanel footer = new JPanel(new BorderLayout(0, 10));
-        footer.setOpaque(false);
-        footer.add(profile, BorderLayout.NORTH);
-        footer.add(logout, BorderLayout.SOUTH);
-        bottomPanel.add(footer, BorderLayout.CENTER);
-        sidebarPanel.add(bottomPanel, BorderLayout.SOUTH);
         // 3. THANH TIÊU ĐỀ PHÍA TRÊN
         JPanel rightSide = new JPanel(new BorderLayout());
         rightSide.setBackground(BG);
@@ -222,14 +110,12 @@ public class MainFrame extends JFrame {
         headerPanel.add(lblDate, BorderLayout.EAST);
         rightSide.add(headerPanel, BorderLayout.NORTH);
         rightSide.add(cardPanel, BorderLayout.CENTER);
-        add(sidebarPanel, BorderLayout.WEST);
         add(rightSide, BorderLayout.CENTER);
 
         // 4. KHỞI TẠO CÁC PANEL CÓ SẴN
         employeePanel = new pnlNhanVien();
         registerCard("Nhân viên", employeePanel);
 
-        // Giao diện tạo đơn hàng kết hợp thanh toán
         // Khởi tạo giao diện tạo đơn hàng
         pnlThanhToan panelPOS = new pnlThanhToan();
         registerCard("Tạo đơn hàng", panelPOS);
@@ -248,126 +134,115 @@ public class MainFrame extends JFrame {
 >>>>>>> d055916 (xxxx)
         registerCard("Đổi mật khẩu", placeholder("Đổi mật khẩu"));
 
-        // 5. HIỂN THỊ THÔNG TIN TÀI KHOẢN
+        // 5. HIỂN THỊ THÔNG TIN TÀI KHOẢN (trên tiêu đề cửa sổ)
         updateAccountInfo();
         // Hiển thị giao diện sản phẩm trong vùng nội dung chính
         registerCard("Sản phẩm", new pnlSanPham());
-        selectMenu(0);
+
+        // Mở thẳng vào Dashboard
+        showAction("Trang chủ", -1);
+
         javax.swing.Timer clock = new javax.swing.Timer(60000, e -> updateDate());
         clock.start();
         updateDate();
     }
-    // Hiển thị thông tin người đăng nhập, không kiểm tra phân quyền
 
+    // Hiển thị thông tin người đăng nhập trên tiêu đề cửa sổ
     private void updateAccountInfo() {
-        if (Auth.user != null) {
-            lblName.setText(Auth.user.getTenNV());
-            lblRole.setText(Auth.user.getMaTK().getVaiTro());
-        } else {
-            lblName.setText("Dev Test");
-            lblRole.setText("Chưa đăng nhập");
-        }
+        String ten = Auth.user != null ? Auth.user.getTenNV() : "Dev Test";
+        String vaiTro = Auth.user != null ? Auth.user.getMaTK().getVaiTro() : "Chưa đăng nhập";
+        setTitle("HỆ THỐNG QUẢN LÝ CỬA HÀNG THÚ CƯNG - " + ten + " [" + vaiTro + "]");
     }
 
-    // Bấm nhóm menu: sổ xuống / thu lại các mục con
-    private void selectMenu(int index) {
-        // Đang mở thì bấm lần nữa để thu lại
-        if (subPanels[index].isVisible()) {
-            subPanels[index].setVisible(false);
-            menuPanel.revalidate();
-            menuPanel.repaint();
-            return;
-        }
+    // Tạo thanh menu ngang
+    private JMenuBar createMenuBar() {
+        // Màu khi rê chuột / mở menu (dùng màu chủ đạo của app)
+        UIManager.put("Menu.selectionBackground", PRIMARY);
+        UIManager.put("Menu.selectionForeground", WHITE);
+        UIManager.put("MenuItem.selectionBackground", new Color(255, 226, 237));
+        UIManager.put("MenuItem.selectionForeground", PRIMARY_DARK);
 
-        setActiveButton(menuButtons[index]);
-        for (JPanel p : subPanels) {
-            p.setVisible(false);
-        }
-        subPanels[index].setVisible(true);
+        JMenuBar bar = new JMenuBar();
+        bar.setBackground(WHITE);
+        bar.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, BORDER));
 
-        if (index == 0) {
-            setActiveSub(null);
-            showAction("Trang chủ", 0);
-        } else if (SUB_MENUS[index].length > 0) {
-            setActiveSub(subButtons[index][0]);
-            showAction(SUB_MENUS[index][0], index);
-        }
-        menuPanel.revalidate();
-        menuPanel.repaint();
-    }
-
-    private void setActiveSub(JButton btn) {
-        if (activeSubButton != null) {
-            activeSubButton.setBackground(new Color(255, 247, 250));
-            activeSubButton.setForeground(TEXT);
-        }
-        activeSubButton = btn;
-        if (btn != null) {
-            btn.setBackground(new Color(255, 226, 237));
-            btn.setForeground(PRIMARY_DARK);
-        }
-    }
-
-    // Nút mục con nằm trong menu sổ xuống
-    private JButton createSubButton(String text, int menuIndex) {
-        JButton btn = new JButton(text);
-        btn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
-        btn.setAlignmentX(Component.LEFT_ALIGNMENT);
-        btn.setHorizontalAlignment(SwingConstants.LEFT);
-        btn.setFocusPainted(false);
-        btn.setBorderPainted(false);
-        btn.setOpaque(true);
-        btn.setBackground(new Color(255, 247, 250));
-        btn.setForeground(TEXT);
-        btn.setFont(new Font("Times New Roman", Font.PLAIN, 14));
-        btn.setBorder(new EmptyBorder(8, 34, 8, 8));
-        btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-
-        if (menuIndex == 0) {
-            String iconName = null;
-            if ("Tạo đơn hàng".equals(text)) {
-                iconName = "top_cart.png";
-            } else if ("Thanh toán".equals(text)) {
-                iconName = "top_payment.png";
-            } else if ("Quét mã vạch".equals(text)) {
-                iconName = "top_barcode.png";
-            } else if ("Đặt lịch dịch vụ".equals(text)) {
-                iconName = "top_booking.png";
-            }
-            if (iconName != null) {
-                ImageIcon icon = loadIcon(iconName, 18, 18);
-                if (icon != null) {
-                    btn.setIcon(icon);
-                    btn.setIconTextGap(8);
-                }
-            }
-        }
-
-        btn.addMouseListener(new MouseAdapter() {
+        // Mục "0. Trang chủ": bấm vào là về Dashboard luôn, không thả xuống
+        JMenu homeMenu = new JMenu("0. Trang chủ");
+        homeMenu.setFont(new Font("Times New Roman", Font.BOLD, 14));
+        homeMenu.setForeground(TEXT);
+        homeMenu.setBorder(new EmptyBorder(8, 12, 8, 12));
+        homeMenu.setIconTextGap(8);
+        ImageIcon homeIcon = loadIcon("home.png", 18, 18);
+        if (homeIcon != null)
+            homeMenu.setIcon(homeIcon);
+        homeMenu.addMenuListener(new MenuListener() {
             @Override
-            public void mouseEntered(MouseEvent e) {
-                if (btn != activeSubButton)
-                    btn.setBackground(new Color(255, 236, 243));
+            public void menuSelected(MenuEvent e) {
+                showAction("Trang chủ", -1);
+                SwingUtilities.invokeLater(
+                        () -> MenuSelectionManager.defaultManager().clearSelectedPath());
             }
 
             @Override
-            public void mouseExited(MouseEvent e) {
-                if (btn != activeSubButton)
-                    btn.setBackground(new Color(255, 247, 250));
+            public void menuDeselected(MenuEvent e) {
+            }
+
+            @Override
+            public void menuCanceled(MenuEvent e) {
             }
         });
+        bar.add(homeMenu);
 
-        btn.addActionListener(e -> {
-            setActiveSub(btn);
-            showAction(text, menuIndex);
-        });
-        return btn;
+        for (int i = 0; i < MENU_ITEMS.length; i++) {
+            JMenu menu = new JMenu(MENU_ITEMS[i]);
+            menu.setFont(new Font("Times New Roman", Font.BOLD, 14));
+            menu.setForeground(TEXT);
+            menu.setBorder(new EmptyBorder(8, 12, 8, 12));
+            menu.setIconTextGap(8);
+            ImageIcon icon = loadIcon(MENU_ICONS[i], 18, 18);
+            if (icon != null)
+                menu.setIcon(icon);
+
+            for (String item : SUB_MENUS[i]) {
+                // Đường kẻ ngăn cách trước nhóm đăng xuất / thoát
+                if ("Đăng xuất tài khoản".equals(item))
+                    menu.addSeparator();
+                menu.add(createMenuItem(item, i));
+            }
+            bar.add(menu);
+        }
+        return bar;
+    }
+
+    // Mục con trong menu thả xuống
+    private JMenuItem createMenuItem(String text, int menuIndex) {
+        JMenuItem item = new JMenuItem(text);
+        item.setFont(new Font("Times New Roman", Font.PLAIN, 14));
+        item.setForeground(TEXT);
+        item.setBackground(WHITE);
+        item.setBorder(new EmptyBorder(8, 12, 8, 12));
+        item.setIconTextGap(10);
+        KeyStroke ks = SHORTCUTS.get(text);
+        if (ks != null)
+            item.setAccelerator(ks);
+        item.addActionListener(e -> showAction(text, menuIndex));
+        return item;
     }
 
     // Xử lý khi chọn chức năng trên menu
     private void showAction(String action, int menuIndex) {
         String title = action;
         String cardName = action;
+
+        // Đăng xuất / thoát ứng dụng
+        if ("Đăng xuất tài khoản".equals(action)) {
+            logout();
+            return;
+        }
+        if ("Thoát ứng dụng".equals(action)) {
+            exitApp();
+            return;
+        }
 
         // Mở giao diện quét mã vạch
         if ("Quét mã vạch".equals(action)) {
@@ -376,7 +251,7 @@ public class MainFrame extends JFrame {
         }
 
         // Các mục menu có giao diện hiện có được mở trên màn hình tương ứng.
-        if ("Thanh toán".equals(action) || "Bán hàng".equals(action)) {
+        if ("Thanh toán".equals(action)) {
             cardName = "Tạo đơn hàng";
         } else if ("Đặt lịch dịch vụ".equals(action)) {
             cardName = "Lịch hẹn";
@@ -388,9 +263,11 @@ public class MainFrame extends JFrame {
             cardName = "Sản phẩm";
         } else if ("Thống kê doanh thu".equals(action) || "Sản phẩm bán chạy".equals(action)) {
             cardName = "Trang chủ";
-        } else if ("Phân quyền".equals(action)) {
+        } else if ("Đổi mật khẩu tài khoản".equals(action)) {
+            cardName = "Đổi mật khẩu";
+        } else if ("Phân quyền vai trò".equals(action)) {
             cardName = "Nhân viên";
-        } else if (menuIndex == 6 && "Dịch vụ".equals(action)) {
+        } else if (menuIndex == 5 && "Dịch vụ".equals(action)) {
             // Mục báo biểu dịch vụ chưa có màn hình báo cáo riêng.
             cardName = "Báo cáo dịch vụ";
         }
@@ -401,7 +278,7 @@ public class MainFrame extends JFrame {
         }
 
         if ("Nhân viên".equals(cardName) && employeePanel != null) {
-            employeePanel.chonTab("Phân quyền".equals(action) ? "Phân quyền" : "Nhân viên");
+            employeePanel.chonTab("Phân quyền vai trò".equals(action) ? "Phân quyền" : "Nhân viên");
         }
         pageTitle.setText(title);
         cardLayout.show(cardPanel, cardName);
@@ -411,8 +288,8 @@ public class MainFrame extends JFrame {
         if (registeredCards.add(name))
             cardPanel.add(page, name);
     }
-    // Giữ lại các panel thật trong project
 
+    // Giữ lại các panel thật trong project
     private JPanel createExistingPanel(String name) {
         try {
             if ("Nhân viên".equals(name))
@@ -435,8 +312,8 @@ public class MainFrame extends JFrame {
         panel.add(message, BorderLayout.CENTER);
         return panel;
     }
-    // 6. GIAO DIỆN TRANG CHỦ
 
+    // 6. GIAO DIỆN TRANG CHỦ
     private JPanel createHomePage() {
         JPanel content = new JPanel();
         content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
@@ -500,8 +377,8 @@ public class MainFrame extends JFrame {
         wrapper.add(scroll, BorderLayout.CENTER);
         return wrapper;
     }
-    // Banner chào mừng
 
+    // Banner chào mừng
     private JPanel createWelcome() {
         RoundPanel banner = new RoundPanel(new Color(255, 240, 246), 18);
         banner.setLayout(new BorderLayout());
@@ -521,8 +398,8 @@ public class MainFrame extends JFrame {
         banner.add(petImage, BorderLayout.EAST);
         return banner;
     }
-    // Các thẻ thống kê lấy dữ liệu từ database
 
+    // Các thẻ thống kê lấy dữ liệu từ database
     private JPanel createStat(JLabel valueLabel, String text, String icon, Color color) {
         RoundPanel card = new RoundPanel(color, 15);
         card.setLayout(new BorderLayout(14, 0));
@@ -544,8 +421,8 @@ public class MainFrame extends JFrame {
         card.add(numbers, BorderLayout.CENTER);
         return card;
     }
-    // Tải 4 chỉ số thống kê từ SQL Server
 
+    // Tải 4 chỉ số thống kê từ SQL Server
     private void loadDashboardStats() {
         SwingWorker<Object[], Void> worker = new SwingWorker<Object[], Void>() {
             @Override
@@ -583,8 +460,8 @@ public class MainFrame extends JFrame {
         };
         worker.execute();
     }
-    // Tạo khung nội dung có icon
 
+    // Tạo khung nội dung có icon
     private JPanel createSection(
             String heading,
             String iconName,
@@ -611,8 +488,8 @@ public class MainFrame extends JFrame {
         panel.add(body, BorderLayout.CENTER);
         return panel;
     }
-    // Hiển thị Top 5 sản phẩm bán chạy
 
+    // Hiển thị Top 5 sản phẩm bán chạy
     private JPanel createTopProducts() {
         JPanel list = new JPanel(new GridLayout(0, 1, 0, 5));
         list.setOpaque(false);
@@ -683,7 +560,7 @@ public class MainFrame extends JFrame {
             }
         };
         JTable table = new JTable(model);
-        // Căn lề trái 5px cho dữ liệu trong bảng
+        // Căn lề trái cho dữ liệu trong bảng
         table.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(
@@ -885,56 +762,8 @@ public class MainFrame extends JFrame {
             g.dispose();
         }
     }
+
     // Các thành phần giao diện dùng lại
-
-    private JButton createSidebarButton(String text, String iconName) {
-        JButton btn = new JButton(text);
-        btn.setPreferredSize(new Dimension(236, 50));
-        btn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
-        btn.setAlignmentX(Component.LEFT_ALIGNMENT);
-        btn.setHorizontalAlignment(SwingConstants.LEFT);
-        btn.setFocusPainted(false);
-        btn.setBorderPainted(false);
-        btn.setOpaque(true);
-        btn.setBackground(new Color(255, 247, 250));
-        btn.setForeground(TEXT);
-        btn.setFont(new Font("Times New Roman", Font.BOLD, 15));
-        btn.setBorder(new EmptyBorder(8, 16, 8, 8));
-        btn.setIconTextGap(16);
-        ImageIcon icon = loadIcon(iconName, 30, 30);
-        if (icon != null)
-            btn.setIcon(icon);
-        btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        btn.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                if (btn != activeButton)
-                    btn.setBackground(new Color(255, 226, 237));
-            }
-
-            @Override
-            public void mouseExited(MouseEvent e) {
-                if (btn != activeButton)
-                    btn.setBackground(new Color(255, 247, 250));
-            }
-        });
-        return btn;
-    }
-
-    private void setActiveButton(JButton clickedBtn) {
-        for (JButton button : menuButtons) {
-            if (button != null) {
-                button.setBackground(new Color(255, 247, 250));
-                button.setForeground(TEXT);
-            }
-        }
-        activeButton = clickedBtn;
-        if (clickedBtn != null) {
-            clickedBtn.setBackground(PRIMARY);
-            clickedBtn.setForeground(WHITE);
-        }
-    }
-
     private ImageIcon loadIcon(String name, int w, int h) {
         URL url = getClass().getResource("/icons/" + name);
         if (url == null) {
@@ -981,8 +810,8 @@ public class MainFrame extends JFrame {
         String date = LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
         lblDate.setText(date);
     }
-    // Đăng xuất và quay về màn hình đăng nhập
 
+    // Đăng xuất và quay về màn hình đăng nhập
     private void logout() {
         int confirm = JOptionPane.showConfirmDialog(this,
                 "Bạn có chắc chắn muốn đăng xuất?", "Xác nhận",
@@ -992,6 +821,15 @@ public class MainFrame extends JFrame {
             new LoginFrame().setVisible(true);
             dispose();
         }
+    }
+
+    // Thoát ứng dụng
+    private void exitApp() {
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "Bạn có chắc chắn muốn thoát ứng dụng?", "Xác nhận",
+                JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+        if (confirm == JOptionPane.YES_OPTION)
+            System.exit(0);
     }
 
     private static class RoundPanel extends JPanel {
