@@ -28,6 +28,12 @@ import dao.SanPhamDAO;
 import gui.dialogs.dlgQuetMaVach;
 import gui.panel.pnlSanPham;
 import gui.panel.pnlThanhToan;
+import gui.panel.pnlNhaCungCap;
+import gui.panel.pnlKhuyenMai;
+import gui.panel.pnlNhapHang;
+import gui.panel.pnlTonKho;
+import gui.panel.pnlTimKiemPhieuNhap;
+import gui.panel.pnlBaoBieuNhapHang;
 
 public class MainFrame extends JFrame {
     private static final Color PRIMARY = new Color(250, 48, 115);
@@ -136,6 +142,14 @@ public class MainFrame extends JFrame {
         registerCard("Dịch vụ", new pnlDichVu());
         registerCard("Lịch hẹn", new pnlLichHen());
         registerCard("Đổi mật khẩu", placeholder("Đổi mật khẩu"));
+
+        // Đăng ký các panel Kho
+registerCard("Nhà cung cấp", new pnlNhaCungCap());
+registerCard("Khuyến mãi", new pnlKhuyenMai());
+registerCard("Nhập hàng", new pnlNhapHang());
+registerCard("Cảnh báo tồn kho", new pnlTonKho());
+registerCard("Tìm kiếm phiếu nhập", new pnlTimKiemPhieuNhap());
+registerCard("Báo biểu nhập hàng", new pnlBaoBieuNhapHang());
 
         // 5. HIỂN THỊ THÔNG TIN TÀI KHOẢN (trên tiêu đề cửa sổ)
         updateAccountInfo();
@@ -254,7 +268,7 @@ public class MainFrame extends JFrame {
         }
 
         // Các mục menu có giao diện hiện có được mở trên màn hình tương ứng.
-        if ("Thanh toán".equals(action)) {
+       if ("Thanh toán".equals(action)) {
             cardName = "Bán hàng và dịch vụ";
         } else if ("Đặt lịch dịch vụ".equals(action)) {
             cardName = "Lịch hẹn";
@@ -263,7 +277,20 @@ public class MainFrame extends JFrame {
         } else if ("Doanh thu".equals(action)) {
             cardName = "Trang chủ";
         } else if ("Tồn kho".equals(action)) {
-            cardName = "Sản phẩm";
+            cardName = "Cảnh báo tồn kho"; // pnlTonKho
+        } else if ("Nhà cung cấp".equals(action)) {
+            cardName = "Nhà cung cấp"; // pnlNhaCungCap
+        } else if ("Khuyến mãi".equals(action)) {
+            cardName = "Khuyến mãi"; // pnlKhuyenMai
+        } else if ("Nhập hàng".equals(action)) {
+            // Phân biệt: Nếu thuộc nhóm Báo biểu (menuIndex == 5) thì trỏ tới báo biểu nhập hàng, ngược lại trỏ tới màn hình nhập hàng xử lý
+            if (menuIndex == 5) {
+                cardName = "Báo biểu nhập hàng";
+            } else {
+                cardName = "Nhập hàng"; // pnlNhapHang
+            }
+        } else if ("Phiếu nhập".equals(action)) {
+            cardName = "Tìm kiếm phiếu nhập";    
         } else if ("Thống kê doanh thu".equals(action) || "Sản phẩm bán chạy".equals(action)) {
             cardName = "Trang chủ";
         } else if ("Đổi mật khẩu tài khoản".equals(action)) {
@@ -271,10 +298,8 @@ public class MainFrame extends JFrame {
         } else if ("Phân quyền vai trò".equals(action)) {
             cardName = "Nhân viên";
         } else if (menuIndex == 5 && "Dịch vụ".equals(action)) {
-            // Mục báo biểu dịch vụ chưa có màn hình báo cáo riêng.
             cardName = "Báo cáo dịch vụ";
         }
-
         // Hiển thị giao diện chức năng
         if (!registeredCards.contains(cardName)) {
             registerCard(cardName, placeholder(title));
