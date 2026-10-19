@@ -39,7 +39,6 @@ public class MainFrame extends JFrame {
     private JPanel cardPanel;
     private JPanel sidebarPanel;
     private JPanel menuPanel;
-    private JPanel toolbarPanel;
     private JPanel homePage;
     private JLabel pageTitle;
     private pnlNhanVien employeePanel;
@@ -56,9 +55,9 @@ public class MainFrame extends JFrame {
             "Báo biểu" };
     private final String[] MENU_ICONS = { "home.png", "settings.png", "box.png", "employee.png", "search.png",
             "cart.png", "chart.png" };
-    // Menu con theo từng nhóm chức năng
+    // Menu con theo từng nhóm chức năng (sổ xuống khi bấm vào nhóm)
     private final String[][] SUB_MENUS = {
-            {},
+            { "Tạo đơn hàng", "Thanh toán", "Quét mã vạch", "Đặt lịch dịch vụ" },
             { "Đổi mật khẩu", "Phân quyền" },
             { "Sản phẩm", "Dịch vụ", "Nhà cung cấp", "Khuyến mãi", "Ca làm việc" },
             { "Nhân viên", "Khách hàng", "Thú cưng", "Đơn hàng", "Lịch hẹn", "Xếp lịch làm việc" },
@@ -67,6 +66,9 @@ public class MainFrame extends JFrame {
             { "Doanh thu", "Lợi nhuận", "Nhập hàng", "Tồn kho", "Dịch vụ" }
     };
     private final JButton[] menuButtons = new JButton[MENU_ITEMS.length];
+    private final JPanel[] subPanels = new JPanel[MENU_ITEMS.length];
+    private final JButton[][] subButtons = new JButton[MENU_ITEMS.length][];
+    private JButton activeSubButton;
     private final java.util.Set<String> registeredCards = new HashSet<>();
 
     public MainFrame() {
@@ -118,7 +120,7 @@ public class MainFrame extends JFrame {
         topPanel.add(Box.createHorizontalStrut(10));
         topPanel.add(logoText);
         sidebarPanel.add(topPanel, BorderLayout.NORTH);
-        // 2.2 CENTER: Menu hướng chức năng
+        // 2.2 CENTER: Menu dọc, bấm vào nhóm thì sổ xuống các mục con
         menuPanel = new JPanel();
         menuPanel.setOpaque(false);
         menuPanel.setLayout(new BoxLayout(menuPanel, BoxLayout.Y_AXIS));
@@ -128,6 +130,22 @@ public class MainFrame extends JFrame {
             JButton button = createSidebarButton(MENU_ITEMS[i], MENU_ICONS[i]);
             menuButtons[i] = button;
             menuPanel.add(button);
+
+            // Panel chứa các mục con, mặc định ẩn
+            JPanel sub = new JPanel();
+            sub.setOpaque(false);
+            sub.setLayout(new BoxLayout(sub, BoxLayout.Y_AXIS));
+            sub.setAlignmentX(Component.LEFT_ALIGNMENT);
+            sub.setVisible(false);
+            subButtons[i] = new JButton[SUB_MENUS[i].length];
+            for (int j = 0; j < SUB_MENUS[i].length; j++) {
+                JButton sb = createSubButton(SUB_MENUS[i][j], i);
+                subButtons[i][j] = sb;
+                sub.add(sb);
+            }
+            subPanels[i] = sub;
+            menuPanel.add(sub);
+
             menuPanel.add(Box.createVerticalStrut(8));
             button.addActionListener(e -> selectMenu(index));
         }
@@ -193,7 +211,7 @@ public class MainFrame extends JFrame {
         footer.add(logout, BorderLayout.SOUTH);
         bottomPanel.add(footer, BorderLayout.CENTER);
         sidebarPanel.add(bottomPanel, BorderLayout.SOUTH);
-        // 3. THANH NGANG CHỨC NĂNG
+        // 3. THANH TIÊU ĐỀ PHÍA TRÊN
         JPanel rightSide = new JPanel(new BorderLayout());
         rightSide.setBackground(BG);
         JPanel headerPanel = new JPanel(new BorderLayout());
@@ -209,13 +227,7 @@ public class MainFrame extends JFrame {
         }
         headerPanel.add(pageTitle, BorderLayout.WEST);
         headerPanel.add(lblDate, BorderLayout.EAST);
-        toolbarPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 8));
-        toolbarPanel.setBackground(new Color(255, 243, 247));
-        toolbarPanel.setBorder(new EmptyBorder(0, 12, 0, 12));
-        JPanel headerWrapper = new JPanel(new BorderLayout());
-        headerWrapper.add(headerPanel, BorderLayout.NORTH);
-        headerWrapper.add(toolbarPanel, BorderLayout.CENTER);
-        rightSide.add(headerWrapper, BorderLayout.NORTH);
+        rightSide.add(headerPanel, BorderLayout.NORTH);
         rightSide.add(cardPanel, BorderLayout.CENTER);
         add(sidebarPanel, BorderLayout.WEST);
         add(rightSide, BorderLayout.CENTER);
@@ -259,39 +271,61 @@ public class MainFrame extends JFrame {
             lblRole.setText("Chưa đăng nhập");
         }
     }
-    // Điều hướng menu bên trái và menu ngang
 
+    // Bấm nhóm menu: sổ xuống / thu lại các mục con
     private void selectMenu(int index) {
-        setActiveButton(menuButtons[index]);
-        toolbarPanel.removeAll();
-        if (index == 0) {
-            String[] shortcuts = { "Tạo đơn hàng", "Thanh toán", "Quét mã vạch", "Đặt lịch dịch vụ" };
-            for (String action : shortcuts) {
-                toolbarPanel.add(createToolbarButton(action, index));
-            }
-            showAction("Trang chủ", index);
-        } else {
-            for (String action : SUB_MENUS[index]) {
-                toolbarPanel.add(createToolbarButton(action, index));
-            }
-            if (toolbarPanel.getComponentCount() > 0) {
-                JButton first = (JButton) toolbarPanel.getComponent(0);
-                showAction(first.getText(), index);
-            }
+        // Đang mở thì bấm lần nữa để thu lại
+        if (subPanels[index].isVisible()) {
+            subPanels[index].setVisible(false);
+            menuPanel.revalidate();
+            menuPanel.repaint();
+            return;
         }
-        toolbarPanel.revalidate();
-        toolbarPanel.repaint();
+
+        setActiveButton(menuButtons[index]);
+        for (JPanel p : subPanels) {
+            p.setVisible(false);
+        }
+        subPanels[index].setVisible(true);
+
+        if (index == 0) {
+            setActiveSub(null);
+            showAction("Trang chủ", 0);
+        } else if (SUB_MENUS[index].length > 0) {
+            setActiveSub(subButtons[index][0]);
+            showAction(SUB_MENUS[index][0], index);
+        }
+        menuPanel.revalidate();
+        menuPanel.repaint();
     }
 
-    private JButton createToolbarButton(String text, int menuIndex) {
+    private void setActiveSub(JButton btn) {
+        if (activeSubButton != null) {
+            activeSubButton.setBackground(new Color(255, 247, 250));
+            activeSubButton.setForeground(TEXT);
+        }
+        activeSubButton = btn;
+        if (btn != null) {
+            btn.setBackground(new Color(255, 226, 237));
+            btn.setForeground(PRIMARY_DARK);
+        }
+    }
+
+    // Nút mục con nằm trong menu sổ xuống
+    private JButton createSubButton(String text, int menuIndex) {
         JButton btn = new JButton(text);
-        btn.setFont(new Font("Times New Roman", Font.PLAIN, 13));
+        btn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
+        btn.setAlignmentX(Component.LEFT_ALIGNMENT);
+        btn.setHorizontalAlignment(SwingConstants.LEFT);
         btn.setFocusPainted(false);
-        btn.setBackground(WHITE);
+        btn.setBorderPainted(false);
+        btn.setOpaque(true);
+        btn.setBackground(new Color(255, 247, 250));
         btn.setForeground(TEXT);
+        btn.setFont(new Font("Times New Roman", Font.PLAIN, 14));
+        btn.setBorder(new EmptyBorder(8, 34, 8, 8));
         btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        btn.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(BORDER, 1, true), new EmptyBorder(10, 17, 10, 17)));
+
         if (menuIndex == 0) {
             String iconName = null;
             if ("Tạo đơn hàng".equals(text)) {
@@ -311,7 +345,25 @@ public class MainFrame extends JFrame {
                 }
             }
         }
-        btn.addActionListener(e -> showAction(text, menuIndex));
+
+        btn.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                if (btn != activeSubButton)
+                    btn.setBackground(new Color(255, 236, 243));
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                if (btn != activeSubButton)
+                    btn.setBackground(new Color(255, 247, 250));
+            }
+        });
+
+        btn.addActionListener(e -> {
+            setActiveSub(btn);
+            showAction(text, menuIndex);
+        });
         return btn;
     }
 
