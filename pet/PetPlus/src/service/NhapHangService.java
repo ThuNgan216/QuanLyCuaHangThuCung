@@ -24,11 +24,11 @@ public class NhapHangService {
     }
     
     // Lấy chi tiết phiếu nhập
-    public List<ChiTietPhieuNhap> layChiTiet(String maPN) {
+    public List<ChiTietPhieuNhap> layChiTiet(String maPN) throws SQLException {
         if (maPN == null || maPN.trim().isEmpty()) {
             throw new IllegalArgumentException("Mã phiếu nhập không hợp lệ.");
         }
-        return chiTietPhieuNhapDAO.layDanhSachTheoMaPhieu(maPN);
+        return chiTietPhieuNhapDAO.layChiTietTheoMaPN(maPN);
     }
 
     /**
@@ -40,7 +40,12 @@ public class NhapHangService {
             throw new IllegalArgumentException("Dữ liệu phiếu nhập hoặc chi tiết không hợp lệ.");
         }
 
-        Connection con = ConnectDB.getConnection();
+        Connection con;
+        try {
+            con = ConnectDB.getConnection();
+        } catch (SQLException e) {
+            throw new RuntimeException("Không thể kết nối CSDL.", e);
+        }
         if (con == null) {
             throw new RuntimeException("Không thể kết nối CSDL.");
         }

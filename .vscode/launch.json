@@ -6,24 +6,38 @@
     "configurations": [
         {
             "type": "java",
-            "name": "pnlThanhToan",
-            "request": "launch",
-            "mainClass": "gui.panel.pnlThanhToan",
-            "projectName": "QuanLyCuaHangThuCung_6ae16dc2"
-        },
-        {
-            "type": "java",
             "name": "LoginFrame",
             "request": "launch",
             "mainClass": "gui.main.LoginFrame",
-            "projectName": "QuanLyCuaHangThuCung_6ae16dc2"
+            "projectName": "PetPlus_6d290777"
         },
         {
             "type": "java",
             "name": "MainFrame",
             "request": "launch",
             "mainClass": "gui.main.MainFrame",
-            "projectName": "QuanLyCuaHangThuCung_6ae16dc2"
+            "projectName": "PetPlus_6d290777"
+        },
+        {
+            "type": "java",
+            "name": "pnlThanhToan",
+            "request": "launch",
+            "mainClass": "gui.panel.pnlThanhToan",
+            "projectName": "PetPlus"
+        },
+        {
+            "type": "java",
+            "name": "LoginFrame",
+            "request": "launch",
+            "mainClass": "gui.main.LoginFrame",
+            "projectName": "PetPlus"
+        },
+        {
+            "type": "java",
+            "name": "MainFrame",
+            "request": "launch",
+            "mainClass": "gui.main.MainFrame",
+            "projectName": "PetPlus"
         },
         {
             "type": "java",
@@ -40,7 +54,7 @@
             "name": "testDAO",
             "request": "launch",
             "mainClass": "dao.testDAO",
-            "projectName": "PetPlus_6d290777",
+            "projectName": "PetPlus",
             "classPaths": [
                 "$Auto",
                 "${workspaceFolder}/pet/PetPlus/lib/sqljdbc42.jar"
@@ -51,7 +65,7 @@
             "name": "ConnectDB",
             "request": "launch",
             "mainClass": "database.ConnectDB",
-            "projectName": "PetPlus_6d290777",
+            "projectName": "PetPlus",
             "classPaths": [
                 "$Auto",
                 "${workspaceFolder}/pet/PetPlus/lib/sqljdbc42.jar"
@@ -62,7 +76,7 @@
             "name": "dlgQuetMaVach",
             "request": "launch",
             "mainClass": "gui.dialogs.dlgQuetMaVach",
-            "projectName": "PetPlus_6d290777",
+            "projectName": "PetPlus",
             "classPaths": [
                 "$Auto",
                 "${workspaceFolder}/pet/PetPlus/lib/sqljdbc42.jar"
@@ -73,7 +87,7 @@
             "name": "LoginFrame",
             "request": "launch",
             "mainClass": "gui.main.LoginFrame",
-            "projectName": "PetPlus_6d290777",
+            "projectName": "PetPlus",
             "classPaths": [
                 "$Auto",
                 "${workspaceFolder}/pet/PetPlus/lib/sqljdbc42.jar"
@@ -84,7 +98,7 @@
             "name": "MainFrame",
             "request": "launch",
             "mainClass": "gui.main.MainFrame",
-            "projectName": "PetPlus_6d290777",
+            "projectName": "PetPlus",
             "classPaths": [
                 "$Auto",
                 "${workspaceFolder}/pet/PetPlus/lib/sqljdbc42.jar"
@@ -95,7 +109,7 @@
             "name": "pnlSanPham",
             "request": "launch",
             "mainClass": "gui.panel.pnlSanPham",
-            "projectName": "PetPlus_6d290777",
+            "projectName": "PetPlus",
             "classPaths": [
                 "$Auto",
                 "${workspaceFolder}/pet/PetPlus/lib/sqljdbc42.jar"
@@ -106,7 +120,7 @@
             "name": "pnlThanhToan",
             "request": "launch",
             "mainClass": "gui.panel.pnlThanhToan",
-            "projectName": "PetPlus_6d290777",
+            "projectName": "PetPlus",
             "classPaths": [
                 "$Auto",
                 "${workspaceFolder}/pet/PetPlus/lib/sqljdbc42.jar"
@@ -117,7 +131,7 @@
             "name": "barcodeScanner",
             "request": "launch",
             "mainClass": "network.barcodeScanner",
-            "projectName": "PetPlus_6d290777",
+            "projectName": "PetPlus",
             "classPaths": [
                 "$Auto",
                 "${workspaceFolder}/pet/PetPlus/lib/sqljdbc42.jar"
