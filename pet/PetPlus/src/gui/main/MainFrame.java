@@ -26,6 +26,7 @@ import gui.panel.pnlNhaCungCap;
 import gui.panel.pnlNhapHang;
 import gui.panel.pnlTimKiemPhieuNhap;
 import gui.panel.pnlTonKho;
+import gui.panel.pnlTiepNhanThuCung;
 import gui.panel.pnlLichHen;
 import gui.panel.pnlKhachHang;
 import gui.panel.pnlQuanLyHoaDon;
@@ -72,7 +73,7 @@ public class MainFrame extends JFrame {
             { "Đổi mật khẩu tài khoản", "Phân quyền vai trò", "Đăng xuất tài khoản", "Thoát ứng dụng" },
             { "Sản phẩm", "Dịch vụ", "Nhà cung cấp", "Khuyến mãi", "Lịch làm việc" },
             { "Nhân viên", "Khách hàng", "Thú cưng", "Lịch hẹn", "Nhập hàng" },
-            { "Bán hàng và dịch vụ", "Quét mã vạch", "Tích điểm", "Xếp lịch làm việc", "Xuất hóa đơn" },
+            { "Tiếp nhận thú cưng", "Lập hóa đơn", "Quét mã vạch", "Tích điểm", "Xếp lịch làm việc", "Xuất hóa đơn" },
             { "Sản phẩm", "Khách hàng", "Hóa đơn", "Lịch hẹn", "Nhân viên", "Dịch vụ", "Tìm kiếm phiếu nhập" },
             { "Doanh thu", "Cảnh báo tồn kho", "Báo biểu nhập hàng" }
     };
@@ -136,7 +137,7 @@ public class MainFrame extends JFrame {
 
         // Khởi tạo giao diện tạo đơn hàng
         // Giao diện bán hàng và dịch vụ
-        registerCard("Bán hàng và dịch vụ", new pnlThanhToan());
+        registerCard("Lập hóa đơn", new pnlThanhToan());
 
         // Đăng ký trang quản lý hóa đơn
         registerCard("Quản lý hóa đơn", new pnlHoaDon());
@@ -284,7 +285,11 @@ public class MainFrame extends JFrame {
 
         // Các mục menu có giao diện hiện có được mở trên màn hình tương ứng.
         if ("Thanh toán".equals(action)) {
-            cardName = "Bán hàng và dịch vụ";
+            cardName = "Lập hóa đơn";
+            title = "Lập hóa đơn";
+        } else if ("Bán hàng và dịch vụ".equals(action)) {
+            cardName = "Lập hóa đơn";
+            title = "Lập hóa đơn";
         } else if ("Đặt lịch dịch vụ".equals(action)) {
             cardName = "Lịch hẹn";
         } else if ("Đơn hàng".equals(action)) {
@@ -334,6 +339,8 @@ public class MainFrame extends JFrame {
             return new pnlTimKiemPhieuNhap();
         if ("Báo biểu nhập hàng".equals(cardName))
             return new pnlBaoBieuNhapHang();
+        if ("Tiếp nhận thú cưng".equals(cardName))
+            return new pnlTiepNhanThuCung();
         if ("Báo biểu doanh thu".equals(cardName))
             return new pnlBaoBieuDoanhThu();
         if ("Tồn kho".equals(cardName))

@@ -5,11 +5,97 @@ import database.ConnectDB;
 import java.sql.*;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.time.LocalDateTime;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class ThanhToanDAO {
+
+    /** Dữ liệu cần hiển thị và nạp nhanh vào hóa đơn từ phiếu tiếp nhận. */
+    public static class PhieuChoThanhToanDTO {
+        public final String maTiepNhan;
+        public final LocalDateTime thoiGianTiepNhan;
+        public final String maKH, tenKH, sdt, diaChi, maThuCung, tenThuCung;
+        public final int hangThanhVien, diemTichLuy;
+        public final String dichVuYeuCau;
+        public final long phiDuKien;
+        public final List<DichVuHoaDonDTO> danhSachDichVu = new ArrayList<>();
+
+        public PhieuChoThanhToanDTO(String maTiepNhan, LocalDateTime thoiGianTiepNhan,
+                String maKH, String tenKH, String sdt, String diaChi,
+                int hangThanhVien, int diemTichLuy, String maThuCung, String tenThuCung,
+                String dichVuYeuCau, long phiDuKien) {
+            this.maTiepNhan = maTiepNhan;
+            this.thoiGianTiepNhan = thoiGianTiepNhan;
+            this.maKH = maKH;
+            this.tenKH = tenKH;
+            this.sdt = sdt;
+            this.diaChi = diaChi;
+            this.hangThanhVien = hangThanhVien;
+            this.diemTichLuy = diemTichLuy;
+            this.maThuCung = maThuCung;
+            this.tenThuCung = tenThuCung;
+            this.dichVuYeuCau = dichVuYeuCau;
+            this.phiDuKien = phiDuKien;
+        }
+
+        public long tongPhiDichVu() {
+            long tong = 0;
+            for (DichVuHoaDonDTO dichVu : danhSachDichVu) tong = Math.addExact(tong, dichVu.donGia);
+            return tong;
+        }
+    }
+
+    public static class DichVuHoaDonDTO {
+        public final String maDichVu, tenDichVu;
+        public final long donGia;
+        public DichVuHoaDonDTO(String maDichVu, String tenDichVu, long donGia) {
+            this.maDichVu = maDichVu;
+            this.tenDichVu = tenDichVu;
+            this.donGia = donGia;
+        }
+    }
+
+    public List<PhieuChoThanhToanDTO> layPhieuChoThanhToan() throws SQLException {
+        String sql = "SELECT tn.maTiepNhan, tn.thoiGianTiepNhan, tn.maKH, kh.tenKH, kh.sdt, kh.diaChi, "
+                + "kh.hangThanhVien, kh.diemTichLuy, tn.maThuCung, tc.tenThuCung, tn.dichVuYeuCau, tn.phiDuKien, "
+                + "dv.maDichVu, dv.tenDichVu, dv.donGia AS giaDichVu "
+                + "FROM TiepNhanThuCung tn "
+                + "INNER JOIN KhachHang kh ON kh.maKH = tn.maKH "
+                + "INNER JOIN ThuCung tc ON tc.maThuCung = tn.maThuCung "
+                + "LEFT JOIN DichVu dv ON dv.maLichHen = tn.maLichHen "
+                + "WHERE tn.trangThai = N'Chờ thanh toán' "
+                + "ORDER BY tn.thoiGianTiepNhan, tn.maTiepNhan, dv.tenDichVu";
+        Map<String, PhieuChoThanhToanDTO> theoMa = new LinkedHashMap<>();
+        try (Connection con = ConnectDB.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql);
+                ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                Timestamp ts = rs.getTimestamp("thoiGianTiepNhan");
+                String maTiepNhan = rs.getString("maTiepNhan");
+                PhieuChoThanhToanDTO phieu = theoMa.get(maTiepNhan);
+                if (phieu == null) {
+                    BigDecimal phiDuKien = rs.getBigDecimal("phiDuKien");
+                    phieu = new PhieuChoThanhToanDTO(maTiepNhan, ts == null ? null : ts.toLocalDateTime(),
+                            rs.getString("maKH"), rs.getString("tenKH"), rs.getString("sdt"),
+                            rs.getString("diaChi"), rs.getInt("hangThanhVien"), rs.getInt("diemTichLuy"),
+                            rs.getString("maThuCung"), rs.getString("tenThuCung"),
+                            rs.getString("dichVuYeuCau"), phiDuKien == null ? 0L : phiDuKien.longValue());
+                    theoMa.put(maTiepNhan, phieu);
+                }
+                String maDichVu = rs.getString("maDichVu");
+                if (maDichVu != null) {
+                    BigDecimal gia = rs.getBigDecimal("giaDichVu");
+                    phieu.danhSachDichVu.add(new DichVuHoaDonDTO(maDichVu, rs.getString("tenDichVu"),
+                            gia == null ? 0L : gia.longValue()));
+                }
+            }
+        }
+        return new ArrayList<>(theoMa.values());
+    }
 
     // ================= DANH MỤC =================
 
