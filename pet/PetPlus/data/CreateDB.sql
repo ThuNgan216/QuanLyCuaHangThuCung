@@ -256,7 +256,6 @@ CREATE TABLE KhuyenMai
     CONSTRAINT CK_KhuyenMai_Ngay CHECK (ngayKetThuc >= ngayBatDau)
 );
 GO
-
 /* ============================================================
    15. PHUONG THUC THANH TOAN
    ============================================================ */
@@ -342,7 +341,12 @@ CREATE TABLE TichDiem
     CONSTRAINT CK_TichDiem_Diem CHECK (diemTichLuy >= 0)
 );
 GO
+ALTER TABLE HoaDon ALTER COLUMN maKhuyenMai VARCHAR(20) NULL;
 
+ALTER TABLE ChiTietHoaDon DROP CONSTRAINT PK_ChiTietHoaDon;
+
+ALTER TABLE ChiTietHoaDon ADD maChiTiet INT IDENTITY(1,1) NOT NULL;
+ALTER TABLE ChiTietHoaDon ADD CONSTRAINT PK_ChiTietHoaDon PRIMARY KEY (maChiTiet);
 /* ============================================================
    INDEX
    ============================================================ */

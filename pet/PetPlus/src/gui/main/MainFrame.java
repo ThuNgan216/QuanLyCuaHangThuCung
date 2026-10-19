@@ -17,6 +17,7 @@ import javax.swing.table.JTableHeader;
 import gui.panel.pnlHoaDon;
 import gui.panel.pnlThuCung;
 import gui.panel.pnlTichDiem;
+import gui.panel.pnlXuatHoaDon;
 import gui.panel.pnlDichVu;
 import gui.panel.pnlLichHen;
 import gui.panel.pnlKhachHang;
@@ -50,20 +51,18 @@ public class MainFrame extends JFrame {
     private JLabel lblDoanhThuHomNay;
 
     // Thanh menu ngang
-    private final String[] MENU_ITEMS = { "1. Hệ thống", "2. Danh mục", "3. Cập nhật",
-            "4. Xử lý", "5. Tìm kiếm", "6. Báo biểu" };
-    private final String[] MENU_ICONS = { "settings.png", "box.png", "employee.png",
-            "cart.png", "search.png", "chart.png" };
+    private final String[] MENU_ITEMS = { "1. Hệ thống", "2. Danh mục", "3. Cập nhật", "4. Xử lý", "5. Tìm kiếm",
+            "6. Báo biểu" };
+    private final String[] MENU_ICONS = { "settings.png", "box.png", "employee.png", "cart.png", "search.png",
+            "chart.png" };
     // Menu con theo từng nhóm chức năng (thả xuống khi bấm vào nhóm)
     private final String[][] SUB_MENUS = {
-            { "Đổi mật khẩu tài khoản", "Phân quyền vai trò", "Bàn giao ca / Chốt két",
-                    "Đăng xuất tài khoản", "Thoát ứng dụng" },
-            { "Sản phẩm", "Dịch vụ", "Nhà cung cấp", "Khuyến mãi", "Ca làm việc" },
-            { "Nhân viên", "Khách hàng", "Thú cưng", "Đơn hàng", "Lịch hẹn", "Xếp lịch làm việc" },
-            { "Bán hàng và dịch vụ", "Thanh toán", "Quét mã vạch", "Đặt lịch dịch vụ", "Nhập hàng",
-                    "Cảnh báo tồn kho" },
+            { "Phân quyền vai trò", "Đăng xuất tài khoản", "Thoát ứng dụng" },
+            { "Sản phẩm", "Dịch vụ", "Nhà cung cấp", "Khuyến mãi", "Lịch làm việc" },
+            { "Nhân viên", "Khách hàng", "Thú cưng", "Lịch hẹn", "Sản phẩm(Nhập hàng)" },
+            { "Bán hàng và dịch vụ", "Quét mã vạch", "Xếp lịch làm việc", "Xuất hóa đơn" },
             { "Sản phẩm", "Khách hàng", "Hóa đơn", "Lịch hẹn", "Nhân viên", "Dịch vụ", "Phiếu nhập" },
-            { "Doanh thu", "Lợi nhuận", "Nhập hàng", "Tồn kho", "Dịch vụ" }
+            { "Doanh thu", "Cảnh báo tồn kho", "Dịch vụ", "Sản phẩm" }
     };
 
     // Phím tắt hiển thị bên phải mục menu
@@ -136,6 +135,7 @@ public class MainFrame extends JFrame {
         registerCard("Dịch vụ", new pnlDichVu());
         registerCard("Lịch hẹn", new pnlLichHen());
         registerCard("Đổi mật khẩu", placeholder("Đổi mật khẩu"));
+        registerCard("Xuất hóa đơn", new pnlXuatHoaDon());
 
         // 5. HIỂN THỊ THÔNG TIN TÀI KHOẢN (trên tiêu đề cửa sổ)
         updateAccountInfo();

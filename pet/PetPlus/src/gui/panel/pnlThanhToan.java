@@ -6,7 +6,6 @@ import utils.Auth;
 
 import java.awt.*;
 import java.awt.event.*;
-import java.math.BigDecimal;
 import java.text.NumberFormat;
 import java.text.Normalizer;
 import java.time.LocalDateTime;
@@ -14,7 +13,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.sql.*;
 
@@ -26,8 +24,8 @@ import javax.swing.table.*;
 
 /**
  * Giao diện bán hàng và dịch vụ PETPLUS.
- * Truy vấn danh mục/khách hàng được gọi thông qua ThanhToanDAO.
- * Phần ghi HoaDon/ChiTietHoaDon cần được hoàn thiện theo schema CSDL thực tế.
+ * Truy vấn danh mục/khách hàng và ghi HoaDon/ChiTietHoaDon được gọi thông qua
+ * ThanhToanDAO.
  */
 public class pnlThanhToan extends JPanel {
     private static final Color PINK = new Color(246, 65, 125);
@@ -931,9 +929,8 @@ public class pnlThanhToan extends JPanel {
     }
 
     /**
-     * Tạm giữ transaction tại giao diện để tương thích ThanhToanDAO đã cung cấp.
-     * Cần triển khai luuHoaDon() theo đúng schema HoaDon/ChiTietHoaDon trước khi sử
-     * dụng bán thật.
+     * Lưu khách hàng mới (nếu có) và hóa đơn trong cùng một transaction.
+     * Lỗi ở bất kỳ bước nào sẽ rollback toàn bộ.
      */
     private void luuDonHang() {
         final boolean themKhach = khachMoi;
@@ -947,6 +944,13 @@ public class pnlThanhToan extends JPanel {
         final String phuongThuc = rbCash.isSelected() ? "Tiền mặt" : "QR Code";
         final double tyLeGiam = layTyLeGiamGia();
         final int diemSuDung = soDiemSuDung;
+        long khachDua;
+        try {
+            khachDua = rbCash.isSelected() ? parseMoney(txtPaid.getText()) : total;
+        } catch (Exception ex) {
+            khachDua = total;
+        }
+        final long tienKhachDua = khachDua;
 
         btnConfirm.setEnabled(false);
         new SwingWorker<String, Void>() {
@@ -967,8 +971,8 @@ public class pnlThanhToan extends JPanel {
                             maKH = khachCu.maKH;
                         }
 
-                        // Không commit một khách hàng mới nếu phần ghi hóa đơn chưa được cài đặt.
-                        luuHoaDon(con, maKH, maNV, dong, tongTien, phuongThuc, tyLeGiam, diemSuDung);
+                        luuHoaDon(con, maKH, maNV, dong, tongTien, phuongThuc,
+                                tyLeGiam, diemSuDung, tienKhachDua);
                         con.commit();
                         return maKH;
                     } catch (Exception ex) {
@@ -1016,16 +1020,19 @@ public class pnlThanhToan extends JPanel {
     }
 
     /**
-     * Chưa thể viết SQL lưu hóa đơn an toàn khi chưa có schema các bảng của dự án.
-     * Phương thức cố ý ném lỗi để transaction rollback thay vì báo thành công giả.
+     * Ghi HoaDon, ChiTietHoaDon, trừ tồn kho và cập nhật điểm tích lũy.
+     * Dùng chung Connection (transaction) do luuDonHang() quản lý.
      */
     private void luuHoaDon(Connection con, String maKH, String maNV,
             List<Object[]> dong, long tongTien,
             String phuongThuc, double tyLeGiam,
-            int diemSuDung) throws SQLException {
-        throw new SQLFeatureNotSupportedException(
-                "ThanhToanDAO/CSDL chưa được cấu hình phần lưu HoaDon và ChiTietHoaDon. "
-                        + "Cần bổ sung SQL theo cấu trúc bảng PETPLUS trước khi xác nhận thanh toán.");
+            int diemSuDung, long tienKhachDua) throws SQLException {
+        String maHD = thanhToanDAO.taoMaHoaDon(con);
+        String maPTTT = thanhToanDAO.layMaPTTT(con, phuongThuc);
+        thanhToanDAO.themHoaDon(con, maHD, maNV, maKH, maPTTT);
+        thanhToanDAO.themChiTiet(con, maHD, dong, tienKhachDua);
+        thanhToanDAO.truTonKho(con, dong);
+        thanhToanDAO.capNhatDiem(con, maKH, diemSuDung, tongTien);
     }
 
     private void cancelPayment() {
