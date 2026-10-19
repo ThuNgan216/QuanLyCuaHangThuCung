@@ -5,7 +5,10 @@ import service.KhachHangService;
 import entity.KhachHang;
 
 import javax.swing.*;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.JTableHeader;
+
 import java.awt.*;
 import java.util.List;
 
@@ -20,7 +23,9 @@ public class pnlKhachHang extends JPanel {
     private JButton btnSua;
     private JButton btnXoa;
     private JButton btnLamMoi;
-
+    private JComboBox<Integer> cboHangLoc;
+    private JButton btnLoc;
+    private JComboBox<String> cboTieuChiLoc;
     private final KhachHangService khachHangService = new KhachHangService();
 
     public pnlKhachHang() {
@@ -51,12 +56,30 @@ public class pnlKhachHang extends JPanel {
         btnTimKiem = new JButton("Tìm kiếm");
         btnLamMoi = new JButton("Làm mới");
 
-        JPanel pnlTimKiem = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 10));
+        JPanel pnlTimKiem = new JPanel(
+                new FlowLayout(FlowLayout.LEFT, 8, 10));
+
         pnlTimKiem.setBackground(Color.WHITE);
+
         pnlTimKiem.add(new JLabel("Mã / Tên / SĐT:"));
         pnlTimKiem.add(txtTimKiem);
         pnlTimKiem.add(btnTimKiem);
         pnlTimKiem.add(btnLamMoi);
+
+        // Lọc theo hạng thành viên
+        cboHangLoc = new JComboBox<>();
+
+        for (int i = 1; i <= 10; i++) {
+            cboHangLoc.addItem(i);
+        }
+
+        cboHangLoc.setFont(new Font("Arial", Font.PLAIN, 13));
+
+        btnLoc = new JButton("Lọc");
+
+        pnlTimKiem.add(new JLabel("Hạng thành viên:"));
+        pnlTimKiem.add(cboHangLoc);
+        pnlTimKiem.add(btnLoc);
 
         JPanel pnlTren = new JPanel(new BorderLayout());
         pnlTren.setBackground(Color.WHITE);
@@ -84,21 +107,55 @@ public class pnlKhachHang extends JPanel {
 
         tblKhachHang = new JTable(model);
         tblKhachHang.setFont(new Font("Arial", Font.PLAIN, 13));
-        tblKhachHang.setRowHeight(28);
-        tblKhachHang.getTableHeader().setFont(
-                new Font("Arial", Font.BOLD, 13));
+        tblKhachHang.setForeground(new Color(32, 44, 64));
+        tblKhachHang.setBackground(Color.WHITE);
+        tblKhachHang.setRowHeight(36);
+        tblKhachHang.setGridColor(new Color(237, 217, 225));
+        tblKhachHang.setShowGrid(true);
+        tblKhachHang.setIntercellSpacing(new Dimension(1, 1));
         tblKhachHang.setSelectionMode(
                 ListSelectionModel.SINGLE_SELECTION);
         tblKhachHang.setAutoCreateRowSorter(true);
+        tblKhachHang.setFillsViewportHeight(true);
 
+        tblKhachHang.setSelectionBackground(
+                new Color(255, 236, 243));
+        tblKhachHang.setSelectionForeground(
+                new Color(32, 44, 64));
+
+        // Tiêu đề các cột
+        JTableHeader header = tblKhachHang.getTableHeader();
+        header.setFont(new Font("Arial", Font.BOLD, 13));
+        header.setForeground(new Color(32, 44, 64));
+        header.setBackground(new Color(255, 236, 243));
+        header.setPreferredSize(new Dimension(0, 42));
+        header.setReorderingAllowed(false);
+
+        // Căn lề và màu nền cho từng ô
+        DefaultTableCellRenderer renderer = new DefaultTableCellRenderer();
+
+        renderer.setBackground(Color.WHITE);
+        renderer.setForeground(new Color(32, 44, 64));
+        renderer.setBorder(BorderFactory.createMatteBorder(
+                0, 0, 1, 1, new Color(237, 217, 225)));
+        renderer.setVerticalAlignment(SwingConstants.CENTER);
+
+        for (int i = 0; i < tblKhachHang.getColumnCount(); i++) {
+            tblKhachHang.getColumnModel()
+                    .getColumn(i).setCellRenderer(renderer);
+        }
+
+        // Tùy chỉnh thanh cuộn
         JScrollPane scrBang = new JScrollPane(tblKhachHang);
+        scrBang.setBorder(BorderFactory.createLineBorder(
+                new Color(237, 217, 225)));
+        scrBang.getViewport().setBackground(Color.WHITE);
+
         add(scrBang, BorderLayout.CENTER);
 
-        // Các nút chức năng
         btnThem = new JButton("Thêm");
         btnSua = new JButton("Sửa");
         btnXoa = new JButton("Xóa");
-
         JPanel pnlNut = new JPanel(
                 new FlowLayout(FlowLayout.RIGHT, 10, 5));
         pnlNut.setBackground(Color.WHITE);
@@ -110,10 +167,9 @@ public class pnlKhachHang extends JPanel {
     }
 
     private void ganSuKien() {
-        btnTimKiem.addActionListener(e -> timKiem());
-
         btnLamMoi.addActionListener(e -> {
             txtTimKiem.setText("");
+            cboHangLoc.setSelectedIndex(0);
             taiDanhSach();
         });
 
@@ -121,7 +177,44 @@ public class pnlKhachHang extends JPanel {
         btnSua.addActionListener(e -> suaKhachHang());
         btnXoa.addActionListener(e -> xoaKhachHang());
 
+        btnTimKiem.addActionListener(e -> timKiem());
         txtTimKiem.addActionListener(e -> timKiem());
+
+        btnLoc.addActionListener(e -> locVaTimKiem());
+    }
+
+    private void locVaTimKiem() {
+        try {
+            int hangCanLoc = (Integer) cboHangLoc.getSelectedItem();
+
+            List<KhachHang> ds = khachHangService.layDanhSach();
+            model.setRowCount(0);
+
+            for (KhachHang kh : ds) {
+                // Chỉ lấy khách hàng thuộc hạng đã chọn
+                if (kh.getHangThanhVien() == hangCanLoc) {
+                    model.addRow(new Object[] {
+                            kh.getMaKH(),
+                            kh.getTenKH(),
+                            kh.getSdt(),
+                            kh.getDiaChi(),
+                            kh.getHangThanhVien(),
+                            kh.getDiemTichLuy()
+                    });
+                }
+            }
+
+            if (model.getRowCount() == 0) {
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Không tìm thấy khách hàng thuộc hạng " + hangCanLoc + "!",
+                        "Thông báo",
+                        JOptionPane.INFORMATION_MESSAGE);
+            }
+
+        } catch (Exception e) {
+            hienThiLoi("Lỗi khi lọc khách hàng.", e);
+        }
     }
 
     private void taiDanhSach() {
