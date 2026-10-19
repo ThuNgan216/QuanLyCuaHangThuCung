@@ -62,8 +62,8 @@ public class MainFrame extends JFrame {
             { "Đổi mật khẩu", "Phân quyền" },
             { "Sản phẩm", "Dịch vụ", "Nhà cung cấp", "Khuyến mãi", "Ca làm việc" },
             { "Nhân viên", "Khách hàng", "Thú cưng", "Đơn hàng", "Lịch hẹn", "Xếp lịch làm việc" },
-            { "Bán hàng", "Nhập hàng", "Cảnh báo tồn kho" },
             { "Sản phẩm", "Khách hàng", "Hóa đơn", "Lịch hẹn", "Nhân viên", "Dịch vụ", "Phiếu nhập" },
+            { "Bán hàng", "Nhập hàng", "Cảnh báo tồn kho" },
             { "Doanh thu", "Lợi nhuận", "Nhập hàng", "Tồn kho", "Dịch vụ" }
     };
     private final JButton[] menuButtons = new JButton[MENU_ITEMS.length];
