@@ -25,7 +25,6 @@ public class pnlDichVu extends JPanel {
         JButton btnTim = new JButton("Tìm"); JButton btnTai = new JButton("Tải lại"); JButton btnThem = new JButton("Thêm"); JButton btnSua = new JButton("Sửa"); JButton btnXoa = new JButton("Xóa");
         top.add(btnTim); top.add(btnTai); top.add(btnThem); top.add(btnSua); top.add(btnXoa); add(top, BorderLayout.BEFORE_FIRST_LINE);
         table.setRowHeight(27); table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION); table.getTableHeader().setFont(new Font("Arial", Font.BOLD, 12)); add(new JScrollPane(table), BorderLayout.CENTER);
-        JLabel note = new JLabel("Theo cấu trúc database hiện tại, mỗi dịch vụ phải gắn với một mã lịch hẹn."); note.setForeground(new Color(89, 111, 140)); add(note, BorderLayout.SOUTH);
         btnTim.addActionListener(e -> tim()); txtTim.addActionListener(e -> tim()); btnTai.addActionListener(e -> { txtTim.setText(""); tai(); });
         btnThem.addActionListener(e -> moDialog(null)); btnSua.addActionListener(e -> { DichVu d = chon(); if (d != null) moDialog(d); }); btnXoa.addActionListener(e -> xoa());
         tai();
