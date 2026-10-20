@@ -11,21 +11,16 @@ public final class ConnectDB {
             + "trustServerCertificate=true;";
 
     private static final String USERNAME = "sa";
-    private static final String PASSWORD_ENV = "PETPLUS_DB_PASSWORD";
+    private static final String PASSWORD = "123456";
 
     private ConnectDB() {
     }
 
     public static Connection getConnection() throws SQLException {
-        String password = System.getenv(PASSWORD_ENV);
-        if (password == null || password.trim().isEmpty()) {
-            throw new SQLException("Chua cau hinh bien moi truong " + PASSWORD_ENV + ".");
-        }
-
         return DriverManager.getConnection(
                 URL,
                 USERNAME,
-                password);
+                PASSWORD);
     }
 
     public static void main(String[] args) {

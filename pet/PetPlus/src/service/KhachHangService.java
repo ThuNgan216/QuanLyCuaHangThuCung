@@ -36,15 +36,13 @@ public class KhachHangService {
     }
 
     // 4. Thêm khách hàng
+    public String taoMaMoi() { return khachHangDAO.taoMaMoi(); }
+
     public boolean them(KhachHang kh) {
+        if (kh == null) throw new IllegalArgumentException("Thông tin khách hàng không hợp lệ.");
+        // Mã do hệ thống phát sinh, không lấy mã người dùng nhập.
+        kh.setMaKH(khachHangDAO.taoMaMoi());
         kiemTraDuLieu(kh);
-
-        if (khachHangDAO.timTheoMa(kh.getMaKH().trim()) != null) {
-            throw new IllegalArgumentException(
-                "Mã khách hàng đã tồn tại."
-            );
-        }
-
         return khachHangDAO.them(kh);
     }
 
@@ -95,10 +93,8 @@ public class KhachHangService {
         String sdt = kh.getSdt() == null
             ? "" : kh.getSdt().trim();
 
-        if (ma.isEmpty()) {
-            throw new IllegalArgumentException(
-                "Mã khách hàng không được để trống."
-            );
+        if (ma.isEmpty() && kh.getMaKH() != null) {
+            throw new IllegalArgumentException("Mã khách hàng không hợp lệ.");
         }
 
         if (ma.length() > 20) {

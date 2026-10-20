@@ -1,6 +1,5 @@
 package gui.dialogs;
 
-import dao.LichHenDAO;
 import entity.*;
 import service.LichHenService;
 import javax.swing.*;
@@ -10,29 +9,39 @@ import java.time.format.DateTimeFormatter;
 import java.time.YearMonth;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
-import java.util.Locale;
+import java.util.*;
+import java.util.List;
 
 public class dlgLichHen extends JDialog {
     private final JTextField txtMa=new JTextField(18), txtThoiGian=new JTextField(18);
-    private final JButton btnChonThoiGian = new JButton("Chọn ngày, giờ...");
+    private final JTextField txtTimKH=new JTextField(18);
+    private final JButton btnChonThoiGian=new JButton("Chọn ngày, giờ...");
     private final JComboBox<TrangThaiLichHen> cboTrangThai=new JComboBox<>(TrangThaiLichHen.values());
     private final JComboBox<String> cboNV=new JComboBox<>(), cboKH=new JComboBox<>(), cboThuCung=new JComboBox<>();
+    private final Map<String,NhanVien> nhanVienMap=new LinkedHashMap<>();
+    private final Map<String,KhachHang> khachHangMap=new LinkedHashMap<>();
+    private final Map<String,ThuCung> thuCungMap=new LinkedHashMap<>();
     private final LichHenService service=new LichHenService();
-    private final LichHen duLieu; private boolean saved=false;
+    private final LichHen duLieu; private boolean saved=false; private boolean dangNap=false;
     private static final DateTimeFormatter F=DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
-    public dlgLichHen(Window owner,LichHen lichHen){super(owner,lichHen==null?"Thêm lịch hẹn":"Cập nhật lịch hẹn",ModalityType.APPLICATION_MODAL);this.duLieu=lichHen; khoiTao();}
-    private void khoiTao(){setLayout(new BorderLayout(10,10));JPanel form=new JPanel(new GridBagLayout());form.setBorder(BorderFactory.createEmptyBorder(15,18,8,18));GridBagConstraints g=new GridBagConstraints();g.insets=new Insets(5,5,5,5);g.fill=GridBagConstraints.HORIZONTAL;g.weightx=1;int y=0;
-        themDong(form,g,y++,"Mã lịch hẹn:",txtMa);JPanel pnlThoiGian = new JPanel(new BorderLayout(6, 0));
-        txtThoiGian.setEditable(false);
-        pnlThoiGian.add(txtThoiGian, BorderLayout.CENTER);
-        pnlThoiGian.add(btnChonThoiGian, BorderLayout.EAST);
-        themDong(form,g,y++,"Thời gian hẹn:",pnlThoiGian);
-        btnChonThoiGian.addActionListener(e -> moChonNgayGio());themDong(form,g,y++,"Trạng thái:",cboTrangThai);themDong(form,g,y++,"Mã nhân viên:",cboNV);themDong(form,g,y++,"Mã khách hàng:",cboKH);themDong(form,g,y++,"Mã thú cưng:",cboThuCung);
-        try{for(String s:service.layMaNhanVien())cboNV.addItem(s);for(String s:service.layMaKhachHang())cboKH.addItem(s);for(String s:service.layMaThuCung())cboThuCung.addItem(s);}catch(RuntimeException ex){JOptionPane.showMessageDialog(this,ex.getMessage(),"Lỗi tải dữ liệu",JOptionPane.ERROR_MESSAGE);}
-        if(duLieu!=null){txtMa.setText(duLieu.getMaLichHen());txtMa.setEditable(false);if(duLieu.getThoiGianHen()!=null)txtThoiGian.setText(duLieu.getThoiGianHen().format(F));cboTrangThai.setSelectedItem(TrangThaiLichHen.tuTen(duLieu.getTrangThai()));chon(cboNV,duLieu.getMaNV()==null?null:duLieu.getMaNV().getMaNV());chon(cboKH,duLieu.getMaKH()==null?null:duLieu.getMaKH().getMaKH());chon(cboThuCung,duLieu.getMaThuCung()==null?null:duLieu.getMaThuCung().getMaThuCung());}else{txtThoiGian.setText(LocalDateTime.now().plusDays(1).withSecond(0).withNano(0).format(F));}
-        JButton btnLuu=new JButton("Lưu"),btnHuy=new JButton("Hủy");JPanel buttons=new JPanel(new FlowLayout(FlowLayout.RIGHT));buttons.add(btnLuu);buttons.add(btnHuy);btnLuu.addActionListener(e->luu());btnHuy.addActionListener(e->dispose());add(form,BorderLayout.CENTER);add(buttons,BorderLayout.SOUTH);utils.PetPlusTheme.apply(getContentPane());pack();setLocationRelativeTo(getOwner());}
+    public dlgLichHen(Window owner,LichHen lichHen){super(owner,lichHen==null?"Thêm lịch hẹn":"Cập nhật lịch hẹn",ModalityType.APPLICATION_MODAL);this.duLieu=lichHen;khoiTao();}
+    private void khoiTao(){
+        setLayout(new BorderLayout(10,10)); JPanel form=new JPanel(new GridBagLayout());form.setBorder(BorderFactory.createEmptyBorder(15,18,8,18));GridBagConstraints g=new GridBagConstraints();g.insets=new Insets(5,5,5,5);g.fill=GridBagConstraints.HORIZONTAL;g.weightx=1;int y=0;
+        txtMa.setEditable(false);txtMa.setText(duLieu==null?service.taoMaMoi():duLieu.getMaLichHen());themDong(form,g,y++,"Mã lịch hẹn:",txtMa);
+        txtThoiGian.setEditable(false);JPanel pt=new JPanel(new BorderLayout(6,0));pt.add(txtThoiGian,BorderLayout.CENTER);pt.add(btnChonThoiGian,BorderLayout.EAST);themDong(form,g,y++,"Thời gian hẹn:",pt);btnChonThoiGian.addActionListener(e->moChonNgayGio());
+        themDong(form,g,y++,"Trạng thái:",cboTrangThai);themDong(form,g,y++,"Nhân viên:",cboNV);
+        JPanel pk=new JPanel(new BorderLayout(4,4));pk.add(txtTimKH,BorderLayout.NORTH);pk.add(cboKH,BorderLayout.CENTER);themDong(form,g,y++,"Tìm khách (tên/SĐT):",pk);
+        themDong(form,g,y++,"Thú cưng của khách:",cboThuCung);
+        try{for(NhanVien nv:service.layNhanVien()){String label=nv.getMaNV()+" - "+nv.getTenNV();nhanVienMap.put(label,nv);cboNV.addItem(label);}}catch(RuntimeException ex){JOptionPane.showMessageDialog(this,ex.getMessage(),"Lỗi tải nhân viên",JOptionPane.ERROR_MESSAGE);}
+        txtTimKH.getDocument().addDocumentListener(new javax.swing.event.DocumentListener(){public void insertUpdate(javax.swing.event.DocumentEvent e){napKhachHang();}public void removeUpdate(javax.swing.event.DocumentEvent e){napKhachHang();}public void changedUpdate(javax.swing.event.DocumentEvent e){napKhachHang();}});
+        cboKH.addActionListener(e->{if(!dangNap)napThuCung();});
+        napKhachHang();
+        if(duLieu!=null){if(duLieu.getThoiGianHen()!=null)txtThoiGian.setText(duLieu.getThoiGianHen().format(F));cboTrangThai.setSelectedItem(TrangThaiLichHen.tuTen(duLieu.getTrangThai()));if(duLieu.getMaNV()!=null){for(String k:nhanVienMap.keySet())if(nhanVienMap.get(k).getMaNV().equals(duLieu.getMaNV().getMaNV()))cboNV.setSelectedItem(k);}if(duLieu.getMaKH()!=null){txtTimKH.setText(duLieu.getMaKH().getTenKH()==null?"":duLieu.getMaKH().getTenKH());napKhachHang();for(String k:khachHangMap.keySet())if(khachHangMap.get(k).getMaKH().equals(duLieu.getMaKH().getMaKH()))cboKH.setSelectedItem(k);napThuCung();if(duLieu.getMaThuCung()!=null)for(String k:thuCungMap.keySet())if(thuCungMap.get(k).getMaThuCung().equals(duLieu.getMaThuCung().getMaThuCung()))cboThuCung.setSelectedItem(k);}}else txtThoiGian.setText(LocalDateTime.now().plusDays(1).withSecond(0).withNano(0).format(F));
+        JButton save=new JButton("Lưu"),cancel=new JButton("Hủy");JPanel buttons=new JPanel(new FlowLayout(FlowLayout.RIGHT));buttons.add(save);buttons.add(cancel);save.addActionListener(e->luu());cancel.addActionListener(e->dispose());add(form,BorderLayout.CENTER);add(buttons,BorderLayout.SOUTH);utils.PetPlusTheme.apply(getContentPane());pack();setMinimumSize(new Dimension(520,340));setLocationRelativeTo(getOwner());
+    }
     private void themDong(JPanel p,GridBagConstraints g,int y,String label,JComponent c){g.gridx=0;g.gridy=y;g.weightx=0;p.add(new JLabel(label),g);g.gridx=1;g.weightx=1;p.add(c,g);}
-    private void chon(JComboBox<String> c,String v){if(v!=null)c.setSelectedItem(v);}
+    private void napKhachHang(){String old=(String)cboKH.getSelectedItem();dangNap=true;try{cboKH.removeAllItems();khachHangMap.clear();for(KhachHang kh:service.timKhachHang(txtTimKH.getText())){String label=kh.getTenKH()+" - "+(kh.getSdt()==null?"Chưa có SĐT":kh.getSdt())+" ["+kh.getMaKH()+"]";khachHangMap.put(label,kh);cboKH.addItem(label);}if(old!=null&&khachHangMap.containsKey(old))cboKH.setSelectedItem(old);}finally{dangNap=false;}napThuCung();}
+    private void napThuCung(){String old=(String)cboThuCung.getSelectedItem();cboThuCung.removeAllItems();thuCungMap.clear();String khLabel=(String)cboKH.getSelectedItem();KhachHang kh=khachHangMap.get(khLabel);if(kh==null)return;for(ThuCung tc:service.layThuCungTheoKhach(kh.getMaKH(),"")){String label=tc.getTenThuCung()+" - "+tc.getLoai()+" - "+tc.getGiong()+" ["+tc.getMaThuCung()+"]";thuCungMap.put(label,tc);cboThuCung.addItem(label);}if(old!=null&&thuCungMap.containsKey(old))cboThuCung.setSelectedItem(old);}
     /** Mở lịch chọn ngày và giờ; người dùng không cần gõ thời gian bằng tay. */
     private void moChonNgayGio() {
         LocalDateTime hienTai;
@@ -113,6 +122,12 @@ public class dlgLichHen extends JDialog {
         dlg.pack(); dlg.setMinimumSize(new Dimension(330, 330)); dlg.setLocationRelativeTo(this); dlg.setVisible(true);
     }
 
-    private void luu(){try{if(cboNV.getSelectedItem()==null||cboKH.getSelectedItem()==null||cboThuCung.getSelectedItem()==null)throw new IllegalArgumentException("Cần có ít nhất một nhân viên, khách hàng và thú cưng trong cơ sở dữ liệu.");if (txtThoiGian.getText().trim().isEmpty()) throw new IllegalArgumentException("Vui lòng chọn ngày và giờ hẹn.");LocalDateTime time=LocalDateTime.parse(txtThoiGian.getText().trim(),F);LichHen l=new LichHen();l.setMaLichHen(txtMa.getText().trim());l.setThoiGianHen(time);l.setTrangThai(((TrangThaiLichHen)cboTrangThai.getSelectedItem()).getTenHienThi());l.setMaNV(new NhanVien(cboNV.getSelectedItem().toString()));l.setMaKH(new KhachHang(cboKH.getSelectedItem().toString()));l.setMaThuCung(new ThuCung());l.getMaThuCung().setMaThuCung(cboThuCung.getSelectedItem().toString());if(duLieu==null)service.them(l);else service.capNhat(l);saved=true;dispose();}catch(Exception ex){JOptionPane.showMessageDialog(this,"Không thể lưu lịch hẹn: "+ex.getMessage()+"\nVui lòng chọn thời gian bằng nút Chọn ngày, giờ.","Lỗi dữ liệu",JOptionPane.ERROR_MESSAGE);}}
+    private void luu(){try{
+        String nvLabel=(String)cboNV.getSelectedItem(),khLabel=(String)cboKH.getSelectedItem(),tcLabel=(String)cboThuCung.getSelectedItem();
+        if(nvLabel==null)throw new IllegalArgumentException("Vui lòng chọn nhân viên.");if(khLabel==null)throw new IllegalArgumentException("Vui lòng tìm và chọn khách hàng.");if(tcLabel==null)throw new IllegalArgumentException("Khách hàng này chưa có thú cưng phù hợp; vui lòng chọn đúng khách hoặc xóa bộ lọc.");
+        if(txtThoiGian.getText().trim().isEmpty())throw new IllegalArgumentException("Vui lòng chọn ngày và giờ hẹn.");LocalDateTime time=LocalDateTime.parse(txtThoiGian.getText().trim(),F);
+        NhanVien nv=nhanVienMap.get(nvLabel);KhachHang kh=khachHangMap.get(khLabel);ThuCung tc=thuCungMap.get(tcLabel);if(nv==null||kh==null||tc==null)throw new IllegalArgumentException("Vui lòng chọn lại nhân viên, khách hàng và thú cưng.");
+        LichHen l=new LichHen();l.setMaLichHen(txtMa.getText().trim());l.setThoiGianHen(time);l.setTrangThai(((TrangThaiLichHen)cboTrangThai.getSelectedItem()).getTenHienThi());l.setMaNV(new NhanVien(nv.getMaNV()));l.setMaKH(new KhachHang(kh.getMaKH()));l.setMaThuCung(new ThuCung());l.getMaThuCung().setMaThuCung(tc.getMaThuCung());if(duLieu==null)service.them(l);else service.capNhat(l);saved=true;dispose();
+    }catch(Exception ex){JOptionPane.showMessageDialog(this,ex.getMessage()==null?"Dữ liệu không hợp lệ.":ex.getMessage(),"Vui lòng kiểm tra dữ liệu",JOptionPane.ERROR_MESSAGE);}}
     public boolean isSaved(){return saved;}
 }

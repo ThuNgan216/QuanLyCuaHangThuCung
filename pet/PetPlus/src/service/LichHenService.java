@@ -8,9 +8,10 @@ public class LichHenService {
     private final LichHenDAO dao=new LichHenDAO();
     public List<LichHen> layDanhSach(){return dao.layDanhSach();}
     public List<LichHen> timKiem(String key){return dao.timKiem(key);}
-    public List<String> layMaNhanVien(){return dao.layMaNhanVien();}
-    public List<String> layMaKhachHang(){return dao.layMaKhachHang();}
-    public List<String> layMaThuCung(){return dao.layMaThuCung();}
+    public List<entity.NhanVien> layNhanVien(){return dao.layNhanVien();}
+    public List<entity.KhachHang> timKhachHang(String key){return dao.timKhachHang(key);}
+    public List<entity.ThuCung> layThuCungTheoKhach(String maKH,String key){return dao.layThuCungTheoKhach(maKH,key);}
+    public String taoMaMoi(){return dao.taoMaMoi();}
     public boolean them(LichHen l){kiemTra(l);if(dao.tonTai(l.getMaLichHen().trim()))throw new IllegalArgumentException("Mã lịch hẹn đã tồn tại.");return dao.them(l);}
     public boolean capNhat(LichHen l){kiemTra(l);if(!dao.tonTai(l.getMaLichHen().trim()))throw new IllegalArgumentException("Không tìm thấy lịch hẹn.");return dao.capNhat(l);}
     public boolean xoa(String ma){if(ma==null||ma.trim().isEmpty())throw new IllegalArgumentException("Vui lòng chọn lịch hẹn cần xóa.");return dao.xoa(ma.trim());}

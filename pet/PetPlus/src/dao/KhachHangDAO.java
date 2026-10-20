@@ -112,6 +112,16 @@ public class KhachHangDAO {
         return ds;
     }
 
+
+    /** Phát sinh mã KH theo số thứ tự lớn nhất hiện có, dạng KH01, KH02... */
+    public String taoMaMoi() {
+        String sql = "SELECT MAX(TRY_CONVERT(INT, SUBSTRING(maKH, 3, 18))) FROM KhachHang WHERE maKH LIKE 'KH[0-9]%'";
+        try (Connection con = ConnectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
+            int max = 0; if (rs.next()) max = rs.getInt(1);
+            return String.format(java.util.Locale.ROOT, "KH%02d", max + 1);
+        } catch (SQLException e) { throw new IllegalStateException("Không thể phát sinh mã khách hàng: " + e.getMessage(), e); }
+    }
+
     // 4. Thêm khách hàng vào SQL Server
     public boolean them(KhachHang kh) {
         String sql = "INSERT INTO KhachHang "
