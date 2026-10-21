@@ -7,12 +7,12 @@ import java.sql.SQLException;
 public final class ConnectDB {
     private static final String URL =
             "jdbc:sqlserver://localhost:1433;"
-            + "databaseName=PetCareDB;"
+            + "databaseName=PETPLUS;"
             + "encrypt=true;"
             + "trustServerCertificate=true;";
 
     private static final String USERNAME = "sa";
-    private static final String PASSWORD = "123456";
+    private static final String PASSWORD = "sapassword";
 
     private ConnectDB() {
     }
