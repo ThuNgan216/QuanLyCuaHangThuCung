@@ -99,8 +99,8 @@ public class SanPhamDAO {
     public SanPham timTheoMa(String maSP) throws SQLException {
         String sql = "SELECT maSP, tenSP, giaBan, soLuongTon FROM dbo.SanPham WHERE maSP = ?";
         try (Connection con = ConnectDB.getConnection();
-                PreparedStatement ps = con.prepareStatement(sql)) {
-
+             PreparedStatement ps = con.prepareStatement(sql)) {
+             
             ps.setString(1, maSP);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
@@ -108,7 +108,8 @@ public class SanPhamDAO {
                             rs.getString("maSP"),
                             rs.getString("tenSP"),
                             rs.getFloat("giaBan"),
-                            rs.getInt("soLuongTon"));
+                            rs.getInt("soLuongTon")
+                    );
                 }
             }
         }
@@ -118,7 +119,7 @@ public class SanPhamDAO {
     public boolean them(SanPham sp) throws SQLException {
         String sql = "INSERT INTO dbo.SanPham (maSP, tenSP, giaBan, soLuongTon) VALUES (?, ?, ?, ?)";
         try (Connection con = ConnectDB.getConnection();
-                PreparedStatement ps = con.prepareStatement(sql)) {
+             PreparedStatement ps = con.prepareStatement(sql)) {
 
             ps.setString(1, sp.getMaSP());
             ps.setString(2, sp.getTenSP());
@@ -132,7 +133,7 @@ public class SanPhamDAO {
     public boolean capNhat(SanPham sp) throws SQLException {
         String sql = "UPDATE dbo.SanPham SET tenSP = ?, giaBan = ?, soLuongTon = ? WHERE maSP = ?";
         try (Connection con = ConnectDB.getConnection();
-                PreparedStatement ps = con.prepareStatement(sql)) {
+             PreparedStatement ps = con.prepareStatement(sql)) {
 
             ps.setString(1, sp.getTenSP());
             ps.setFloat(2, sp.getGiaBan());
@@ -146,7 +147,7 @@ public class SanPhamDAO {
     public boolean xoa(String maSP) throws SQLException {
         String sql = "DELETE FROM dbo.SanPham WHERE maSP = ?";
         try (Connection con = ConnectDB.getConnection();
-                PreparedStatement ps = con.prepareStatement(sql)) {
+             PreparedStatement ps = con.prepareStatement(sql)) {
 
             ps.setString(1, maSP);
             return ps.executeUpdate() > 0;

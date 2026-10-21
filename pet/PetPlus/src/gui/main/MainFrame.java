@@ -19,6 +19,14 @@ import gui.panel.pnlThuCung;
 import gui.panel.pnlTichDiem;
 import gui.panel.pnlXuatHoaDon;
 import gui.panel.pnlDichVu;
+import gui.panel.pnlBaoBieuNhapHang;
+import gui.panel.pnlBaoBieuDoanhThu;
+import gui.panel.pnlKhuyenMai;
+import gui.panel.pnlNhaCungCap;
+import gui.panel.pnlNhapHang;
+import gui.panel.pnlTimKiemPhieuNhap;
+import gui.panel.pnlTonKho;
+import gui.panel.pnlTiepNhanThuCung;
 import gui.panel.pnlLichHen;
 import gui.panel.pnlKhachHang;
 import gui.panel.pnlQuanLyHoaDon;
@@ -26,9 +34,12 @@ import gui.panel.pnlNhanVien;
 import utils.Auth;
 import dao.HoaDonDAO;
 import dao.SanPhamDAO;
+import gui.dialogs.dlgDoiMatKhau;
 import gui.dialogs.dlgQuetMaVach;
 import gui.panel.pnlSanPham;
 import gui.panel.pnlThanhToan;
+import gui.panel.pnlXemLichLamViec;
+import gui.panel.pnlXepLichLamViec;
 
 public class MainFrame extends JFrame {
     private static final Color PRIMARY = new Color(250, 48, 115);
@@ -49,6 +60,8 @@ public class MainFrame extends JFrame {
     private JLabel lblDichVuHomNay;
     private JLabel lblSanPhamHomNay;
     private JLabel lblDoanhThuHomNay;
+    private pnlXemLichLamViec xemLichPanel;
+    private pnlXepLichLamViec xepLichPanel;
 
     // Thanh menu ngang
     private final String[] MENU_ITEMS = { "1. Hệ thống", "2. Danh mục", "3. Cập nhật", "4. Xử lý", "5. Tìm kiếm",
@@ -57,12 +70,12 @@ public class MainFrame extends JFrame {
             "chart.png" };
     // Menu con theo từng nhóm chức năng (thả xuống khi bấm vào nhóm)
     private final String[][] SUB_MENUS = {
-            { "Phân quyền vai trò", "Đăng xuất tài khoản", "Thoát ứng dụng" },
+            { "Đổi mật khẩu tài khoản", "Phân quyền vai trò", "Đăng xuất tài khoản", "Thoát ứng dụng" },
             { "Sản phẩm", "Dịch vụ", "Nhà cung cấp", "Khuyến mãi", "Lịch làm việc" },
-            { "Nhân viên", "Khách hàng", "Thú cưng", "Lịch hẹn", "Sản phẩm(Nhập hàng)" },
-            { "Bán hàng và dịch vụ", "Quét mã vạch", "Xếp lịch làm việc", "Xuất hóa đơn" },
-            { "Sản phẩm", "Khách hàng", "Hóa đơn", "Lịch hẹn", "Nhân viên", "Dịch vụ", "Phiếu nhập" },
-            { "Doanh thu", "Cảnh báo tồn kho", "Dịch vụ", "Sản phẩm" }
+            { "Nhân viên", "Khách hàng", "Thú cưng", "Lịch hẹn", "Nhập hàng" },
+            { "Tiếp nhận thú cưng", "Lập hóa đơn", "Quét mã vạch", "Tích điểm", "Xếp lịch làm việc", "Xuất hóa đơn" },
+            { "Sản phẩm", "Khách hàng", "Hóa đơn", "Lịch hẹn", "Nhân viên", "Dịch vụ", "Tìm kiếm phiếu nhập" },
+            { "Doanh thu", "Cảnh báo tồn kho", "Báo biểu nhập hàng" }
     };
 
     // Phím tắt hiển thị bên phải mục menu
@@ -124,7 +137,7 @@ public class MainFrame extends JFrame {
 
         // Khởi tạo giao diện tạo đơn hàng
         // Giao diện bán hàng và dịch vụ
-        registerCard("Bán hàng và dịch vụ", new pnlThanhToan());
+        registerCard("Lập hóa đơn", new pnlThanhToan());
 
         // Đăng ký trang quản lý hóa đơn
         registerCard("Quản lý hóa đơn", new pnlHoaDon());
@@ -134,8 +147,15 @@ public class MainFrame extends JFrame {
         registerCard("Tích điểm", new pnlTichDiem());
         registerCard("Dịch vụ", new pnlDichVu());
         registerCard("Lịch hẹn", new pnlLichHen());
-        registerCard("Đổi mật khẩu", placeholder("Đổi mật khẩu"));
         registerCard("Xuất hóa đơn", new pnlXuatHoaDon());
+        xemLichPanel = new pnlXemLichLamViec();
+        xepLichPanel = new pnlXepLichLamViec();
+
+        xepLichPanel.setOnChanged(
+                () -> xemLichPanel.chuyenDenTuan(xepLichPanel.getDauTuan()));
+
+        registerCard("Lịch làm việc", xemLichPanel);
+        registerCard("Xếp lịch làm việc", xepLichPanel);
 
         // 5. HIỂN THỊ THÔNG TIN TÀI KHOẢN (trên tiêu đề cửa sổ)
         updateAccountInfo();
@@ -148,6 +168,7 @@ public class MainFrame extends JFrame {
         javax.swing.Timer clock = new javax.swing.Timer(60000, e -> updateDate());
         clock.start();
         updateDate();
+
     }
 
     // Hiển thị thông tin người đăng nhập trên tiêu đề cửa sổ
@@ -247,6 +268,15 @@ public class MainFrame extends JFrame {
             return;
         }
 
+        if ("Đổi mật khẩu tài khoản".equals(action)) {
+            if (!Auth.isLogin() || Auth.user.getMaTK() == null) {
+                JOptionPane.showMessageDialog(this, "Vui lòng đăng nhập để đổi mật khẩu.",
+                        "Chưa đăng nhập", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            new dlgDoiMatKhau(this).setVisible(true);
+            return;
+        }
         // Mở giao diện quét mã vạch
         if ("Quét mã vạch".equals(action)) {
             new dlgQuetMaVach(this).setVisible(true);
@@ -255,29 +285,33 @@ public class MainFrame extends JFrame {
 
         // Các mục menu có giao diện hiện có được mở trên màn hình tương ứng.
         if ("Thanh toán".equals(action)) {
-            cardName = "Bán hàng và dịch vụ";
+            cardName = "Lập hóa đơn";
+            title = "Lập hóa đơn";
+        } else if ("Bán hàng và dịch vụ".equals(action)) {
+            cardName = "Lập hóa đơn";
+            title = "Lập hóa đơn";
         } else if ("Đặt lịch dịch vụ".equals(action)) {
             cardName = "Lịch hẹn";
         } else if ("Đơn hàng".equals(action)) {
             cardName = "Hóa đơn";
+        } else if ("Nhập hàng".equals(action)) {
+            cardName = "Nhập hàng";
+        } else if ("Phiếu nhập".equals(action) || "Tìm kiếm phiếu nhập".equals(action)) {
+            cardName = "Tìm kiếm phiếu nhập";
+        } else if ("Cảnh báo tồn kho".equals(action) || "Tồn kho".equals(action)) {
+            cardName = "Tồn kho";
         } else if ("Doanh thu".equals(action)) {
-            cardName = "Trang chủ";
-        } else if ("Tồn kho".equals(action)) {
-            cardName = "Sản phẩm";
+            cardName = "Báo biểu doanh thu";
+            title = "Báo biểu doanh thu";
         } else if ("Thống kê doanh thu".equals(action) || "Sản phẩm bán chạy".equals(action)) {
             cardName = "Trang chủ";
-        } else if ("Đổi mật khẩu tài khoản".equals(action)) {
-            cardName = "Đổi mật khẩu";
         } else if ("Phân quyền vai trò".equals(action)) {
             cardName = "Nhân viên";
-        } else if (menuIndex == 5 && "Dịch vụ".equals(action)) {
-            // Mục báo biểu dịch vụ chưa có màn hình báo cáo riêng.
-            cardName = "Báo cáo dịch vụ";
         }
 
         // Hiển thị giao diện chức năng
         if (!registeredCards.contains(cardName)) {
-            registerCard(cardName, placeholder(title));
+            registerCard(cardName, createPage(cardName, title));
         }
 
         if ("Nhân viên".equals(cardName) && employeePanel != null) {
@@ -285,8 +319,34 @@ public class MainFrame extends JFrame {
         }
         pageTitle.setText(title);
         cardLayout.show(cardPanel, cardName);
+        if ("Lịch làm việc".equals(cardName) && xemLichPanel != null) {
+            xemLichPanel.taiLich();
+        }
+
+        if ("Xếp lịch làm việc".equals(cardName) && xepLichPanel != null) {
+            xepLichPanel.lamMoi();
+        }
     }
 
+    private JPanel createPage(String cardName, String title) {
+        if ("Nhà cung cấp".equals(cardName))
+            return new pnlNhaCungCap();
+        if ("Khuyến mãi".equals(cardName))
+            return new pnlKhuyenMai();
+        if ("Nhập hàng".equals(cardName))
+            return new pnlNhapHang();
+        if ("Tìm kiếm phiếu nhập".equals(cardName))
+            return new pnlTimKiemPhieuNhap();
+        if ("Báo biểu nhập hàng".equals(cardName))
+            return new pnlBaoBieuNhapHang();
+        if ("Tiếp nhận thú cưng".equals(cardName))
+            return new pnlTiepNhanThuCung();
+        if ("Báo biểu doanh thu".equals(cardName))
+            return new pnlBaoBieuDoanhThu();
+        if ("Tồn kho".equals(cardName))
+            return new pnlTonKho();
+        return placeholder(title);
+    }
     private void registerCard(String name, JPanel page) {
         if (registeredCards.add(name))
             cardPanel.add(page, name);
