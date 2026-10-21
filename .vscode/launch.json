@@ -55,7 +55,8 @@
             "classPaths": [
                 "$Auto",
                 "${workspaceFolder}/pet/PetPlus/lib/sqljdbc42.jar"
-            ]
+            ],
+            "env":{"PETPLUS_DB_PASWORD": "sapassword"}
         },
         {
             "type": "java",
