@@ -2,7 +2,6 @@ package dao;
 
 import database.ConnectDB;
 import entity.NhaCungCap;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -56,6 +55,30 @@ public class NhaCungCapDAO {
             e.printStackTrace();
         }
         return null;
+    }
+
+    // --- HÀM MỚI: PHÁT SINH MÃ TỰ ĐỘNG ---
+    public String phatSinhMaNCCMoi() throws SQLException {
+        String sql = "SELECT TOP 1 maNCC FROM dbo.NhaCungCap ORDER BY maNCC DESC";
+        try (Connection con = ConnectDB.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            
+            if (rs.next()) {
+                String maMax = rs.getString("maNCC"); // VD: NCC005
+                try {
+                    // Lấy phần số sau chữ NCC (từ vị trí thứ 3), ví dụ "005" -> 5
+                    int soHienTai = Integer.parseInt(maMax.substring(3));
+                    int soMoi = soHienTai + 1;
+                    // Định dạng lại thành NCC + 3 chữ số (NCC006)
+                    return String.format("NCC%03d", soMoi);
+                } catch (NumberFormatException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        // Trả về mặc định nếu bảng đang rỗng hoặc lỗi phân tích chuỗi
+        return "NCC001";
     }
 
     public boolean them(NhaCungCap ncc) {
