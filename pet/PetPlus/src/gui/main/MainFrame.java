@@ -14,6 +14,7 @@ import javax.swing.event.MenuListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
+<<<<<<< HEAD
 import gui.panel.pnlHoaDon;
 import gui.panel.pnlThuCung;
 import gui.panel.pnlTichDiem;
@@ -31,6 +32,9 @@ import gui.panel.pnlLichHen;
 import gui.panel.pnlKhachHang;
 import gui.panel.pnlQuanLyHoaDon;
 import gui.panel.pnlNhanVien;
+=======
+import gui.panel.pnlQuanLyHoaDon;
+>>>>>>> 95e50a45891aa5ed4bac26dd4eec8ba51e1cb9d5
 import utils.Auth;
 import dao.HoaDonDAO;
 import dao.SanPhamDAO;
@@ -140,13 +144,29 @@ public class MainFrame extends JFrame {
         registerCard("Lập hóa đơn", new pnlThanhToan());
 
         // Đăng ký trang quản lý hóa đơn
+<<<<<<< HEAD
         registerCard("Quản lý hóa đơn", new pnlHoaDon());
         registerCard("Hóa đơn", createExistingPanel("Hóa đơn"));
+=======
+<<<<<<< HEAD
+        registerCard("Quản lý hóa đơn", placeholder("Quản lý hóa đơn"));
+        registerCard("Hóa đơn", createExistingPanel("Hóa đơn"));
+=======
+        registerCard("Quản lý hóa đơn", new pnlHoaDon());
+>>>>>>> 95e50a45891aa5ed4bac26dd4eec8ba51e1cb9d5
         registerCard("Khách hàng", new pnlKhachHang());
         registerCard("Thú cưng", new pnlThuCung());
         registerCard("Tích điểm", new pnlTichDiem());
         registerCard("Dịch vụ", new pnlDichVu());
         registerCard("Lịch hẹn", new pnlLichHen());
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> d055916 (xxxx)
+        registerCard("Đổi mật khẩu", placeholder("Đổi mật khẩu"));
+=======
+>>>>>>> 433a018 (commit truoc khi them xu ly tiep nhan thu cung)
+>>>>>>> 95e50a45891aa5ed4bac26dd4eec8ba51e1cb9d5
         registerCard("Xuất hóa đơn", new pnlXuatHoaDon());
         xemLichPanel = new pnlXemLichLamViec();
         xepLichPanel = new pnlXepLichLamViec();
@@ -157,6 +177,17 @@ public class MainFrame extends JFrame {
         registerCard("Lịch làm việc", xemLichPanel);
         registerCard("Xếp lịch làm việc", xepLichPanel);
 
+<<<<<<< HEAD
+=======
+        // Đăng ký các panel Kho
+registerCard("Nhà cung cấp", new pnlNhaCungCap());
+registerCard("Khuyến mãi", new pnlKhuyenMai());
+registerCard("Nhập hàng", new pnlNhapHang());
+registerCard("Cảnh báo tồn kho", new pnlTonKho());
+registerCard("Tìm kiếm phiếu nhập", new pnlTimKiemPhieuNhap());
+registerCard("Báo biểu nhập hàng", new pnlBaoBieuNhapHang());
+
+>>>>>>> 95e50a45891aa5ed4bac26dd4eec8ba51e1cb9d5
         // 5. HIỂN THỊ THÔNG TIN TÀI KHOẢN (trên tiêu đề cửa sổ)
         updateAccountInfo();
         // Hiển thị giao diện sản phẩm trong vùng nội dung chính
@@ -284,12 +315,23 @@ public class MainFrame extends JFrame {
         }
 
         // Các mục menu có giao diện hiện có được mở trên màn hình tương ứng.
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+       if ("Thanh toán".equals(action)) {
+            cardName = "Bán hàng và dịch vụ";
+=======
+>>>>>>> 95e50a45891aa5ed4bac26dd4eec8ba51e1cb9d5
         if ("Thanh toán".equals(action)) {
             cardName = "Lập hóa đơn";
             title = "Lập hóa đơn";
         } else if ("Bán hàng và dịch vụ".equals(action)) {
             cardName = "Lập hóa đơn";
             title = "Lập hóa đơn";
+<<<<<<< HEAD
+=======
+>>>>>>> c82e046 (them xu ly tiep nhan thu cung)
+>>>>>>> 95e50a45891aa5ed4bac26dd4eec8ba51e1cb9d5
         } else if ("Đặt lịch dịch vụ".equals(action)) {
             cardName = "Lịch hẹn";
         } else if ("Đơn hàng".equals(action)) {
@@ -301,14 +343,47 @@ public class MainFrame extends JFrame {
         } else if ("Cảnh báo tồn kho".equals(action) || "Tồn kho".equals(action)) {
             cardName = "Tồn kho";
         } else if ("Doanh thu".equals(action)) {
+<<<<<<< HEAD
             cardName = "Báo biểu doanh thu";
             title = "Báo biểu doanh thu";
+=======
+<<<<<<< HEAD
+            cardName = "Trang chủ";
+        } else if ("Tồn kho".equals(action)) {
+            cardName = "Cảnh báo tồn kho"; // pnlTonKho
+        } else if ("Nhà cung cấp".equals(action)) {
+            cardName = "Nhà cung cấp"; // pnlNhaCungCap
+        } else if ("Khuyến mãi".equals(action)) {
+            cardName = "Khuyến mãi"; // pnlKhuyenMai
+        } else if ("Nhập hàng".equals(action)) {
+            // Phân biệt: Nếu thuộc nhóm Báo biểu (menuIndex == 5) thì trỏ tới báo biểu nhập hàng, ngược lại trỏ tới màn hình nhập hàng xử lý
+            if (menuIndex == 5) {
+                cardName = "Báo biểu nhập hàng";
+            } else {
+                cardName = "Nhập hàng"; // pnlNhapHang
+            }
+        } else if ("Phiếu nhập".equals(action)) {
+            cardName = "Tìm kiếm phiếu nhập";    
+=======
+            cardName = "Báo biểu doanh thu";
+            title = "Báo biểu doanh thu";
+>>>>>>> 433a018 (commit truoc khi them xu ly tiep nhan thu cung)
+>>>>>>> 95e50a45891aa5ed4bac26dd4eec8ba51e1cb9d5
         } else if ("Thống kê doanh thu".equals(action) || "Sản phẩm bán chạy".equals(action)) {
             cardName = "Trang chủ";
         } else if ("Phân quyền vai trò".equals(action)) {
             cardName = "Nhân viên";
+<<<<<<< HEAD
         }
 
+=======
+<<<<<<< HEAD
+        } else if (menuIndex == 5 && "Dịch vụ".equals(action)) {
+            cardName = "Báo cáo dịch vụ";
+=======
+>>>>>>> 433a018 (commit truoc khi them xu ly tiep nhan thu cung)
+        }
+>>>>>>> 95e50a45891aa5ed4bac26dd4eec8ba51e1cb9d5
         // Hiển thị giao diện chức năng
         if (!registeredCards.contains(cardName)) {
             registerCard(cardName, createPage(cardName, title));
@@ -356,7 +431,11 @@ public class MainFrame extends JFrame {
     private JPanel createExistingPanel(String name) {
         try {
             if ("Nhân viên".equals(name))
+<<<<<<< HEAD
                 return new pnlNhanVien();
+=======
+                return new QuanLyNhanVienPanel();
+>>>>>>> 95e50a45891aa5ed4bac26dd4eec8ba51e1cb9d5
             if ("Hóa đơn".equals(name))
                 return new pnlQuanLyHoaDon();
             if ("Thanh toán".equals(name))

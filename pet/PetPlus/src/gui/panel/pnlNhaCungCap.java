@@ -13,11 +13,14 @@ public class pnlNhaCungCap extends JPanel {
     private final NhaCungCapService service = new NhaCungCapService();
 
     private JTextField txtTimKiem;
+<<<<<<< HEAD
     private JTextField txtMaNCC;
     private JTextField txtTenNCC;
     private JTextField txtSoDienThoai;
     private JTextField txtDiaChi;
     private JTextField txtEmail;
+=======
+>>>>>>> 95e50a45891aa5ed4bac26dd4eec8ba51e1cb9d5
 
     private JButton btnTimKiem;
     private JButton btnLamMoi;
@@ -47,7 +50,15 @@ public class pnlNhaCungCap extends JPanel {
         title.setForeground(new Color(224, 25, 91));
         add(title, BorderLayout.NORTH);
 
+<<<<<<< HEAD
         // Thanh tìm kiếm
+=======
+        // --- TẠO PANEL CHỨA THANH TÌM KIẾM (TRÁI) VÀ NÚT THAO TÁC (PHẢI) ---
+        JPanel pnlTop = new JPanel(new BorderLayout());
+        pnlTop.setOpaque(false);
+
+        // 1. Cụm thanh tìm kiếm (Đẩy sang trái)
+>>>>>>> 95e50a45891aa5ed4bac26dd4eec8ba51e1cb9d5
         JPanel pnlTimKiem = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 8));
         pnlTimKiem.setOpaque(false);
 
@@ -59,6 +70,7 @@ public class pnlNhaCungCap extends JPanel {
         pnlTimKiem.add(txtTimKiem);
         pnlTimKiem.add(btnTimKiem);
         pnlTimKiem.add(btnLamMoi);
+<<<<<<< HEAD
 
         // Bảng danh sách
         model = new DefaultTableModel(new Object[]{"Mã NCC", "Tên nhà cung cấp", "Số điện thoại", "Địa chỉ", "Email"}, 0) {
@@ -118,6 +130,13 @@ txtDiaChi.setEditable(false);
 
         // Cụm nút thao tác
         JPanel pnlNut = new JPanel(new FlowLayout(FlowLayout.CENTER, 12, 10));
+=======
+        
+        pnlTop.add(pnlTimKiem, BorderLayout.WEST);
+
+        // 2. Cụm nút thao tác (Đẩy sang phải)
+        JPanel pnlNut = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 8));
+>>>>>>> 95e50a45891aa5ed4bac26dd4eec8ba51e1cb9d5
         pnlNut.setOpaque(false);
 
         btnThem = new JButton("Thêm mới");
@@ -127,6 +146,7 @@ txtDiaChi.setEditable(false);
         pnlNut.add(btnThem);
         pnlNut.add(btnSua);
         pnlNut.add(btnXoa);
+<<<<<<< HEAD
 
         JPanel bottomPanel = new JPanel(new BorderLayout());
         bottomPanel.setOpaque(false);
@@ -134,6 +154,31 @@ txtDiaChi.setEditable(false);
         bottomPanel.add(pnlNut, BorderLayout.SOUTH);
 
         add(bottomPanel, BorderLayout.SOUTH);
+=======
+        
+        pnlTop.add(pnlNut, BorderLayout.EAST);
+
+        // --- Bảng danh sách ---
+        model = new DefaultTableModel(new Object[]{"Mã NCC", "Tên nhà cung cấp", "Số điện thoại", "Địa chỉ", "Email"}, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+        table = new JTable(model);
+        table.setRowHeight(28);
+        table.setFont(new Font("Arial", Font.PLAIN, 13));
+        table.getTableHeader().setFont(new Font("Arial", Font.BOLD, 13));
+        table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+
+        // Khu vực trung tâm chứa pnlTop và bảng
+        JPanel centerPanel = new JPanel(new BorderLayout(8, 8));
+        centerPanel.setOpaque(false);
+        centerPanel.add(pnlTop, BorderLayout.NORTH);
+        centerPanel.add(new JScrollPane(table), BorderLayout.CENTER);
+
+        add(centerPanel, BorderLayout.CENTER);
+>>>>>>> 95e50a45891aa5ed4bac26dd4eec8ba51e1cb9d5
     }
 
     private void ganSuKien() {
@@ -141,6 +186,7 @@ txtDiaChi.setEditable(false);
         txtTimKiem.addActionListener(e -> timKiem());
         btnLamMoi.addActionListener(e -> {
             txtTimKiem.setText("");
+<<<<<<< HEAD
             xoaTrangForm();
             taiDanhSach();
         });
@@ -181,6 +227,44 @@ txtDiaChi.setEditable(false);
         }
     }
 });
+=======
+            taiDanhSach();
+        });
+
+        // Nút Thêm mới
+        btnThem.addActionListener(e -> {
+            dlgNhaCungCap dlg = new dlgNhaCungCap(SwingUtilities.getWindowAncestor(this), null);
+            dlg.setVisible(true);
+            if (dlg.isDaLuu()) {
+                taiDanhSach(); 
+            }
+        });
+
+        // Nút Cập nhật
+        btnSua.addActionListener(e -> {
+            int selectedRow = table.getSelectedRow();
+            if (selectedRow < 0) {
+                JOptionPane.showMessageDialog(this, "Vui lòng chọn nhà cung cấp cần chỉnh sửa trên bảng.", "Thông báo", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            String maNCC = model.getValueAt(selectedRow, 0).toString();
+
+            NhaCungCap nccDangChon = service.layDanhSach().stream()
+                    .filter(x -> x.getMaNCC().equals(maNCC))
+                    .findFirst().orElse(null);
+
+            if (nccDangChon != null) {
+                dlgNhaCungCap dlg = new dlgNhaCungCap(SwingUtilities.getWindowAncestor(this), nccDangChon);
+                dlg.setVisible(true);
+                if (dlg.isDaLuu()) {
+                    taiDanhSach(); 
+                }
+            }
+        });
+
+        // Nút Xóa
+>>>>>>> 95e50a45891aa5ed4bac26dd4eec8ba51e1cb9d5
         btnXoa.addActionListener(e -> xoaNCC());
     }
 
@@ -213,6 +297,7 @@ txtDiaChi.setEditable(false);
         }
     }
 
+<<<<<<< HEAD
     private void hienThiLenForm() {
         int r = table.getSelectedRow();
         if (r >= 0) {
@@ -278,12 +363,25 @@ txtDiaChi.setEditable(false);
             return;
         }
 
+=======
+    private void xoaNCC() {
+        int selectedRow = table.getSelectedRow();
+        if (selectedRow < 0) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn nhà cung cấp cần xóa trên bảng.", "Thông báo", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        String ma = model.getValueAt(selectedRow, 0).toString();
+>>>>>>> 95e50a45891aa5ed4bac26dd4eec8ba51e1cb9d5
         int confirm = JOptionPane.showConfirmDialog(this, "Bạn có chắc chắn muốn xóa nhà cung cấp " + ma + "?", "Xác nhận", JOptionPane.YES_NO_OPTION);
         if (confirm == JOptionPane.YES_OPTION) {
             try {
                 if (service.xoa(ma)) {
                     JOptionPane.showMessageDialog(this, "Xóa nhà cung cấp thành công!");
+<<<<<<< HEAD
                     xoaTrangForm();
+=======
+>>>>>>> 95e50a45891aa5ed4bac26dd4eec8ba51e1cb9d5
                     taiDanhSach();
                 }
             } catch (Exception ex) {
