@@ -1,14 +1,13 @@
 package dao;
 
+import database.ConnectDB;
+import entity.SanPham;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-
-import database.ConnectDB;
-import entity.SanPham;
 
 public class SanPhamDAO {
 
@@ -95,6 +94,63 @@ public class SanPhamDAO {
             }
         }
         return danhSach;
+    }
+
+    public SanPham timTheoMa(String maSP) throws SQLException {
+        String sql = "SELECT maSP, tenSP, giaBan, soLuongTon FROM dbo.SanPham WHERE maSP = ?";
+        try (Connection con = ConnectDB.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setString(1, maSP);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return new SanPham(
+                            rs.getString("maSP"),
+                            rs.getString("tenSP"),
+                            rs.getFloat("giaBan"),
+                            rs.getInt("soLuongTon"));
+                }
+            }
+        }
+        return null;
+    }
+
+    public boolean them(SanPham sp) throws SQLException {
+        String sql = "INSERT INTO dbo.SanPham (maSP, tenSP, giaBan, soLuongTon) VALUES (?, ?, ?, ?)";
+        try (Connection con = ConnectDB.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setString(1, sp.getMaSP());
+            ps.setString(2, sp.getTenSP());
+            ps.setFloat(3, sp.getGiaBan());
+            ps.setInt(4, sp.getSoLuongTon());
+
+            return ps.executeUpdate() > 0;
+        }
+    }
+
+    public boolean capNhat(SanPham sp) throws SQLException {
+        String sql = "UPDATE dbo.SanPham SET tenSP = ?, giaBan = ?, soLuongTon = ? WHERE maSP = ?";
+        try (Connection con = ConnectDB.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setString(1, sp.getTenSP());
+            ps.setFloat(2, sp.getGiaBan());
+            ps.setInt(3, sp.getSoLuongTon());
+            ps.setString(4, sp.getMaSP());
+
+            return ps.executeUpdate() > 0;
+        }
+    }
+
+    public boolean xoa(String maSP) throws SQLException {
+        String sql = "DELETE FROM dbo.SanPham WHERE maSP = ?";
+        try (Connection con = ConnectDB.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setString(1, maSP);
+            return ps.executeUpdate() > 0;
+        }
     }
 
 }

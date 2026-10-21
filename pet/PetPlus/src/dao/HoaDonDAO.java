@@ -5,6 +5,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -276,6 +277,43 @@ public class HoaDonDAO {
             }
         }
 
+        return danhSach;
+    }
+
+    /** Báo cáo doanh thu theo ngày trong khoảng thời gian được chọn. */
+    public List<Object[]> layBaoCaoDoanhThu(LocalDate tuNgay, LocalDate denNgay) throws SQLException {
+        if (tuNgay == null || denNgay == null || tuNgay.isAfter(denNgay)) {
+            throw new IllegalArgumentException("Khoảng ngày báo cáo không hợp lệ.");
+        }
+
+        String sql = "WITH TongHoaDon AS ( " +
+                " SELECT h.maHoaDon, CAST(h.ngayLapHD AS DATE) AS ngay, " +
+                " COALESCE(SUM(ct.soLuong * ct.donGia), 0) " +
+                " * (1 - COALESCE(km.phanTramGiam, 0) / 100.0) AS doanhThu " +
+                " FROM dbo.HoaDon h " +
+                " LEFT JOIN dbo.ChiTietHoaDon ct ON h.maHoaDon = ct.maHoaDon " +
+                " LEFT JOIN dbo.KhuyenMai km ON h.maKhuyenMai = km.maKhuyenMai " +
+                " WHERE h.ngayLapHD >= ? AND h.ngayLapHD < DATEADD(DAY, 1, ?) " +
+                " GROUP BY h.maHoaDon, CAST(h.ngayLapHD AS DATE), km.phanTramGiam " +
+                ") " +
+                "SELECT ngay, COUNT(*) AS soHoaDon, COALESCE(SUM(doanhThu), 0) AS doanhThu " +
+                "FROM TongHoaDon GROUP BY ngay ORDER BY ngay";
+
+        List<Object[]> danhSach = new ArrayList<>();
+        try (Connection con = ConnectDB.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setDate(1, java.sql.Date.valueOf(tuNgay));
+            ps.setDate(2, java.sql.Date.valueOf(denNgay));
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    danhSach.add(new Object[] {
+                            rs.getDate("ngay").toLocalDate(),
+                            rs.getInt("soHoaDon"),
+                            rs.getBigDecimal("doanhThu")
+                    });
+                }
+            }
+        }
         return danhSach;
     }
 
