@@ -40,6 +40,8 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 /** Form check-in cho lịch hẹn đã đặt hoặc khách đến trực tiếp. */
 public class dlgTiepNhanThuCung extends JDialog {
@@ -59,6 +61,7 @@ public class dlgTiepNhanThuCung extends JDialog {
     };
     private final JTable tblDichVuChon = new JTable(modelDichVuChon);
     private final List<DichVu> danhSachDichVuChon = new ArrayList<>();
+    private final Set<String> dichVuDaCoTrongLich = new HashSet<>();
     private final JLabel lblSoDichVu = new JLabel("Chưa có dịch vụ nào được chọn.");
     private final JLabel lblThongTinLichHen = new JLabel(" ");
     private final JLabel lblKetQuaTraCuu = new JLabel("Nhập số điện thoại để tra cứu khách hàng.");
@@ -239,6 +242,7 @@ public class dlgTiepNhanThuCung extends JDialog {
 
         cboDichVu.removeAllItems();
         danhSachDichVuChon.clear();
+        dichVuDaCoTrongLich.clear();
         modelDichVuChon.setRowCount(0);
         capNhatSoDichVu();
         capNhatTongPhiDuKien();
@@ -246,7 +250,10 @@ public class dlgTiepNhanThuCung extends JDialog {
             List<DichVu> dichVuTheoLich = service.layDichVuTheoLichHen(lichHen.getMaLichHen());
             List<DichVu> tatCaDichVu = service.layDichVuChoTiepNhan();
             for (DichVu item : tatCaDichVu) cboDichVu.addItem(item);
-            for (DichVu item : dichVuTheoLich) themDichVuDaChon(item, false);
+            for (DichVu item : dichVuTheoLich) {
+                dichVuDaCoTrongLich.add(item.getMaDichVu());
+                themDichVuDaChon(item, false);
+            }
             if (cboDichVu.getItemCount() > 0) cboDichVu.setSelectedIndex(0);
             capNhatTongPhiDuKien();
         } catch (RuntimeException ex) {
@@ -309,17 +316,10 @@ public class dlgTiepNhanThuCung extends JDialog {
                 return;
             }
             String maDichVu = String.valueOf(modelDichVuChon.getValueAt(row, 2));
-            if (theoLichHen) {
-                LichHen lichHen = (LichHen) cboLichHen.getSelectedItem();
-                for (DichVu dichVu : danhSachDichVuChon) {
-                    if (maDichVu.equals(dichVu.getMaDichVu()) && dichVu.getMaLichHen() != null
-                            && lichHen != null && lichHen.getMaLichHen().equals(
-                                    dichVu.getMaLichHen().getMaLichHen())) {
-                        JOptionPane.showMessageDialog(this,
-                                "Dịch vụ đã có trong lịch hẹn được giữ nguyên. Chỉ xóa được dịch vụ thêm tại quầy.");
-                        return;
-                    }
-                }
+            if (theoLichHen && dichVuDaCoTrongLich.contains(maDichVu)) {
+                JOptionPane.showMessageDialog(this,
+                        "Dịch vụ đã có trong lịch hẹn được giữ nguyên. Chỉ xóa được dịch vụ thêm tại quầy.");
+                return;
             }
             danhSachDichVuChon.removeIf(d -> maDichVu.equals(d.getMaDichVu()));
             modelDichVuChon.removeRow(row);

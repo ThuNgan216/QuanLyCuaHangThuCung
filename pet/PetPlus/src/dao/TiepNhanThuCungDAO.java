@@ -96,19 +96,14 @@ public class TiepNhanThuCungDAO {
 
     public List<DichVu> layDichVuTheoLichHen(String maLichHen) {
         List<DichVu> danhSach = new ArrayList<>();
-        String sql = "SELECT maDichVu, tenDichVu, donGia, moTa, trangThai "
-                + "FROM DichVu WHERE maLichHen = ? ORDER BY tenDichVu";
+        String sql = "SELECT d.maDichVu, d.tenDichVu, c.donGia, d.moTa, d.trangThai "
+                + "FROM ChiTietLichHenDichVu c JOIN DichVu d ON d.maDichVu = c.maDichVu "
+                + "WHERE c.maLichHen = ? ORDER BY d.tenDichVu";
         try (Connection con = ConnectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, maLichHen);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    DichVu dichVu = new DichVu();
-                    dichVu.setMaDichVu(rs.getString("maDichVu"));
-                    dichVu.setTenDichVu(rs.getString("tenDichVu"));
-                    dichVu.setDonGia(rs.getBigDecimal("donGia"));
-                    dichVu.setMoTa(rs.getString("moTa"));
-                    dichVu.setTrangThai(rs.getString("trangThai"));
-                    danhSach.add(dichVu);
+                    danhSach.add(docDichVu(rs));
                 }
             }
         } catch (SQLException e) {
@@ -117,16 +112,11 @@ public class TiepNhanThuCungDAO {
         return danhSach;
     }
 
-    /** Danh sách dịch vụ có thể chọn cho khách đến trực tiếp, lấy giá hiện tại từ database. */
+    /** Danh mục dịch vụ đang hoạt động để nhân viên chọn khi tiếp nhận. */
     public List<DichVu> layDichVuChoTiepNhan() {
         List<DichVu> danhSach = new ArrayList<>();
-        String sql = "WITH DichVuMau AS ("
-                + "SELECT d.maDichVu, d.tenDichVu, d.donGia, d.moTa, d.trangThai, d.maLichHen, "
-                + "ROW_NUMBER() OVER (PARTITION BY d.tenDichVu ORDER BY lh.thoiGianHen DESC, d.maDichVu DESC) AS thuTu "
-                + "FROM DichVu d LEFT JOIN LichHen lh ON lh.maLichHen = d.maLichHen "
-                + "WHERE d.trangThai <> N'Ngừng hoạt động') "
-                + "SELECT maDichVu, tenDichVu, donGia, moTa, trangThai, maLichHen "
-                + "FROM DichVuMau WHERE thuTu = 1 ORDER BY tenDichVu";
+        String sql = "SELECT maDichVu, tenDichVu, donGia, moTa, trangThai FROM DichVu "
+                + "WHERE trangThai = N'Đang hoạt động' ORDER BY tenDichVu";
         try (Connection con = ConnectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) danhSach.add(docDichVu(rs));
@@ -265,30 +255,18 @@ public class TiepNhanThuCungDAO {
                 }
 
                 List<DichVu> dichVuDaGanVaoLich = new ArrayList<>();
-                String sqlDichVu = "INSERT INTO DichVu "
-                        + "(maDichVu, tenDichVu, donGia, moTa, trangThai, maLichHen) "
-                        + "VALUES (?, ?, ?, ?, N'Đã đặt', ?)";
-                try (PreparedStatement ps = con.prepareStatement(sqlDichVu)) {
-                    for (DichVu dichVu : phieu.getDanhSachDichVu()) {
-                        String lichHenGoc = dichVu.getMaLichHen() == null
-                                ? null : dichVu.getMaLichHen().getMaLichHen();
-                        if (phieu.getMaLichHen().equals(lichHenGoc)) {
-                            dichVuDaGanVaoLich.add(dichVu);
-                            continue;
-                        }
-                        String maDichVuMoi = "DV" + UUID.randomUUID().toString().replace("-", "")
-                                .substring(0, 18).toUpperCase();
-                        ps.setString(1, maDichVuMoi);
-                        ps.setString(2, dichVu.getTenDichVu());
-                        ps.setBigDecimal(3, dichVu.getDonGia());
-                        ps.setString(4, dichVu.getMoTa());
-                        ps.setString(5, phieu.getMaLichHen());
-                        ps.addBatch();
-                        DichVu daGan = new DichVu(maDichVuMoi, dichVu.getTenDichVu(), dichVu.getDonGia(),
-                                dichVu.getMoTa(), "Đã đặt", new LichHen(phieu.getMaLichHen()));
-                        dichVuDaGanVaoLich.add(daGan);
+                String sqlDichVu = "IF NOT EXISTS (SELECT 1 FROM ChiTietLichHenDichVu WHERE maLichHen=? AND maDichVu=?) "
+                        + "INSERT INTO ChiTietLichHenDichVu (maLichHen, maDichVu, donGia) VALUES (?, ?, ?)";
+                for (DichVu dichVu : phieu.getDanhSachDichVu()) {
+                    try (PreparedStatement ps = con.prepareStatement(sqlDichVu)) {
+                        ps.setString(1, phieu.getMaLichHen());
+                        ps.setString(2, dichVu.getMaDichVu());
+                        ps.setString(3, phieu.getMaLichHen());
+                        ps.setString(4, dichVu.getMaDichVu());
+                        ps.setBigDecimal(5, dichVu.getDonGia());
+                        ps.executeUpdate();
                     }
-                    ps.executeBatch();
+                    dichVuDaGanVaoLich.add(dichVu);
                 }
                 phieu.setDanhSachDichVu(dichVuDaGanVaoLich);
 
