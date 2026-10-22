@@ -9,6 +9,7 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.util.List;
 
+/** Giao diện CRUD quản lý thú cưng. */
 public class pnlThuCung extends JPanel {
     private final ThuCungService service = new ThuCungService();
     private final JTextField txtTimKiem = new JTextField(22);
@@ -38,13 +39,13 @@ public class pnlThuCung extends JPanel {
     }
     private void them() {
         dlgThuCung dlg = new dlgThuCung(SwingUtilities.getWindowAncestor(this), null); dlg.setVisible(true);
-        if (dlg.isSaved()) try { if (service.them(dlg.getThuCung())) { thongBao("Thêm thú cưng thành công."); taiDanhSach(); } else thongBao("Không thêm được thú cưng. Hãy kiểm tra kết nối/database."); } catch (Exception ex) { loi("Thêm thú cưng thất bại.", ex); }
+        if (dlg.isSaved()) taiDanhSach();
     }
     private void sua() {
         ThuCung selected = layDongChon(); if (selected == null) { thongBao("Vui lòng chọn thú cưng cần sửa."); return; }
         try { ThuCung full = service.timTheoMa(selected.getMaThuCung()); if (full == null) { thongBao("Không tìm thấy thú cưng."); taiDanhSach(); return; }
             dlgThuCung dlg = new dlgThuCung(SwingUtilities.getWindowAncestor(this), full); dlg.setVisible(true);
-            if (dlg.isSaved()) try { if (service.capNhat(dlg.getThuCung())) { thongBao("Cập nhật thú cưng thành công."); taiDanhSach(); } else thongBao("Không cập nhật được thú cưng."); } catch (Exception ex) { loi("Cập nhật thất bại.", ex); }
+            if (dlg.isSaved()) taiDanhSach();
         } catch (Exception ex) { loi("Không đọc được thông tin thú cưng.", ex); }
     }
     private void xoa() {

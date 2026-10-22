@@ -42,6 +42,8 @@ public class KhachHangService {
         if (kh == null) throw new IllegalArgumentException("Thông tin khách hàng không hợp lệ.");
         // Mã do hệ thống phát sinh, không lấy mã người dùng nhập.
         kh.setMaKH(khachHangDAO.taoMaMoi());
+        kh.setHangThanhVien(1);
+        kh.setDiemTichLuy(0);
         kiemTraDuLieu(kh);
         return khachHangDAO.them(kh);
     }
@@ -49,13 +51,13 @@ public class KhachHangService {
     // 5. Cập nhật khách hàng
     public boolean capNhat(KhachHang kh) {
         kiemTraDuLieu(kh);
-
-        if (khachHangDAO.timTheoMa(kh.getMaKH().trim()) == null) {
-            throw new IllegalArgumentException(
-                "Khách hàng không tồn tại."
-            );
+        KhachHang khCu = khachHangDAO.timTheoMa(kh.getMaKH().trim());
+        if (khCu == null) {
+            throw new IllegalArgumentException("Khách hàng không tồn tại.");
         }
-
+        // Không cho phép thay đổi hạng/điểm bằng cách gửi dữ liệu giả từ giao diện.
+        kh.setHangThanhVien(khCu.getHangThanhVien());
+        kh.setDiemTichLuy(khCu.getDiemTichLuy());
         return khachHangDAO.capNhat(kh);
     }
 
@@ -115,20 +117,29 @@ public class KhachHangService {
             );
         }
 
-        if (sdt.length() > 15) {
+        if (!ten.matches("[\\p{L}]+(?:\\s+[\\p{L}]+)*")) {
             throw new IllegalArgumentException(
-                "Số điện thoại tối đa 15 ký tự."
+                "Tên khách hàng chỉ được chứa chữ cái và khoảng trắng, không có số hoặc ký tự đặc biệt."
             );
         }
 
-        if (!sdt.isEmpty() && !sdt.matches("\\d{9,15}")) {
+        if (!sdt.matches("0\\d{9}")) {
             throw new IllegalArgumentException(
-                "Số điện thoại phải gồm 9 đến 15 chữ số."
+                "Số điện thoại phải bắt đầu bằng 0 và gồm đúng 10 chữ số."
             );
         }
 
-        if (kh.getDiaChi() != null
-                && kh.getDiaChi().length() > 255) {
+        String diaChi = kh.getDiaChi() == null ? "" : kh.getDiaChi().trim();
+        if (diaChi.isEmpty()) {
+            throw new IllegalArgumentException("Địa chỉ không được để trống.");
+        }
+        if (!diaChi.matches("[\\p{L}]+(?:\\s+[\\p{L}]+)*")) {
+            throw new IllegalArgumentException(
+                "Địa chỉ chỉ được chứa chữ cái và khoảng trắng."
+            );
+        }
+
+        if (diaChi.length() > 255) {
             throw new IllegalArgumentException(
                 "Địa chỉ tối đa 255 ký tự."
             );
@@ -150,10 +161,6 @@ public class KhachHangService {
         kh.setMaKH(ma);
         kh.setTenKH(ten);
         kh.setSdt(sdt.isEmpty() ? null : sdt);
-        kh.setDiaChi(
-            kh.getDiaChi() == null
-                || kh.getDiaChi().trim().isEmpty()
-                ? null : kh.getDiaChi().trim()
-        );
+        kh.setDiaChi(diaChi);
     }
 }

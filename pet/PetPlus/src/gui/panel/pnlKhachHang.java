@@ -367,6 +367,11 @@ public class pnlKhachHang extends JPanel {
         JTextField txtHang = new JTextField(dangSua ? String.valueOf(khCu.getHangThanhVien()) : "1");
         JTextField txtDiem = new JTextField(dangSua ? String.valueOf(khCu.getDiemTichLuy()) : "0");
         txtMa.setEditable(false);
+        // Hạng thành viên và điểm tích lũy do hệ thống quản lý, không cho nhập tay.
+        txtHang.setEditable(false);
+        txtDiem.setEditable(false);
+        txtHang.setFocusable(false);
+        txtDiem.setFocusable(false);
         JPanel pnl = new JPanel(new GridLayout(0, 2, 8, 8));
         pnl.add(new JLabel("Mã khách hàng:")); pnl.add(txtMa);
         pnl.add(new JLabel("Tên khách hàng:")); pnl.add(txtTen);
@@ -380,11 +385,19 @@ public class pnlKhachHang extends JPanel {
             String ma=txtMa.getText().trim(), ten=txtTen.getText().trim(), sdt=txtSDT.getText().trim(), diaChi=txtDiaChi.getText().trim();
             try {
                 if (ten.isEmpty()) throw new IllegalArgumentException("Vui lòng nhập tên khách hàng.");
-                if (!sdt.isEmpty() && !sdt.matches("\\d{9,15}")) throw new IllegalArgumentException("Số điện thoại phải gồm 9–15 chữ số.");
-                int hang=Integer.parseInt(txtHang.getText().trim()), diem=Integer.parseInt(txtDiem.getText().trim());
-                if (hang<0 || diem<0) throw new IllegalArgumentException("Hạng thành viên và điểm không được âm.");
-                return new KhachHang(ma,ten,sdt.isEmpty()?null:sdt,diaChi.isEmpty()?null:diaChi,hang,diem);
-            } catch (Exception ex) { JOptionPane.showMessageDialog(this, ex instanceof NumberFormatException ? "Hạng thành viên và điểm phải là số nguyên." : ex.getMessage(), "Dữ liệu chưa hợp lệ", JOptionPane.WARNING_MESSAGE); }
+                if (!ten.matches("[\\p{L}]+(?:\\s+[\\p{L}]+)*"))
+                    throw new IllegalArgumentException("Tên khách hàng chỉ được chứa chữ cái và khoảng trắng, không có số hoặc ký tự đặc biệt.");
+                if (sdt.isEmpty() || !sdt.matches("0\\d{9}"))
+                    throw new IllegalArgumentException("Số điện thoại phải bắt đầu bằng 0 và gồm đúng 10 chữ số.");
+                if (diaChi.isEmpty()) throw new IllegalArgumentException("Vui lòng nhập địa chỉ.");
+                if (!diaChi.matches("[\\p{L}]+(?:\\s+[\\p{L}]+)*"))
+                    throw new IllegalArgumentException("Địa chỉ chỉ được chứa chữ cái và khoảng trắng.");
+                int hang = dangSua ? khCu.getHangThanhVien() : 1;
+                int diem = dangSua ? khCu.getDiemTichLuy() : 0;
+                return new KhachHang(ma, ten, sdt, diaChi, hang, diem);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, ex.getMessage(), "Dữ liệu chưa hợp lệ", JOptionPane.WARNING_MESSAGE);
+            }
         }
     }
 

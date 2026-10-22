@@ -10,7 +10,7 @@
    ============================================================ */
 
 USE master;
-GO
+
 
 /* 1. XOA DATABASE CU NEU TON TAI */
 IF DB_ID(N'PETPLUS') IS NOT NULL
@@ -18,13 +18,11 @@ BEGIN
     ALTER DATABASE PETPLUS SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
     DROP DATABASE PETPLUS;
 END;
-GO
 
 /* 2. TAO DATABASE MOI */
 CREATE DATABASE PETPLUS;
-GO
+
 USE PETPLUS;
-GO
 
 /* ============================================================
    1. TAI KHOAN
@@ -39,7 +37,7 @@ CREATE TABLE TaiKhoan
     CONSTRAINT PK_TaiKhoan PRIMARY KEY (maTK),
     CONSTRAINT UQ_TaiKhoan_TenDangNhap UNIQUE (tenDangNhap)
 );
-GO
+
 
 /* ============================================================
    2. NHAN VIEN
@@ -60,7 +58,7 @@ CREATE TABLE NhanVien
     CONSTRAINT UQ_NhanVien_MaTK UNIQUE (maTK),
     CONSTRAINT FK_NhanVien_TaiKhoan FOREIGN KEY (maTK) REFERENCES TaiKhoan(maTK)
 );
-GO
+
 
 /* ============================================================
    3. CA LAM VIEC
@@ -74,7 +72,7 @@ CREATE TABLE CaLamViec
     CONSTRAINT PK_CaLamViec PRIMARY KEY (maCa),
     CONSTRAINT CK_CaLamViec_ThoiGian CHECK (gioKetThuc > gioBatDau)
 );
-GO
+
 
 /* ============================================================
    4. LICH LAM VIEC
@@ -264,13 +262,22 @@ CREATE TABLE DichVu
     donGia     DECIMAL(18,2)   NOT NULL,
     moTa       NVARCHAR(500)   NULL,
     trangThai  NVARCHAR(20)    NOT NULL,
-    maLichHen  VARCHAR(20)     NOT NULL,
     CONSTRAINT PK_DichVu PRIMARY KEY (maDichVu),
-    CONSTRAINT FK_DichVu_LichHen FOREIGN KEY (maLichHen) REFERENCES LichHen(maLichHen),
     CONSTRAINT CK_DichVu_DonGia CHECK (donGia >= 0)
 );
 GO
-
+CREATE TABLE BangGiaDichVu (
+    maBangGia INT IDENTITY(1,1) PRIMARY KEY,
+    tenDichVu NVARCHAR(150) NOT NULL,
+    canNangTu DECIMAL(8,2) NOT NULL,
+    canNangDen DECIMAL(8,2) NOT NULL,
+    doDaiLong NVARCHAR(30) NOT NULL,
+    donGia DECIMAL(18,2) NOT NULL,
+    CONSTRAINT CK_BangGia_CanNang
+        CHECK (canNangTu >= 0 AND canNangDen > canNangTu),
+    CONSTRAINT CK_BangGia_DonGia
+        CHECK (donGia >= 0)
+);
 /* ============================================================
    14. KHUYEN MAI
    ============================================================ */
@@ -496,13 +503,13 @@ BEGIN TRY
     ('LH005', '2026-10-14T15:00:00', N'Đã xác nhận', 'NV003', 'KH005', 'TC005'),
     ('LH006', '2026-10-15T10:00:00', N'Chờ xác nhận', 'NV005', 'KH006', 'TC006');
 
-    INSERT INTO DichVu (maDichVu, tenDichVu, donGia, moTa, trangThai, maLichHen) VALUES
-    ('DV001', N'Tắm và sấy chó nhỏ', 120000, N'Tắm, sấy và chải lông cơ bản', N'Hoàn thành', 'LH001'),
-    ('DV002', N'Vệ sinh tai mèo', 80000, N'Vệ sinh tai và kiểm tra sơ bộ', N'Hoàn thành', 'LH002'),
-    ('DV003', N'Cắt tỉa lông', 180000, N'Cắt tỉa theo yêu cầu khách hàng', N'Đã đặt', 'LH003'),
-    ('DV004', N'Khám sức khỏe tổng quát', 150000, N'Kiểm tra sức khỏe tổng quát', N'Đã đặt', 'LH004'),
-    ('DV005', N'Cắt móng thú cưng', 50000, N'Cắt móng và vệ sinh bàn chân', N'Đã đặt', 'LH005'),
-    ('DV006', N'Tắm mèo', 140000, N'Tắm và sấy dành cho mèo', N'Đã đặt', 'LH006');
+    INSERT INTO DichVu (maDichVu, tenDichVu, donGia, moTa, trangThai) VALUES
+    ('DV001', N'Tắm và sấy chó nhỏ', 120000, N'Tắm, sấy và chải lông cơ bản', N'Đang hoạt động'),
+    ('DV002', N'Vệ sinh tai mèo', 80000, N'Ve sinh tai và kiểm tra sơ bộ', N'Đang hoạt động'),
+    ('DV003', N'Cắt tỉa lông', 180000, N'Cắt tỉa theo yêu cầu khách hàng', N'Đang hoạt động'),
+    ('DV004', N'Khám sức khỏe tổng quát', 150000, N'Kiểm tra sức khỏe tổng quát', N'Đang hoạt động'),
+    ('DV005', N'Cắt móng thú cưng', 50000, N'Cắt móng và vệ sinh bàn chân', N'Đang hoạt động'),
+    ('DV006', N'Tắm mèo', 140000, N'Tắm và sấy dành cho mèo', N'Đang hoạt động');
 
     INSERT INTO KhuyenMai (maKhuyenMai, tenKhuyenMai, phanTramGiam, dieuKienApDung, ngayBatDau, ngayKetThuc) VALUES
     ('KM000', N'Không áp dụng khuyến mãi', 0, N'Áp dụng khi không có chương trình giảm giá', '2025-01-01', '2030-12-31'),

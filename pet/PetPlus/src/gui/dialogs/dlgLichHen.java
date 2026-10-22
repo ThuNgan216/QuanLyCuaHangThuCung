@@ -66,7 +66,9 @@ public class dlgLichHen extends JDialog {
         calendar.add(header, BorderLayout.NORTH);
         JPanel daysPanel = new JPanel(new GridLayout(0, 7, 3, 3));
         calendar.add(daysPanel, BorderLayout.CENTER);
-        LocalDate[] selectedDate = { banDau.toLocalDate() };
+        LocalDate homNay = LocalDate.now();
+        LocalDateTime gioHienTai = LocalDateTime.now();
+        LocalDate[] selectedDate = { banDau.toLocalDate().isBefore(homNay) ? homNay : banDau.toLocalDate() };
         YearMonth[] shownMonth = { YearMonth.from(selectedDate[0]) };
         JPanel timePanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 8, 4));
         timePanel.add(new JLabel("Giờ:"));
@@ -90,6 +92,7 @@ public class dlgLichHen extends JDialog {
             @Override public void run() {
                 monthLabel.setText(shownMonth[0].getMonth().getDisplayName(java.time.format.TextStyle.FULL, new Locale("vi", "VN")) + " " + shownMonth[0].getYear());
                 daysPanel.removeAll();
+                prev.setEnabled(shownMonth[0].isAfter(YearMonth.from(LocalDate.now())));
                 String[] weekdays = {"T2", "T3", "T4", "T5", "T6", "T7", "CN"};
                 for (String day : weekdays) daysPanel.add(new JLabel(day, SwingConstants.CENTER));
                 LocalDate first = shownMonth[0].atDay(1);
@@ -103,16 +106,30 @@ public class dlgLichHen extends JDialog {
                         b.setBackground(utils.PetPlusTheme.PRIMARY);
                         b.setForeground(Color.WHITE);
                     }
+                    // Không cho chọn ngày đã qua.
+                    b.setEnabled(!date.isBefore(LocalDate.now()));
                     b.addActionListener(e -> { selectedDate[0] = date; renderCalendar[0].run(); });
                     daysPanel.add(b);
                 }
                 daysPanel.revalidate(); daysPanel.repaint();
             }
         };
-        prev.addActionListener(e -> { shownMonth[0] = shownMonth[0].minusMonths(1); renderCalendar[0].run(); });
+        prev.addActionListener(e -> {
+            YearMonth thangTruoc = shownMonth[0].minusMonths(1);
+            if (!thangTruoc.isBefore(YearMonth.from(LocalDate.now()))) {
+                shownMonth[0] = thangTruoc;
+                renderCalendar[0].run();
+            }
+        });
         next.addActionListener(e -> { shownMonth[0] = shownMonth[0].plusMonths(1); renderCalendar[0].run(); });
         ok.addActionListener(e -> {
             LocalDateTime value = selectedDate[0].atTime((Integer) hour.getValue(), (Integer) minute.getValue());
+            if (!value.isAfter(LocalDateTime.now())) {
+                JOptionPane.showMessageDialog(dlg,
+                        "Thời gian hẹn phải ở tương lai. Vui lòng chọn giờ sau thời điểm hiện tại.",
+                        "Thời gian hẹn không hợp lệ", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
             txtThoiGian.setText(value.format(F));
             dlg.dispose();
         });
@@ -126,6 +143,7 @@ public class dlgLichHen extends JDialog {
         String nvLabel=(String)cboNV.getSelectedItem(),khLabel=(String)cboKH.getSelectedItem(),tcLabel=(String)cboThuCung.getSelectedItem();
         if(nvLabel==null)throw new IllegalArgumentException("Vui lòng chọn nhân viên.");if(khLabel==null)throw new IllegalArgumentException("Vui lòng tìm và chọn khách hàng.");if(tcLabel==null)throw new IllegalArgumentException("Khách hàng này chưa có thú cưng phù hợp; vui lòng chọn đúng khách hoặc xóa bộ lọc.");
         if(txtThoiGian.getText().trim().isEmpty())throw new IllegalArgumentException("Vui lòng chọn ngày và giờ hẹn.");LocalDateTime time=LocalDateTime.parse(txtThoiGian.getText().trim(),F);
+        if (!time.isAfter(LocalDateTime.now())) throw new IllegalArgumentException("Thời gian hẹn phải ở tương lai, không được chọn thời điểm hiện tại hoặc đã qua.");
         NhanVien nv=nhanVienMap.get(nvLabel);KhachHang kh=khachHangMap.get(khLabel);ThuCung tc=thuCungMap.get(tcLabel);if(nv==null||kh==null||tc==null)throw new IllegalArgumentException("Vui lòng chọn lại nhân viên, khách hàng và thú cưng.");
         LichHen l=new LichHen();l.setMaLichHen(txtMa.getText().trim());l.setThoiGianHen(time);l.setTrangThai(((TrangThaiLichHen)cboTrangThai.getSelectedItem()).getTenHienThi());l.setMaNV(new NhanVien(nv.getMaNV()));l.setMaKH(new KhachHang(kh.getMaKH()));l.setMaThuCung(new ThuCung());l.getMaThuCung().setMaThuCung(tc.getMaThuCung());if(duLieu==null)service.them(l);else service.capNhat(l);saved=true;dispose();
     }catch(Exception ex){JOptionPane.showMessageDialog(this,ex.getMessage()==null?"Dữ liệu không hợp lệ.":ex.getMessage(),"Vui lòng kiểm tra dữ liệu",JOptionPane.ERROR_MESSAGE);}}
