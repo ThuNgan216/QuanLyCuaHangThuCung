@@ -4,6 +4,13 @@
     "configurations": [
         {
             "type": "java",
+            "name": "pnlThanhToan",
+            "request": "launch",
+            "mainClass": "gui.panel.pnlThanhToan",
+            "projectName": "QuanLyCuaHangThuCung_6ae16dc2"
+        },
+        {
+            "type": "java",
             "name": "LoginFrame - QuanLyCuaHangThuCung",
             "request": "launch",
             "mainClass": "gui.main.LoginFrame",
