@@ -43,14 +43,11 @@ public class pnlDichVu extends JPanel {
         top.add(txtTim);
         JButton btnTim = taoNut("Tìm kiếm", PRIMARY);
         JButton btnTai = taoNut("Làm mới", new Color(100, 116, 139));
-        JButton btnThem = taoNut("+ Thêm dịch vụ", PRIMARY);
+        JButton btnThem = taoNut("Thêm dịch vụ", PRIMARY);
         JButton btnSua = taoNut("Sửa", new Color(52, 120, 190));
         JButton btnXoa = taoNut("Xóa", new Color(200, 60, 75));
         top.add(btnTim);
         top.add(btnTai);
-        top.add(btnThem);
-        top.add(btnSua);
-        top.add(btnXoa);
         header.add(top, BorderLayout.CENTER);
         add(header, BorderLayout.NORTH);
 
@@ -94,8 +91,36 @@ public class pnlDichVu extends JPanel {
         scroll.getViewport().setBackground(Color.WHITE);
         add(scroll, BorderLayout.CENTER);
 
-        btnTim.addActionListener(e -> tim()); txtTim.addActionListener(e -> tim());
-        txtTim.getDocument().addDocumentListener(new javax.swing.event.DocumentListener(){private void capNhat(){SwingUtilities.invokeLater(()->tim());} public void insertUpdate(javax.swing.event.DocumentEvent e){capNhat();} public void removeUpdate(javax.swing.event.DocumentEvent e){capNhat();} public void changedUpdate(javax.swing.event.DocumentEvent e){capNhat();}});
+        // Panel chức năng ở góc dưới bên phải
+        JPanel pnlChucNang = new JPanel(
+                new FlowLayout(FlowLayout.RIGHT, 10, 8));
+        pnlChucNang.setOpaque(false);
+
+        pnlChucNang.add(btnThem);
+        pnlChucNang.add(btnSua);
+        pnlChucNang.add(btnXoa);
+
+        add(pnlChucNang, BorderLayout.SOUTH);
+
+        btnTim.addActionListener(e -> tim());
+        txtTim.addActionListener(e -> tim());
+        txtTim.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            private void capNhat() {
+                SwingUtilities.invokeLater(() -> tim());
+            }
+
+            public void insertUpdate(javax.swing.event.DocumentEvent e) {
+                capNhat();
+            }
+
+            public void removeUpdate(javax.swing.event.DocumentEvent e) {
+                capNhat();
+            }
+
+            public void changedUpdate(javax.swing.event.DocumentEvent e) {
+                capNhat();
+            }
+        });
         btnTai.addActionListener(e -> {
             txtTim.setText("");
             tai();
@@ -182,9 +207,9 @@ public class pnlDichVu extends JPanel {
         if (row < 0) {
             JOptionPane.showMessageDialog(
                     this,
-                    "Đã xử lý dịch vụ. Nếu dịch vụ đã phát sinh hóa đơn, "
-                            + "trạng thái sẽ được chuyển thành Ngừng hoạt động.");
-            ;
+                    "Vui lòng chọn dịch vụ cần xóa.",
+                    "Thông báo",
+                    JOptionPane.WARNING_MESSAGE);
             return;
         }
         String ma = String.valueOf(model.getValueAt(table.convertRowIndexToModel(row), 0));
