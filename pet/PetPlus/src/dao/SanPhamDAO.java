@@ -154,4 +154,86 @@ public class SanPhamDAO {
         }
     }
 
+    // Lấy danh sách sản phẩm theo mã nhà cung cấp
+public List<SanPham> laySanPhamTheoNhaCungCap(String maNCC) throws SQLException {
+    List<SanPham> danhSach = new ArrayList<>();
+    String sql = "SELECT sp.maSP, sp.tenSP, sp.giaBan, sp.soLuongTon "
+               + "FROM dbo.SanPham sp "
+               + "INNER JOIN dbo.SanPham_NhaCungCap sn ON sp.maSP = sn.maSP "
+               + "WHERE sn.maNCC = ?";
+
+    try (Connection con = ConnectDB.getConnection();
+         PreparedStatement ps = con.prepareStatement(sql)) {
+        
+        ps.setString(1, maNCC);
+        try (ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                SanPham sp = new SanPham(
+                        rs.getString("maSP"),
+                        rs.getString("tenSP"),
+                        rs.getFloat("giaBan"),
+                        rs.getInt("soLuongTon"));
+                danhSach.add(sp);
+            }
+        }
+    }
+    return danhSach;
+}
+
+// Lấy giá nhập của 1 sản phẩm theo nhà cung cấp
+public float layGiaNhap(String maSP, String maNCC) throws SQLException {
+    String sql = "SELECT giaNhap FROM dbo.SanPham_NhaCungCap WHERE maSP = ? AND maNCC = ?";
+    try (Connection con = ConnectDB.getConnection();
+         PreparedStatement ps = con.prepareStatement(sql)) {
+        ps.setString(1, maSP);
+        ps.setString(2, maNCC);
+        try (ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) return rs.getFloat("giaNhap");
+        }
+    }
+    return 0;
+}
+
+// Lưu hoặc cập nhật giá nhập mới
+public void luuGiaNhap(String maSP, String maNCC, float giaNhap) throws SQLException {
+    String sqlCheck = "SELECT 1 FROM dbo.SanPham_NhaCungCap WHERE maSP = ? AND maNCC = ?";
+    boolean exists = false;
+    try (Connection con = ConnectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sqlCheck)) {
+        ps.setString(1, maSP); ps.setString(2, maNCC);
+        try (ResultSet rs = ps.executeQuery()) { exists = rs.next(); }
+    }
+    
+    String sql = exists ? "UPDATE dbo.SanPham_NhaCungCap SET giaNhap = ? WHERE maSP = ? AND maNCC = ?" 
+                        : "INSERT INTO dbo.SanPham_NhaCungCap (giaNhap, maSP, maNCC) VALUES (?, ?, ?)";
+    try (Connection con = ConnectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+        ps.setFloat(1, giaNhap);
+        ps.setString(2, maSP);
+        ps.setString(3, maNCC);
+        ps.executeUpdate();
+    }
+}
+// Lấy danh sách Sản phẩm kèm Giá nhập theo Mã NCC
+    public List<Object[]> layDanhSachSanPhamVaGiaNhapTheoNCC(String maNCC) throws SQLException {
+        List<Object[]> list = new ArrayList<>();
+        String sql = "SELECT sp.maSP, sp.tenSP, sn.giaNhap, sp.soLuongTon " +
+                     "FROM dbo.SanPham sp " +
+                     "INNER JOIN dbo.SanPham_NhaCungCap sn ON sp.maSP = sn.maSP " +
+                     "WHERE sn.maNCC = ?";
+        try (Connection con = database.ConnectDB.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, maNCC);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(new Object[]{
+                        rs.getString("maSP"),
+                        rs.getString("tenSP"),
+                        rs.getFloat("giaNhap"),
+                        rs.getInt("soLuongTon")
+                    });
+                }
+            }
+        }
+        return list;
+    }
+
 }

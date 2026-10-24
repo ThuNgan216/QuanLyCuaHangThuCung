@@ -1,18 +1,18 @@
 package gui.dialogs;
 
 import entity.SanPham;
+import java.awt.*;
+import javax.swing.*;
 import service.SanPhamService;
 import utils.PetPlusTheme;
-
-import javax.swing.*;
-import java.awt.*;
 
 public class dlgSanPham extends JDialog {
     private final JTextField txtMaSP = new JTextField(15);
     private final JTextField txtTenSP = new JTextField(15);
     private final JTextField txtGiaBan = new JTextField(15);
     private final JTextField txtSoLuongTon = new JTextField(15);
-    private final JComboBox<String> cboLoai = new JComboBox<>();
+    private final JComboBox<entity.NhaCungCap> cboNhaCungCap = new JComboBox<>();
+private final JTextField txtGiaNhap = new JTextField(15);
 
     private final SanPhamService service = new SanPhamService();
     private final SanPham sanPhamHienTai;
@@ -36,11 +36,37 @@ public class dlgSanPham extends JDialog {
         g.weightx = 1;
 
         int y = 0;
-        themDong(pnlForm, g, y++, "Mã sản phẩm (*):", txtMaSP);
+        themDong(pnlForm, g, y++, "Mã sản phẩm (*):", txtMaSP); // Thêm lại dòng này
+        txtMaSP.setEditable(false);
         themDong(pnlForm, g, y++, "Tên sản phẩm (*):", txtTenSP);
-        themDong(pnlForm, g, y++, "Loại sản phẩm:", cboLoai);
-        themDong(pnlForm, g, y++, "Giá bán (VNĐ) (*):", txtGiaBan);
-        themDong(pnlForm, g, y++, "Số lượng tồn:", txtSoLuongTon);
+themDong(pnlForm, g, y++, "Nhà cung cấp:", cboNhaCungCap);
+themDong(pnlForm, g, y++, "Giá nhập (VNĐ):", txtGiaNhap);
+themDong(pnlForm, g, y++, "Giá bán (VNĐ) (*):", txtGiaBan);
+themDong(pnlForm, g, y++, "Số lượng tồn:", txtSoLuongTon);
+
+cboNhaCungCap.setRenderer(new DefaultListCellRenderer() {
+    @Override
+    public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean hasFocus) {
+        super.getListCellRendererComponent(list, value, index, isSelected, hasFocus);
+        if (value instanceof entity.NhaCungCap) {
+            entity.NhaCungCap ncc = (entity.NhaCungCap) value;
+            setText(ncc.getMaNCC() + " - " + ncc.getTenNCC());
+        }
+        return this;
+    }
+});
+
+cboNhaCungCap.addActionListener(e -> {
+    if (sanPhamHienTai != null) {
+        entity.NhaCungCap ncc = (entity.NhaCungCap) cboNhaCungCap.getSelectedItem();
+        if (ncc != null) {
+            try {
+                float gia = new dao.SanPhamDAO().layGiaNhap(sanPhamHienTai.getMaSP(), ncc.getMaNCC());
+                txtGiaNhap.setText(gia > 0 ? String.format("%.0f", gia) : "");
+            } catch (Exception ex) {}
+        }
+    }
+});
 
         // Nút thao tác
         JButton btnLuu = new JButton("Lưu");
@@ -63,6 +89,8 @@ public class dlgSanPham extends JDialog {
             txtGiaBan.setText(String.valueOf(sanPhamHienTai.getGiaBan()));
             txtSoLuongTon.setText(String.valueOf(sanPhamHienTai.getSoLuongTon()));
             txtSoLuongTon.setEditable(false); // Số lượng tồn thay đổi qua phiếu nhập
+        } else {
+            tuDongSinhMaSP(); // Tự động sinh mã nếu là Thêm Mới
         }
 
         PetPlusTheme.apply(getContentPane());
@@ -78,12 +106,15 @@ public class dlgSanPham extends JDialog {
     }
 
     private void taiDuLieuBanDau() {
-        // Có thể load danh sách loại sản phẩm từ DB hoặc cứng tạm thời
-        cboLoai.addItem("LSP001 - Thức ăn cho chó");
-        cboLoai.addItem("LSP002 - Thức ăn cho mèo");
-        cboLoai.addItem("LSP003 - Đồ chơi thú cưng");
-        cboLoai.addItem("LSP004 - Phụ kiện thú cưng");
-        cboLoai.addItem("LSP005 - Sản phẩm chăm sóc");
+        try {
+            // Xóa đoạn code cũ của cboLoai đi và thay bằng code tải danh sách NCC
+            java.util.List<entity.NhaCungCap> ds = new dao.NhaCungCapDAO().layDanhSach();
+            for (entity.NhaCungCap ncc : ds) {
+                cboNhaCungCap.addItem(ncc);
+            }
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Lỗi tải nhà cung cấp: " + ex.getMessage());
+        }
     }
 
     private void xuLyLuu() {
@@ -105,6 +136,11 @@ public class dlgSanPham extends JDialog {
                 service.capNhat(sp);
                 JOptionPane.showMessageDialog(this, "Cập nhật sản phẩm thành công!");
             }
+
+            float giaNhap = Float.parseFloat(txtGiaNhap.getText().trim());
+entity.NhaCungCap ncc = (entity.NhaCungCap) cboNhaCungCap.getSelectedItem();
+new dao.SanPhamDAO().luuGiaNhap(sp.getMaSP(), ncc.getMaNCC(), giaNhap);
+
             daLuu = true;
             dispose();
         } catch (NumberFormatException ex) {
@@ -113,8 +149,29 @@ public class dlgSanPham extends JDialog {
             JOptionPane.showMessageDialog(this, ex.getMessage(), "Lỗi nghiệp vụ", JOptionPane.ERROR_MESSAGE);
         }
     }
+    
 
     public boolean isDaLuu() {
         return daLuu;
     }
+
+    private void tuDongSinhMaSP() {
+        try {
+            java.util.List<entity.SanPham> ds = new dao.SanPhamDAO().layDanhSachSanPham();
+            int maxId = 0;
+            for (entity.SanPham sp : ds) {
+                String ma = sp.getMaSP();
+                if (ma != null && ma.startsWith("SP")) {
+                    try {
+                        int num = Integer.parseInt(ma.substring(2));
+                        if (num > maxId) maxId = num;
+                    } catch (Exception e) {}
+                }
+            }
+            txtMaSP.setText(String.format("SP%03d", maxId + 1));
+        } catch (Exception ex) {
+            txtMaSP.setText("SP001");
+        }
+    }
+    
 }

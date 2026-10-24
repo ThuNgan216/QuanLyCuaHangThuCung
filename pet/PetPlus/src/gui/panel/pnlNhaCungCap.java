@@ -19,6 +19,7 @@ public class pnlNhaCungCap extends JPanel {
     private JButton btnThem;
     private JButton btnSua;
     private JButton btnXoa;
+    private JButton btnXemSP;
 
     private DefaultTableModel model;
     private JTable table;
@@ -68,10 +69,12 @@ public class pnlNhaCungCap extends JPanel {
         btnThem = new JButton("Thêm mới");
         btnSua = new JButton("Cập nhật");
         btnXoa = new JButton("Xóa");
+        btnXemSP = new JButton("Xem SP");
 
         pnlNut.add(btnThem);
         pnlNut.add(btnSua);
         pnlNut.add(btnXoa);
+        pnlNut.add(btnXemSP);
         
         pnlTop.add(pnlNut, BorderLayout.EAST);
 
@@ -137,6 +140,9 @@ public class pnlNhaCungCap extends JPanel {
             }
         });
 
+        // Sự kiện click nút Xem SP
+        btnXemSP.addActionListener(e -> xemSanPhamCungCap());
+
         // Nút Xóa
         btnXoa.addActionListener(e -> xoaNCC());
     }
@@ -188,6 +194,51 @@ public class pnlNhaCungCap extends JPanel {
             } catch (Exception ex) {
                 baoLoi("Xóa nhà cung cấp thất bại.", ex);
             }
+        }
+    }
+
+    private void xemSanPhamCungCap() {
+        int selectedRow = table.getSelectedRow();
+        if (selectedRow < 0) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn một nhà cung cấp trên bảng để xem sản phẩm.", "Thông báo", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        String maNCC = model.getValueAt(selectedRow, 0).toString();
+        String tenNCC = model.getValueAt(selectedRow, 1).toString();
+
+        try {
+            // Lấy data từ hàm DAO vừa tạo ở Bước 1
+            List<Object[]> dsSP = new dao.SanPhamDAO().layDanhSachSanPhamVaGiaNhapTheoNCC(maNCC);
+            if (dsSP.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Nhà cung cấp này hiện chưa cung cấp sản phẩm nào cho hệ thống.", "Thông tin", JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
+
+            // Tạo bảng popup
+            String[] cols = {"Mã SP", "Tên Sản Phẩm", "Giá Nhập Thực Tế", "Tồn Kho"};
+            DefaultTableModel modelSP = new DefaultTableModel(cols, 0) {
+                @Override
+                public boolean isCellEditable(int row, int column) { return false; }
+            };
+
+            for (Object[] row : dsSP) {
+                float giaNhap = (float) row[2];
+                row[2] = String.format("%,.0f đ", giaNhap); // Format tiền VNĐ
+                modelSP.addRow(row);
+            }
+
+            JTable tblSP = new JTable(modelSP);
+            tblSP.setRowHeight(28);
+            tblSP.getTableHeader().setFont(new Font("Arial", Font.BOLD, 13));
+
+            JScrollPane scroll = new JScrollPane(tblSP);
+            scroll.setPreferredSize(new Dimension(600, 300)); // Kích thước popup
+
+            JOptionPane.showMessageDialog(this, scroll, "Sản phẩm cung cấp bởi: " + tenNCC, JOptionPane.PLAIN_MESSAGE);
+
+        } catch (Exception ex) {
+            baoLoi("Không thể tải danh sách sản phẩm của nhà cung cấp.", ex);
         }
     }
 

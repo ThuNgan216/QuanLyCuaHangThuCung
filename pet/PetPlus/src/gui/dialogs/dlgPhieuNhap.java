@@ -89,6 +89,14 @@ public class dlgPhieuNhap extends JDialog {
             }
         });
 
+        cboNhaCungCap.addActionListener(e -> {
+    NhaCungCap nccSelected = (NhaCungCap) cboNhaCungCap.getSelectedItem();
+    if (nccSelected != null) {
+        // Mỗi lần click đổi NCC, gọi hàm tải lại sản phẩm tương ứng
+        capNhatDanhSachSanPhamTheoNCC(nccSelected.getMaNCC());
+    }
+});
+
         // Custom Renderer cho ComboBox Nhân Viên
         cboNhanVien.setRenderer(new DefaultListCellRenderer() {
             @Override
@@ -135,6 +143,21 @@ public class dlgPhieuNhap extends JDialog {
         });
         cboSanPham.setPreferredSize(new Dimension(220, 28));
         spnTrangThaiHSD.setPreferredSize(new Dimension(120, 28));
+
+        // Khóa ô nhập tay vì giá sẽ tự nhảy
+txtDonGia.setEditable(false);
+
+// Sự kiện: Khi chọn Sản phẩm, tự động kéo giá nhập tương ứng với NCC đang chọn ở trên
+cboSanPham.addActionListener(e -> {
+    SanPham sp = (SanPham) cboSanPham.getSelectedItem();
+    NhaCungCap ncc = (NhaCungCap) cboNhaCungCap.getSelectedItem();
+    if (sp != null && ncc != null) {
+        try {
+            float giaNhap = sanPhamDAO.layGiaNhap(sp.getMaSP(), ncc.getMaNCC());
+            txtDonGia.setText(String.format("%.0f", giaNhap)); // Điền tự động
+        } catch (Exception ex) {}
+    }
+});
 
         pnlAddSP.add(new JLabel("Sản phẩm:"));
         pnlAddSP.add(cboSanPham);
@@ -187,11 +210,6 @@ public class dlgPhieuNhap extends JDialog {
             List<NhanVien> dsNV = nhanVienDAO.layDanhSach();
             for (NhanVien nv : dsNV) {
                 cboNhanVien.addItem(nv);
-            }
-
-            List<SanPham> dsSP = sanPhamDAO.layDanhSachSanPham();
-            for (SanPham sp : dsSP) {
-                cboSanPham.addItem(sp);
             }
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Lỗi tải dữ liệu danh mục: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
@@ -343,4 +361,16 @@ private void xuLyHoanTat() {
     public boolean isDaLuu() {
         return daLuu;
     }
+
+    private void capNhatDanhSachSanPhamTheoNCC(String maNCC) {
+    try {
+        cboSanPham.removeAllItems(); // Xóa sạch list cũ
+        List<SanPham> dsSP = sanPhamDAO.laySanPhamTheoNhaCungCap(maNCC); // Gọi hàm mới tạo ở DAO
+        for (SanPham sp : dsSP) {
+            cboSanPham.addItem(sp); // Đổ data mới vào
+        }
+    } catch (Exception ex) {
+        JOptionPane.showMessageDialog(this, "Lỗi tải sản phẩm theo NCC: " + ex.getMessage());
+    }
+}
 }

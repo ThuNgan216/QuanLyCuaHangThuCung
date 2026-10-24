@@ -580,3 +580,45 @@ UNION ALL SELECT N'ChiTietHoaDon', COUNT(*) FROM ChiTietHoaDon
 UNION ALL SELECT N'KhuyenMaiSanPham', COUNT(*) FROM KhuyenMaiSanPham
 UNION ALL SELECT N'TichDiem', COUNT(*) FROM TichDiem;
 GO
+
+
+USE PETPLUS;
+GO
+
+-- 1. Tạo bảng trung gian kết nối Sản Phẩm và Nhà Cung Cấp
+CREATE TABLE SanPham_NhaCungCap
+(
+    maSP   VARCHAR(20) NOT NULL,
+    maNCC  VARCHAR(20) NOT NULL,
+    CONSTRAINT PK_SanPham_NhaCungCap PRIMARY KEY (maSP, maNCC),
+    CONSTRAINT FK_SP_NCC_SanPham FOREIGN KEY (maSP) REFERENCES SanPham(maSP),
+    CONSTRAINT FK_SP_NCC_NhaCungCap FOREIGN KEY (maNCC) REFERENCES NhaCungCap(maNCC)
+);
+GO
+
+-- 2. Thêm dữ liệu mẫu để test giao diện
+INSERT INTO SanPham_NhaCungCap (maSP, maNCC) VALUES
+('SP001', 'NCC001'), ('SP002', 'NCC001'), ('SP003', 'NCC001'), ('SP004', 'NCC001'), 
+('SP005', 'NCC002'), ('SP006', 'NCC002'), 
+('SP007', 'NCC003'), ('SP008', 'NCC003'), ('SP009', 'NCC003'), ('SP010', 'NCC003'),
+('SP001', 'NCC002'); -- Test thử SP001 được cung cấp bởi cả 2 nhà (NCC001 và NCC002)
+GO
+
+USE PETPLUS;
+GO
+IF OBJECT_ID('SanPham_NhaCungCap', 'U') IS NOT NULL DROP TABLE SanPham_NhaCungCap;
+GO
+CREATE TABLE SanPham_NhaCungCap
+(
+    maSP    VARCHAR(20)   NOT NULL,
+    maNCC   VARCHAR(20)   NOT NULL,
+    giaNhap DECIMAL(18,2) NOT NULL CONSTRAINT DF_GiaNhap DEFAULT 0,
+    CONSTRAINT PK_SanPham_NhaCungCap PRIMARY KEY (maSP, maNCC),
+    CONSTRAINT FK_SP_NCC_SanPham FOREIGN KEY (maSP) REFERENCES SanPham(maSP),
+    CONSTRAINT FK_SP_NCC_NhaCungCap FOREIGN KEY (maNCC) REFERENCES NhaCungCap(maNCC)
+);
+GO
+INSERT INTO SanPham_NhaCungCap (maSP, maNCC, giaNhap) VALUES 
+('SP001', 'NCC001', 135000), ('SP002', 'NCC001', 112000), 
+('SP003', 'NCC002', 22000),  ('SP001', 'NCC002', 132000); 
+GO
