@@ -29,7 +29,7 @@ public class pnlDichVu extends JPanel {
 
     public pnlDichVu() {
         setLayout(new BorderLayout(10, 12));
-        setBackground(new Color(255, 247, 250));
+        setBackground(Color.WHITE);
         setBorder(BorderFactory.createEmptyBorder(18, 18, 18, 18));
         JLabel title = new JLabel("QUẢN LÝ DỊCH VỤ");
         title.setFont(new Font("Arial", Font.BOLD, 22));
@@ -39,7 +39,7 @@ public class pnlDichVu extends JPanel {
         header.add(title, BorderLayout.NORTH);
         JPanel top = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 4));
         top.setOpaque(false);
-        top.add(new JLabel("Tìm mã / tên / mô tả:"));
+        top.add(new JLabel("Tên dịch vụ:"));
         top.add(txtTim);
         JButton btnTim = taoNut("Tìm kiếm", PRIMARY);
         JButton btnTai = taoNut("Làm mới", new Color(100, 116, 139));
@@ -55,20 +55,20 @@ public class pnlDichVu extends JPanel {
         add(header, BorderLayout.NORTH);
 
         table.setFont(new Font("Arial", Font.PLAIN, 13));
-        table.setRowHeight(34);
+        table.setRowHeight(36);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.setFillsViewportHeight(true);
         table.setShowGrid(true);
         table.setGridColor(BORDER);
-        table.setIntercellSpacing(new Dimension(0, 1));
+        table.setIntercellSpacing(new Dimension(1, 1));
         table.setBackground(Color.WHITE);
         table.setForeground(new Color(32, 44, 64));
         table.setSelectionBackground(LIGHT_PINK);
         table.setSelectionForeground(new Color(32, 44, 64));
         table.getTableHeader().setFont(new Font("Arial", Font.BOLD, 13));
-        table.getTableHeader().setBackground(new Color(255, 224, 235));
-        table.getTableHeader().setForeground(new Color(100, 30, 55));
-        table.getTableHeader().setPreferredSize(new Dimension(0, 38));
+        table.getTableHeader().setBackground(new Color(255, 236, 243));
+        table.getTableHeader().setForeground(new Color(32, 44, 64));
+        table.getTableHeader().setPreferredSize(new Dimension(0, 42));
         table.getTableHeader().setReorderingAllowed(false);
         DefaultTableCellRenderer center = new DefaultTableCellRenderer();
         center.setHorizontalAlignment(SwingConstants.CENTER);
@@ -94,8 +94,8 @@ public class pnlDichVu extends JPanel {
         scroll.getViewport().setBackground(Color.WHITE);
         add(scroll, BorderLayout.CENTER);
 
-        btnTim.addActionListener(e -> tim());
-        txtTim.addActionListener(e -> tim());
+        btnTim.addActionListener(e -> tim()); txtTim.addActionListener(e -> tim());
+        txtTim.getDocument().addDocumentListener(new javax.swing.event.DocumentListener(){private void capNhat(){SwingUtilities.invokeLater(()->tim());} public void insertUpdate(javax.swing.event.DocumentEvent e){capNhat();} public void removeUpdate(javax.swing.event.DocumentEvent e){capNhat();} public void changedUpdate(javax.swing.event.DocumentEvent e){capNhat();}});
         btnTai.addActionListener(e -> {
             txtTim.setText("");
             tai();

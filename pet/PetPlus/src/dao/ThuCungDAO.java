@@ -42,31 +42,14 @@ public class ThuCungDAO {
 
     public List<ThuCung> timKiem(String tuKhoa) {
         List<ThuCung> ds = new ArrayList<>();
-        String sql = "SELECT t." + COLUMNS.replace(", ", ", t.") + " FROM ThuCung t "
-                + "LEFT JOIN KhachHang k ON t.maKH = k.maKH "
-                + "WHERE t.maThuCung LIKE ? OR t.tenThuCung LIKE ? OR t.loai LIKE ? OR t.giong LIKE ? OR t.maKH LIKE ? OR k.tenKH LIKE ? ORDER BY t.tenThuCung";
-        try (Connection con = ConnectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
-            String key = "%" + tuKhoa + "%";
-            for (int i = 1; i <= 6; i++)
-                ps.setString(i, key);
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next())
-                    ds.add(docThuCung(rs));
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        String sql = "SELECT t." + COLUMNS.replace(", ", ", t.") + " FROM ThuCung t LEFT JOIN KhachHang k ON t.maKH=k.maKH WHERE k.sdt LIKE ? ORDER BY t.tenThuCung";
+        try (Connection con=ConnectDB.getConnection(); PreparedStatement ps=con.prepareStatement(sql)) {
+            ps.setString(1, "%" + (tuKhoa==null ? "" : tuKhoa.trim()) + "%");
+            try(ResultSet rs=ps.executeQuery()){while(rs.next()) ds.add(docThuCung(rs));}
+        } catch(SQLException e){throw new RuntimeException("Không thể tìm thú cưng theo số điện thoại khách hàng.",e);}
         return ds;
     }
 
-    /**
-     * Sinh mã thú cưng theo định dạng TC001, TC002, TC003...
-     * Chỉ xét các mã có đúng 3 chữ số sau TC.
-     */
-    /**
-     * Sinh mã thú cưng TC001, TC002, ... TC999, TC1000...
-     * Không giới hạn số chữ số theo quy tắc định dạng.
-     */
     public String taoMaTuDong() {
         String sql = "SELECT maThuCung FROM ThuCung";
 

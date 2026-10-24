@@ -15,8 +15,7 @@ public class LichHenDAO {
     public List<LichHen> layDanhSach() { return truyVan(SELECT + " ORDER BY l.thoiGianHen DESC", null); }
     public List<LichHen> timKiem(String key) {
         if (key == null || key.trim().isEmpty()) return layDanhSach();
-        String sql = SELECT + " WHERE l.maLichHen LIKE ? OR l.trangThai LIKE ? OR l.maKH LIKE ? OR kh.tenKH LIKE ? OR l.maNV LIKE ? OR nv.tenNV LIKE ? OR l.maThuCung LIKE ? OR tc.tenThuCung LIKE ? ORDER BY l.thoiGianHen DESC";
-        String k="%"+key.trim()+"%"; List<String> args=new ArrayList<>(); for(int i=0;i<8;i++) args.add(k); return truyVan(sql,args);
+        String sql = SELECT + " WHERE kh.tenKH LIKE ? ORDER BY l.thoiGianHen DESC"; String k="%"+key.trim()+"%"; return truyVan(sql, java.util.Collections.singletonList(k));
     }
     private List<LichHen> truyVan(String sql, List<String> args) {
         List<LichHen> ds=new ArrayList<>();

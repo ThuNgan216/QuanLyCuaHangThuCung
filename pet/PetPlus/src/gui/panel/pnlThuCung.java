@@ -6,6 +6,8 @@ import service.ThuCungService;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.JTableHeader;
+import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
 import java.util.List;
 
@@ -23,11 +25,11 @@ public class pnlThuCung extends JPanel {
         JLabel title = new JLabel("QUẢN LÝ THÚ CƯNG"); title.setFont(new Font("Arial", Font.BOLD, 23)); title.setForeground(new Color(224, 25, 91));
         JPanel top = new JPanel(new BorderLayout(8, 8)); top.setBackground(Color.WHITE); top.add(title, BorderLayout.NORTH);
         JPanel search = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 8)); search.setBackground(Color.WHITE);
-        JButton btnTim = new JButton("Tìm kiếm"), btnLamMoi = new JButton("Làm mới"); search.add(new JLabel("Mã / Tên / Loài / Giống / Khách hàng:")); search.add(txtTimKiem); search.add(btnTim); search.add(btnLamMoi); top.add(search, BorderLayout.CENTER); add(top, BorderLayout.NORTH);
-        table.setRowHeight(26); table.setAutoCreateRowSorter(true); table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION); table.getTableHeader().setFont(new Font("Arial", Font.BOLD, 12)); add(new JScrollPane(table), BorderLayout.CENTER);
+        JButton btnTim = new JButton("Tìm kiếm"), btnLamMoi = new JButton("Làm mới"); search.add(new JLabel("SĐT khách hàng:")); search.add(txtTimKiem); search.add(btnTim); search.add(btnLamMoi); top.add(search, BorderLayout.CENTER); add(top, BorderLayout.NORTH);
+        table.setFont(new Font("Arial", Font.PLAIN, 13)); table.setForeground(new Color(32,44,64)); table.setBackground(Color.WHITE); table.setRowHeight(36); table.setGridColor(new Color(237,217,225)); table.setShowGrid(true); table.setIntercellSpacing(new Dimension(1,1)); table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION); table.setAutoCreateRowSorter(true); table.setFillsViewportHeight(true); table.setSelectionBackground(new Color(255,236,243)); table.setSelectionForeground(new Color(32,44,64)); JTableHeader th=table.getTableHeader(); th.setFont(new Font("Arial",Font.BOLD,13)); th.setForeground(new Color(32,44,64)); th.setBackground(new Color(255,236,243)); th.setPreferredSize(new Dimension(0,42)); th.setReorderingAllowed(false); DefaultTableCellRenderer rr=new DefaultTableCellRenderer(); rr.setBackground(Color.WHITE); rr.setForeground(new Color(32,44,64)); rr.setBorder(BorderFactory.createMatteBorder(0,0,1,1,new Color(237,217,225))); rr.setVerticalAlignment(SwingConstants.CENTER); for(int i=0;i<table.getColumnCount();i++) table.getColumnModel().getColumn(i).setCellRenderer(rr); JScrollPane sc=new JScrollPane(table); sc.setBorder(BorderFactory.createLineBorder(new Color(237,217,225))); sc.getViewport().setBackground(Color.WHITE); add(sc,BorderLayout.CENTER);
         JButton btnThem = new JButton("Thêm thú cưng"), btnSua = new JButton("Sửa"), btnXoa = new JButton("Xóa"), btnTai = new JButton("Tải danh sách");
         JPanel bottom = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 4)); bottom.setBackground(Color.WHITE); bottom.add(btnTai); bottom.add(btnThem); bottom.add(btnSua); bottom.add(btnXoa); add(bottom, BorderLayout.SOUTH);
-        btnTim.addActionListener(e -> timKiem()); txtTimKiem.addActionListener(e -> timKiem()); btnLamMoi.addActionListener(e -> { txtTimKiem.setText(""); taiDanhSach(); }); btnTai.addActionListener(e -> taiDanhSach());
+        btnTim.addActionListener(e -> timKiem()); txtTimKiem.addActionListener(e -> timKiem()); txtTimKiem.getDocument().addDocumentListener(new javax.swing.event.DocumentListener(){private void capNhat(){SwingUtilities.invokeLater(()->timKiem());} public void insertUpdate(javax.swing.event.DocumentEvent e){capNhat();} public void removeUpdate(javax.swing.event.DocumentEvent e){capNhat();} public void changedUpdate(javax.swing.event.DocumentEvent e){capNhat();}}); btnLamMoi.addActionListener(e -> { txtTimKiem.setText(""); taiDanhSach(); }); btnTai.addActionListener(e -> taiDanhSach());
         btnThem.addActionListener(e -> them()); btnSua.addActionListener(e -> sua()); btnXoa.addActionListener(e -> xoa()); taiDanhSach();
         utils.PetPlusTheme.apply(this);
     }

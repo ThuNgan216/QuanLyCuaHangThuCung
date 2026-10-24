@@ -6,6 +6,13 @@
     "configurations": [
         {
             "type": "java",
+            "name": "MainFrame",
+            "request": "launch",
+            "mainClass": "gui.main.MainFrame",
+            "projectName": "QuanLyCuaHangThuCung_6ae16dc2"
+        },
+        {
+            "type": "java",
             "name": "LoginFrame",
             "request": "launch",
             "mainClass": "gui.main.LoginFrame",

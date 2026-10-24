@@ -27,21 +27,11 @@ public class DichVuDAO {
             return layDanhSach();
         }
 
-        String sql = SELECT
-                + " WHERE maDichVu LIKE ? "
-                + " OR tenDichVu LIKE ? "
-                + " OR moTa LIKE ? "
-                + " OR trangThai LIKE ? "
-                + " ORDER BY tenDichVu";
-
+        String sql = SELECT + " WHERE tenDichVu LIKE ? ORDER BY tenDichVu";
         String key = "%" + tuKhoa.trim() + "%";
-
         try (Connection con = ConnectDB.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql)) {
-
-            for (int i = 1; i <= 4; i++) {
-                ps.setString(i, key);
-            }
+            ps.setString(1, key);
 
             try (ResultSet rs = ps.executeQuery()) {
                 List<DichVu> ds = new ArrayList<>();
