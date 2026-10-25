@@ -25,6 +25,13 @@ import javax.swing.border.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.table.*;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import javax.imageio.ImageIO;
 
 /**
  * Giao diện bán hàng và dịch vụ PETPLUS.
@@ -104,6 +111,12 @@ public class pnlThanhToan extends JPanel {
     private int soDiemSuDung = 0;
     private String maTiepNhanDangLap;
     private final Set<String> maDichVuPhieuDangLap = new HashSet<>();
+    private static final String DUONG_DAN_QR = "pet/PetPlus/resources/QR/QR.jpg";
+    private static final String THU_MUC_HOA_DON = "pet/PetPlus/data/hoadon";
+
+    private JDialog dlgQR;
+    private final JLabel lblAnhQR = new JLabel("", SwingConstants.CENTER);
+    private final JEditorPane txtThongTinQR = new JEditorPane("text/html", "");
 
     private static class KhachHangItem {
         final String maKH, ten, sdt, diaChi;
@@ -1132,6 +1145,11 @@ public class pnlThanhToan extends JPanel {
         for (JButton b : nutTienNhanh)
             b.setEnabled(tienMat);
         updateTotals();
+        if (!tienMat) {
+            hienThiQR();
+        } else if (dlgQR != null) {
+            dlgQR.setVisible(false);
+        }
     }
 
     /** Chỉ cho dùng điểm khi đã chọn khách hàng cũ có số dư điểm lớn hơn 0. */
@@ -1192,6 +1210,8 @@ public class pnlThanhToan extends JPanel {
         }
         long change = rbCash.isSelected() ? Math.max(0, paid - total) : 0;
         lblChange.setText(MONEY.format(change) + " đ");
+        if (dlgQR != null && dlgQR.isVisible())
+            capNhatNoiDungQR();
     }
 
     // ================== XÁC NHẬN / LƯU ĐƠN ==================
@@ -1266,6 +1286,14 @@ public class pnlThanhToan extends JPanel {
         final String maKhuyenMai = khuyenMai == null ? null : khuyenMai.getMaKhuyenMai();
         final int diemSuDung = soDiemSuDung;
         final String maTiepNhan = maTiepNhanDangLap;
+
+        // MỚI: chụp lại dữ liệu hiển thị trước khi form bị reset
+        final String ngayLap = txtOrderDate.getText();
+        final String tenNV = txtEmployee.getText();
+        final String tamTinhTxt = lblSubtotal.getText();
+        final String giamKMTxt = lblDiscount.getText();
+        final String giamDiemTxt = lblGiamDiem.getText();
+
         long khachDua;
         try {
             khachDua = rbCash.isSelected() ? parseMoney(txtPaid.getText()) : total;
@@ -1275,9 +1303,9 @@ public class pnlThanhToan extends JPanel {
         final long tienKhachDua = khachDua;
 
         btnConfirm.setEnabled(false);
-        new SwingWorker<String, Void>() {
+        new SwingWorker<String[], Void>() { // ĐỔI: String -> String[]
             @Override
-            protected String doInBackground() throws Exception {
+            protected String[] doInBackground() throws Exception {
                 try (Connection con = ConnectDB.getConnection()) {
                     con.setAutoCommit(false);
                     try {
@@ -1293,12 +1321,13 @@ public class pnlThanhToan extends JPanel {
                             maKH = khachCu.maKH;
                         }
 
-                        luuHoaDon(con, maKH, maNV, dong, tongTien, phuongThuc,
+                        // ĐỔI: nhận về maHD
+                        String maHD = luuHoaDon(con, maKH, maNV, dong, tongTien, phuongThuc,
                                 maKhuyenMai, diemSuDung, tienKhachDua);
                         if (maTiepNhan != null)
                             tiepNhanThuCungDAO.danhDauDaThanhToan(con, maTiepNhan);
                         con.commit();
-                        return maKH;
+                        return new String[] { maKH, maHD }; // ĐỔI
                     } catch (Exception ex) {
                         try {
                             con.rollback();
@@ -1319,13 +1348,20 @@ public class pnlThanhToan extends JPanel {
             protected void done() {
                 btnConfirm.setEnabled(true);
                 try {
-                    String maKH = get();
+                    String[] kq = get(); // ĐỔI
+                    String maKH = kq[0];
+                    String maHD = kq[1];
                     String ketQua = maTiepNhan == null
-                            ? "Đã lập hóa đơn cho khách " + ten + " (mã KH: " + maKH + ")."
-                            : "Đã thanh toán phiếu " + maTiepNhan + " và lập hóa đơn cho khách " + ten + ".";
+                            ? "Đã lập hóa đơn " + maHD + " cho khách " + ten + " (mã KH: " + maKH + ")."
+                            : "Đã thanh toán phiếu " + maTiepNhan + " và lập hóa đơn " + maHD
+                                    + " cho khách " + ten + ".";
                     JOptionPane.showMessageDialog(pnlThanhToan.this,
-                            ketQua,
-                            "PETPLUS", JOptionPane.INFORMATION_MESSAGE);
+                            ketQua, "PETPLUS", JOptionPane.INFORMATION_MESSAGE);
+
+                    // MỚI: xuất file txt sau khi đã lưu DB thành công
+                    xuatHoaDon(maHD, maKH, ten, sdt, diaChi, ngayLap, tenNV, phuongThuc, dong,
+                            tamTinhTxt, giamKMTxt, giamDiemTxt, tongTien, tienKhachDua);
+
                     lamMoiDonHang();
                 } catch (Exception ex) {
                     Throwable loi = nguyenNhan(ex);
@@ -1341,7 +1377,7 @@ public class pnlThanhToan extends JPanel {
      * Ghi HoaDon, ChiTietHoaDon, trừ tồn kho và cập nhật điểm tích lũy.
      * Dùng chung Connection (transaction) do luuDonHang() quản lý.
      */
-    private void luuHoaDon(Connection con, String maKH, String maNV,
+    private String luuHoaDon(Connection con, String maKH, String maNV,
             List<Object[]> dong, long tongTien,
             String phuongThuc, String maKhuyenMai,
             int diemSuDung, long tienKhachDua) throws SQLException {
@@ -1351,6 +1387,7 @@ public class pnlThanhToan extends JPanel {
         thanhToanDAO.themChiTiet(con, maHD, dong, tienKhachDua);
         thanhToanDAO.truTonKho(con, dong);
         thanhToanDAO.capNhatDiem(con, maKH, diemSuDung, tongTien);
+        return maHD;
     }
 
     private void cancelPayment() {
@@ -1495,4 +1532,176 @@ public class pnlThanhToan extends JPanel {
             callback.run();
         }
     }
+
+    // ================== QR CODE ==================
+    private void hienThiQR() {
+        if (dlgQR == null) {
+            Window owner = SwingUtilities.getWindowAncestor(this);
+            dlgQR = new JDialog(owner, "Thanh toán QR Code", Dialog.ModalityType.MODELESS);
+
+            JPanel content = new JPanel(new BorderLayout(14, 0));
+            content.setBackground(Color.WHITE);
+            content.setBorder(new EmptyBorder(14, 14, 14, 14));
+
+            lblAnhQR.setPreferredSize(new Dimension(320, 320));
+            lblAnhQR.setBorder(new LineBorder(BORDER));
+            lblAnhQR.setFont(FONT);
+            content.add(lblAnhQR, BorderLayout.WEST);
+
+            txtThongTinQR.setEditable(false);
+            JScrollPane sp = new JScrollPane(txtThongTinQR);
+            sp.setPreferredSize(new Dimension(320, 320));
+            sp.setBorder(new LineBorder(BORDER));
+            content.add(sp, BorderLayout.CENTER);
+
+            dlgQR.setContentPane(content);
+            dlgQR.pack();
+            dlgQR.setLocationRelativeTo(this);
+
+        }
+        napAnhQR();
+        capNhatNoiDungQR();
+        dlgQR.setVisible(true);
+    }
+
+    private void napAnhQR() {
+        File f = new File(DUONG_DAN_QR);
+        String lyDo;
+        try {
+            if (!f.exists()) {
+                lyDo = "File không tồn tại tại đường dẫn trên.";
+            } else {
+                BufferedImage img = ImageIO.read(f);
+                if (img == null) {
+                    lyDo = "File có tồn tại nhưng Java không đọc được định dạng "
+                            + "(có thể là webp/CMYK hoặc đổi đuôi). Hãy mở bằng Paint rồi Save as JPEG/PNG.";
+                } else {
+                    int max = 310;
+                    double tiLe = Math.min((double) max / img.getWidth(), (double) max / img.getHeight());
+                    int w = Math.max(1, (int) (img.getWidth() * tiLe));
+                    int h = Math.max(1, (int) (img.getHeight() * tiLe));
+                    lblAnhQR.setText("");
+                    lblAnhQR.setIcon(new ImageIcon(img.getScaledInstance(w, h, Image.SCALE_SMOOTH)));
+                    return;
+                }
+            }
+        } catch (Exception ex) {
+            lyDo = "Lỗi khi đọc: " + ex;
+        }
+        lblAnhQR.setIcon(null);
+        lblAnhQR.setText("<html><div style='width:290px;text-align:center'>Không tải được ảnh QR<br>"
+                + f.getAbsolutePath() + "<br><b>" + lyDo + "</b></div></html>");
+    }
+
+    private void capNhatNoiDungQR() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("<html><body style='font-family:Times New Roman;font-size:12px;margin:8px'>");
+        sb.append("<h3 style='color:#d92560;margin:0 0 6px 0'>THÔNG TIN HÓA ĐƠN</h3>");
+        sb.append("Mã đơn: <b>").append(esc(txtOrderCode.getText())).append("</b><br>");
+        sb.append("Ngày: ").append(esc(txtOrderDate.getText())).append("<br>");
+        sb.append("Nhân viên: ").append(esc(txtEmployee.getText())).append("<br>");
+        sb.append("Khách hàng: ").append(esc(txtCustomer.getText())).append("<br>");
+        sb.append("SĐT: ").append(esc(txtPhone.getText())).append("<hr>");
+        sb.append("<table width='100%' cellspacing='0' cellpadding='2'>");
+        for (int i = 0; i < modelDon.getRowCount(); i++) {
+            sb.append("<tr><td>").append(esc(String.valueOf(modelDon.getValueAt(i, C_TEN))))
+                    .append(" x").append(modelDon.getValueAt(i, C_SL))
+                    .append("</td><td align='right'>")
+                    .append(MONEY.format(((Number) modelDon.getValueAt(i, C_TIEN)).longValue()))
+                    .append(" đ</td></tr>");
+        }
+        sb.append("</table><hr>");
+        sb.append("Tạm tính: ").append(lblSubtotal.getText()).append("<br>");
+        sb.append("Khuyến mãi: ").append(lblDiscount.getText()).append("<br>");
+        sb.append("Giảm điểm: ").append(lblGiamDiem.getText()).append("<br>");
+        sb.append("<p style='font-size:15px;color:#d92560'><b>TỔNG: ")
+                .append(MONEY.format(total)).append(" đ</b></p>");
+        sb.append("<i>Nội dung CK: ").append(esc(txtOrderCode.getText())).append("</i>");
+        sb.append("</body></html>");
+        txtThongTinQR.setText(sb.toString());
+        txtThongTinQR.setCaretPosition(0);
+    }
+
+    private static String esc(String s) {
+        if (s == null)
+            return "";
+        return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
+    }
+
+    // ================== XUẤT HÓA ĐƠN ==================
+    private static final int RONG_HD = 48;
+
+    private static String canHaiBen(String trai, String phai) {
+        int khoang = Math.max(1, RONG_HD - trai.length() - phai.length());
+        return trai + " ".repeat(khoang) + phai;
+    }
+
+    private static String canGiua(String s) {
+        int le = Math.max(0, (RONG_HD - s.length()) / 2);
+        return " ".repeat(le) + s;
+    }
+
+    private void xuatHoaDon(String maHD, String maKH, String tenKH, String sdt, String diaChi,
+            String ngay, String nhanVien, String phuongThuc, List<Object[]> dong,
+            String tamTinh, String giamKM, String giamDiem, long tongTien, long khachDua) {
+        try {
+            String gach = "=".repeat(RONG_HD);
+            String nhat = "-".repeat(RONG_HD);
+            StringBuilder sb = new StringBuilder();
+            sb.append(gach).append("\r\n");
+            sb.append(canGiua("PETPLUS")).append("\r\n");
+            sb.append(canGiua("HÓA ĐƠN BÁN HÀNG")).append("\r\n");
+            sb.append(gach).append("\r\n");
+            sb.append("Mã hóa đơn : ").append(maHD).append("\r\n");
+            sb.append("Ngày lập   : ").append(ngay).append("\r\n");
+            sb.append("Nhân viên  : ").append(nhanVien).append("\r\n");
+            sb.append("Khách hàng : ").append(tenKH).append(" (").append(maKH).append(")\r\n");
+            sb.append("SĐT        : ").append(sdt).append("\r\n");
+            if (diaChi != null && !diaChi.isEmpty())
+                sb.append("Địa chỉ    : ").append(diaChi).append("\r\n");
+            sb.append("Thanh toán : ").append(phuongThuc).append("\r\n");
+            sb.append(nhat).append("\r\n");
+
+            int stt = 1;
+            for (Object[] r : dong) {
+                long sl = ((Number) r[3]).longValue();
+                long gia = ((Number) r[4]).longValue();
+                long tien = ((Number) r[5]).longValue();
+                sb.append(stt++).append(". ").append(r[2]).append(" [").append(r[0]).append("]\r\n");
+                sb.append(canHaiBen("   " + sl + " x " + MONEY.format(gia) + " đ",
+                        MONEY.format(tien) + " đ")).append("\r\n");
+            }
+            sb.append(nhat).append("\r\n");
+            sb.append(canHaiBen("Tạm tính:", tamTinh)).append("\r\n");
+            sb.append(canHaiBen("Khuyến mãi:", giamKM)).append("\r\n");
+            sb.append(canHaiBen("Giảm bằng điểm:", giamDiem)).append("\r\n");
+            sb.append(nhat).append("\r\n");
+            sb.append(canHaiBen("TỔNG THANH TOÁN:", MONEY.format(tongTien) + " đ")).append("\r\n");
+            sb.append(canHaiBen("Khách đưa:", MONEY.format(khachDua) + " đ")).append("\r\n");
+            sb.append(canHaiBen("Tiền thừa:", MONEY.format(Math.max(0, khachDua - tongTien)) + " đ"))
+                    .append("\r\n");
+            sb.append(gach).append("\r\n");
+            sb.append(canGiua("Cảm ơn quý khách!")).append("\r\n");
+            sb.append(gach).append("\r\n");
+
+            Path thuMuc = Paths.get(THU_MUC_HOA_DON);
+            Files.createDirectories(thuMuc);
+            Path file = thuMuc.resolve(maHD + ".txt");
+
+            byte[] noiDung = sb.toString().getBytes(StandardCharsets.UTF_8);
+            byte[] bom = { (byte) 0xEF, (byte) 0xBB, (byte) 0xBF };
+            byte[] out = new byte[bom.length + noiDung.length];
+            System.arraycopy(bom, 0, out, 0, bom.length);
+            System.arraycopy(noiDung, 0, out, bom.length, noiDung.length);
+            Files.write(file, out);
+
+            if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.OPEN))
+                Desktop.getDesktop().open(file.toFile());
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this,
+                    "Đơn đã lưu nhưng không xuất được hóa đơn: " + ex.getMessage(),
+                    "Xuất hóa đơn", JOptionPane.WARNING_MESSAGE);
+        }
+    }
+
 }
