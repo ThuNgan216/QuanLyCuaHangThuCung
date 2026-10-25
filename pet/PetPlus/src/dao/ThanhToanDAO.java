@@ -11,6 +11,8 @@ import java.util.Map;
 import java.time.LocalDateTime;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import entity.KhuyenMai;
+import java.time.LocalDate;
 
 public class ThanhToanDAO {
 
@@ -44,7 +46,8 @@ public class ThanhToanDAO {
 
         public long tongPhiDichVu() {
             long tong = 0;
-            for (DichVuHoaDonDTO dichVu : danhSachDichVu) tong = Math.addExact(tong, dichVu.donGia);
+            for (DichVuHoaDonDTO dichVu : danhSachDichVu)
+                tong = Math.addExact(tong, dichVu.donGia);
             return tong;
         }
     }
@@ -52,6 +55,7 @@ public class ThanhToanDAO {
     public static class DichVuHoaDonDTO {
         public final String maDichVu, tenDichVu;
         public final long donGia;
+
         public DichVuHoaDonDTO(String maDichVu, String tenDichVu, long donGia) {
             this.maDichVu = maDichVu;
             this.tenDichVu = tenDichVu;
@@ -287,15 +291,19 @@ public class ThanhToanDAO {
     }
 
     public void themHoaDon(Connection con, String maHD, String maNV, String maKH,
-            String maPTTT) throws SQLException {
+            String maKhuyenMai, String maPTTT) throws SQLException {
         String sql = "INSERT INTO HoaDon (maHoaDon, ngayLapHD, maNV, maKH, maKhuyenMai, maPTTT) "
-                + "VALUES (?, ?, ?, ?, NULL, ?)";
+                + "VALUES (?, ?, ?, ?, ?, ?)";
         try (PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, maHD);
-            ps.setDate(2, java.sql.Date.valueOf(java.time.LocalDate.now()));
+            ps.setDate(2, java.sql.Date.valueOf(LocalDate.now()));
             ps.setString(3, maNV);
             ps.setString(4, maKH);
-            ps.setString(5, maPTTT);
+            if (maKhuyenMai == null)
+                ps.setNull(5, Types.VARCHAR);
+            else
+                ps.setString(5, maKhuyenMai);
+            ps.setString(6, maPTTT);
             ps.executeUpdate();
         }
     }
@@ -377,5 +385,33 @@ public class ThanhToanDAO {
             ps.setString(3, maKH);
             ps.executeUpdate();
         }
+    }
+
+    public List<KhuyenMai> layKhuyenMaiHieuLuc() throws SQLException {
+        String sql = "SELECT maKhuyenMai, tenKhuyenMai, phanTramGiam, dieuKienApDung, ngayBatDau, ngayKetThuc "
+                + "FROM KhuyenMai "
+                + "WHERE (ngayBatDau IS NULL OR ngayBatDau <= ?) AND (ngayKetThuc IS NULL OR ngayKetThuc >= ?) "
+                + "ORDER BY tenKhuyenMai";
+        List<KhuyenMai> ds = new ArrayList<>();
+        java.sql.Date homNay = java.sql.Date.valueOf(LocalDate.now());
+        try (Connection con = ConnectDB.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setDate(1, homNay);
+            ps.setDate(2, homNay);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    java.sql.Date bd = rs.getDate("ngayBatDau");
+                    java.sql.Date kt = rs.getDate("ngayKetThuc");
+                    ds.add(new KhuyenMai(
+                            rs.getString("maKhuyenMai"),
+                            rs.getString("tenKhuyenMai"),
+                            rs.getFloat("phanTramGiam"),
+                            rs.getString("dieuKienApDung"),
+                            bd == null ? null : bd.toLocalDate(),
+                            kt == null ? null : kt.toLocalDate()));
+                }
+            }
+        }
+        return ds;
     }
 }

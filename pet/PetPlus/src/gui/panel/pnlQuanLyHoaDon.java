@@ -1,35 +1,27 @@
 package gui.panel;
 
-import java.awt.CardLayout;
+import java.awt.BorderLayout;
+import java.awt.Window;
 import java.sql.SQLException;
 
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.SwingUtilities;
 
 import dao.ChiTietHoaDonDAO;
+import gui.dialogs.dlgChiTietHoaDon;
 
 public class pnlQuanLyHoaDon extends JPanel {
 
-    private static final String CARD_DS = "DS";
-    private static final String CARD_CT = "CT";
-
-    private final CardLayout cards = new CardLayout();
     private final pnlHoaDon pnlDanhSach = new pnlHoaDon();
-    private final pnlChiTietHoaDon pnlChiTiet = new pnlChiTietHoaDon();
     private final ChiTietHoaDonDAO chiTietDAO = new ChiTietHoaDonDAO();
 
     public pnlQuanLyHoaDon() {
-        setLayout(cards);
-        add(pnlDanhSach, CARD_DS);
-        add(pnlChiTiet, CARD_CT);
+        setLayout(new BorderLayout());
+        add(pnlDanhSach, BorderLayout.CENTER);
 
-        // Chọn 1 hóa đơn trong danh sách -> sang trang chi tiết
+        // Chọn 1 hóa đơn trong danh sách -> mở dialog chi tiết
         pnlDanhSach.setOnChonHoaDon(this::moChiTiet);
-
-        // Nút "Quay lại" -> về danh sách
-        pnlChiTiet.setOnBack(() -> cards.show(this, CARD_DS));
-
-        cards.show(this, CARD_DS);
     }
 
     private void moChiTiet(String maHD) {
@@ -40,8 +32,8 @@ public class pnlQuanLyHoaDon extends JPanel {
                         JOptionPane.WARNING_MESSAGE);
                 return;
             }
-            pnlChiTiet.hienThi(v);
-            cards.show(this, CARD_CT);
+            Window owner = SwingUtilities.getWindowAncestor(this);
+            new dlgChiTietHoaDon(owner, v).setVisible(true); // modal: dừng tới khi đóng
         } catch (SQLException ex) {
             ex.printStackTrace();
             JOptionPane.showMessageDialog(this, "Lỗi tải chi tiết hóa đơn: " + ex.getMessage(), "Lỗi",
