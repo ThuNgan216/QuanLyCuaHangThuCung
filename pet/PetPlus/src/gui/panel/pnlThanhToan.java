@@ -2,7 +2,11 @@ package gui.panel;
 
 import dao.ThanhToanDAO;
 import dao.TiepNhanThuCungDAO;
+import dao.MaVachDAO;
+import dao.SanPhamDAO;
 import database.ConnectDB;
+import entity.SanPham;
+import gui.dialogs.dlgQuetMaVach;
 import utils.Auth;
 
 import java.awt.*;
@@ -49,6 +53,7 @@ public class pnlThanhToan extends JPanel {
 
     private final ThanhToanDAO thanhToanDAO = new ThanhToanDAO();
     private final TiepNhanThuCungDAO tiepNhanThuCungDAO = new TiepNhanThuCungDAO();
+    private final MaVachDAO maVachDAO = new MaVachDAO();
 
     private final DefaultTableModel modelDon = new DefaultTableModel(
             new String[] { "Loại", "Tên", "SL", "Đơn giá", "Thành tiền", "Mã" }, 0) {
@@ -100,7 +105,7 @@ public class pnlThanhToan extends JPanel {
     private JButton btnConfirm;
     private long total = 0;
     private int soDiemSuDung = 0;
-    private String maTiepNhanDangLap;
+    private String maHoaDonTiepNhanDangLap;
     private final Set<String> maDichVuPhieuDangLap = new HashSet<>();
 
     private static class KhachHangItem {
@@ -487,18 +492,160 @@ public class pnlThanhToan extends JPanel {
         JPanel p = new JPanel(new BorderLayout());
         p.setOpaque(false);
         p.add(label("Lập hóa đơn", 22, DARK_PINK, true), BorderLayout.WEST);
-        JButton btnPhieuChoThanhToan = outlineButton("Chọn phiếu chờ thanh toán");
-        btnPhieuChoThanhToan.setToolTipText("Nạp thông tin khách hàng và dịch vụ từ phiếu tiếp nhận đang chờ thanh toán.");
+        JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+        actions.setOpaque(false);
+        JButton btnQuetMaVach = outlineButton("Quét mã vạch");
+        btnQuetMaVach.setToolTipText("Quét sản phẩm bằng webcam và thêm vào đơn hàng đang lập.");
+        btnQuetMaVach.addActionListener(e -> moQuetMaVach(SwingUtilities.getWindowAncestor(this) instanceof Frame
+                ? (Frame) SwingUtilities.getWindowAncestor(this) : null));
+        JButton btnPhieuChoThanhToan = outlineButton("Chọn hóa đơn tiếp nhận");
+        btnPhieuChoThanhToan.setToolTipText("Nạp hóa đơn tiếp nhận đang chờ thanh toán.");
         btnPhieuChoThanhToan.addActionListener(e -> moChonPhieuChoThanhToan());
-        p.add(btnPhieuChoThanhToan, BorderLayout.EAST);
+        actions.add(btnQuetMaVach);
+        actions.add(btnPhieuChoThanhToan);
+        p.add(actions, BorderLayout.EAST);
         p.setBorder(new CompoundBorder(new MatteBorder(0, 0, 1, 0, PINK),
                 new EmptyBorder(0, 6, 9, 0)));
         return p;
     }
 
+    public void moQuetMaVach(Frame parent) {
+        new dlgQuetMaVach(parent, this::themSanPhamTheoMaVach).setVisible(true);
+    }
+
+    private void themSanPhamTheoMaVach(String maVach) {
+        new SwingWorker<MaVachDAO.SanPhamQuet, Void>() {
+            @Override
+            protected MaVachDAO.SanPhamQuet doInBackground() throws Exception {
+                try (Connection con = ConnectDB.getConnection()) {
+                    return maVachDAO.timSanPhamTheoMaVach(con, maVach);
+                }
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    MaVachDAO.SanPhamQuet sanPham = get();
+                    if (sanPham == null) {
+                        chonSanPhamGanMaVach(maVach);
+                        return;
+                    }
+                    themSanPhamVaoDon(sanPham, maVach);
+                } catch (Exception ex) {
+                    Throwable loi = nguyenNhan(ex);
+                    JOptionPane.showMessageDialog(pnlThanhToan.this,
+                            "Không thể tra sản phẩm theo mã vạch: " + loi.getMessage(),
+                            "Lỗi mã vạch", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        }.execute();
+    }
+
+    private void chonSanPhamGanMaVach(String maVach) {
+        new SwingWorker<List<SanPham>, Void>() {
+            @Override
+            protected List<SanPham> doInBackground() throws Exception {
+                return new SanPhamDAO().layDanhSachSanPham();
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    List<SanPham> sanPham = get();
+                    if (sanPham.isEmpty()) {
+                        JOptionPane.showMessageDialog(pnlThanhToan.this,
+                                "Chưa có sản phẩm để gán mã vạch " + maVach + ".",
+                                "Không có sản phẩm", JOptionPane.WARNING_MESSAGE);
+                        return;
+                    }
+
+                    JComboBox<SanPham> cboSanPham = new JComboBox<>(sanPham.toArray(new SanPham[0]));
+                    cboSanPham.setSelectedIndex(-1);
+                    cboSanPham.setRenderer(new DefaultListCellRenderer() {
+                        @Override
+                        public Component getListCellRendererComponent(JList<?> list, Object value, int index,
+                                boolean isSelected, boolean cellHasFocus) {
+                            super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                            if (value instanceof SanPham) {
+                                SanPham item = (SanPham) value;
+                                setText(item.getMaSP() + " - " + item.getTenSP()
+                                        + " • Tồn: " + item.getSoLuongTon());
+                            } else {
+                                setText("— Chọn sản phẩm —");
+                            }
+                            return this;
+                        }
+                    });
+                    JPanel form = new JPanel(new BorderLayout(0, 8));
+                    form.add(new JLabel("Mã vạch " + maVach + " chưa được gán. Chọn sản phẩm cần liên kết:"),
+                            BorderLayout.NORTH);
+                    form.add(cboSanPham, BorderLayout.CENTER);
+                    form.add(new JLabel("Nếu sản phẩm đã có mã vạch, mã cũ sẽ được thay thế."), BorderLayout.SOUTH);
+                    int chon = JOptionPane.showConfirmDialog(pnlThanhToan.this, form,
+                            "Gán mã vạch cho sản phẩm", JOptionPane.OK_CANCEL_OPTION,
+                            JOptionPane.QUESTION_MESSAGE);
+                    if (chon != JOptionPane.OK_OPTION) return;
+                    if (!(cboSanPham.getSelectedItem() instanceof SanPham)) {
+                        JOptionPane.showMessageDialog(pnlThanhToan.this, "Hãy chọn sản phẩm cần gán mã vạch.",
+                                "Chưa chọn sản phẩm", JOptionPane.WARNING_MESSAGE);
+                        return;
+                    }
+
+                    SanPham daChon = (SanPham) cboSanPham.getSelectedItem();
+                    new SwingWorker<MaVachDAO.SanPhamQuet, Void>() {
+                        @Override
+                        protected MaVachDAO.SanPhamQuet doInBackground() throws Exception {
+                            return maVachDAO.ganMaVachChoSanPham(maVach, daChon.getMaSP());
+                        }
+
+                        @Override
+                        protected void done() {
+                            try {
+                                MaVachDAO.SanPhamQuet daGan = get();
+                                lblGoiY.setText("Đã gán mã " + maVach + " cho " + daGan.getTenSP() + ".");
+                                themSanPhamVaoDon(daGan, maVach);
+                            } catch (Exception ex) {
+                                Throwable loi = nguyenNhan(ex);
+                                JOptionPane.showMessageDialog(pnlThanhToan.this,
+                                        "Không thể gán mã vạch: " + loi.getMessage(),
+                                        "Lỗi mã vạch", JOptionPane.ERROR_MESSAGE);
+                            }
+                        }
+                    }.execute();
+                } catch (Exception ex) {
+                    Throwable loi = nguyenNhan(ex);
+                    JOptionPane.showMessageDialog(pnlThanhToan.this,
+                            "Không tải được danh sách sản phẩm: " + loi.getMessage(),
+                            "Lỗi dữ liệu", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        }.execute();
+    }
+
+    private void themSanPhamVaoDon(MaVachDAO.SanPhamQuet sanPham, String maVach) {
+        int soLuongTrongDon = 0;
+        for (int row = 0; row < modelDon.getRowCount(); row++) {
+            if (LOAI_SP.equals(modelDon.getValueAt(row, C_LOAI))
+                    && sanPham.getMaSP().equals(String.valueOf(modelDon.getValueAt(row, C_MA)))) {
+                soLuongTrongDon = ((Number) modelDon.getValueAt(row, C_SL)).intValue();
+                break;
+            }
+        }
+        if (sanPham.getSoLuongTon() <= soLuongTrongDon) {
+            JOptionPane.showMessageDialog(pnlThanhToan.this,
+                    sanPham.getSoLuongTon() <= 0
+                            ? "Sản phẩm " + sanPham.getTenSP() + " hiện đã hết hàng."
+                            : "Chỉ còn " + sanPham.getSoLuongTon() + " sản phẩm trong kho.",
+                    "Không đủ tồn kho", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        themVaoDon(LOAI_SP, sanPham.getMaSP(), sanPham.getTenSP(), Math.round(sanPham.getGiaBan()));
+        lblGoiY.setText("Đã thêm " + sanPham.getTenSP() + " vào đơn hàng • Mã vạch: " + maVach);
+    }
+
     private void moChonPhieuChoThanhToan() {
         Window owner = SwingUtilities.getWindowAncestor(this);
-        JDialog dialog = new JDialog(owner, "Chọn phiếu chờ thanh toán", Dialog.ModalityType.APPLICATION_MODAL);
+        JDialog dialog = new JDialog(owner, "Chọn hóa đơn tiếp nhận", Dialog.ModalityType.APPLICATION_MODAL);
         dialog.setLayout(new BorderLayout(8, 8));
         JPanel content = new JPanel(new BorderLayout(8, 8));
         content.setBorder(new EmptyBorder(12, 12, 10, 12));
@@ -506,13 +653,13 @@ public class pnlThanhToan extends JPanel {
 
         JPanel top = new JPanel(new BorderLayout(8, 0));
         top.setOpaque(false);
-        top.add(label("Chọn phiếu để tự động nạp khách hàng và dịch vụ vào hóa đơn.", 13, TEXT, false), BorderLayout.NORTH);
-        JTextField search = timKiemField("Tìm mã phiếu, khách hàng, số điện thoại hoặc thú cưng...");
+        top.add(label("Chọn hóa đơn để nạp khách hàng và dịch vụ vào đơn thanh toán.", 13, TEXT, false), BorderLayout.NORTH);
+        JTextField search = timKiemField("Tìm mã hóa đơn, khách hàng, số điện thoại hoặc thú cưng...");
         top.add(search, BorderLayout.SOUTH);
         content.add(top, BorderLayout.NORTH);
 
         DefaultTableModel model = new DefaultTableModel(new Object[] {
-                "Mã phiếu", "Giờ tiếp nhận", "Khách hàng", "Số điện thoại", "Thú cưng", "Dịch vụ", "Phí dự kiến"
+                "Mã hóa đơn", "Giờ tiếp nhận", "Khách hàng", "Số điện thoại", "Thú cưng", "Dịch vụ", "Phí dự kiến"
         }, 0) {
             @Override public boolean isCellEditable(int row, int column) { return false; }
         };
@@ -534,8 +681,8 @@ public class pnlThanhToan extends JPanel {
         table.getColumnModel().getColumn(6).setCellRenderer(taoCurrencyRenderer());
         content.add(new JScrollPane(table), BorderLayout.CENTER);
 
-        JLabel status = label("Đang tải danh sách phiếu...", 12, MUTED, false);
-        JButton choose = primaryButton("Chọn phiếu");
+        JLabel status = label("Đang tải hóa đơn tiếp nhận...", 12, MUTED, false);
+        JButton choose = primaryButton("Chọn hóa đơn");
         JButton reload = outlineButton("Tải lại");
         JButton close = outlineButton("Đóng");
         JPanel actions = new JPanel(new BorderLayout(8, 0));
@@ -552,7 +699,7 @@ public class pnlThanhToan extends JPanel {
 
         List<ThanhToanDAO.PhieuChoThanhToanDTO> phieuData = new ArrayList<>();
         Runnable napPhieu = () -> {
-            status.setText("Đang tải danh sách phiếu...");
+            status.setText("Đang tải hóa đơn tiếp nhận...");
             choose.setEnabled(false);
             reload.setEnabled(false);
             new SwingWorker<List<ThanhToanDAO.PhieuChoThanhToanDTO>, Void>() {
@@ -565,20 +712,20 @@ public class pnlThanhToan extends JPanel {
                         phieuData.addAll(get());
                         model.setRowCount(0);
                         for (ThanhToanDAO.PhieuChoThanhToanDTO phieu : phieuData) {
-                            model.addRow(new Object[] { phieu.maTiepNhan,
+                            model.addRow(new Object[] { phieu.maHoaDon,
                                     phieu.thoiGianTiepNhan == null ? "—" : phieu.thoiGianTiepNhan.format(
                                             DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")),
                                     phieu.tenKH, phieu.sdt, phieu.tenThuCung, tenDichVuTrongPhieu(phieu),
                                     phieu.danhSachDichVu.isEmpty() ? phieu.phiDuKien : phieu.tongPhiDichVu() });
                         }
-                        status.setText(phieuData.size() + " phiếu đang chờ thanh toán. Nhấp đúp hoặc chọn rồi bấm Chọn phiếu.");
-                        if (phieuData.isEmpty()) status.setText("Hiện không có phiếu nào chờ thanh toán.");
+                        status.setText(phieuData.size() + " hóa đơn tiếp nhận đang chờ thanh toán. Nhấp đúp hoặc chọn một hóa đơn.");
+                        if (phieuData.isEmpty()) status.setText("Hiện không có hóa đơn tiếp nhận nào chờ thanh toán.");
                         choose.setEnabled(!phieuData.isEmpty());
                     } catch (Exception ex) {
                         Throwable loi = nguyenNhan(ex);
                         status.setText("Không tải được danh sách: " + loi.getMessage());
                         JOptionPane.showMessageDialog(dialog,
-                                "Không thể tải phiếu chờ thanh toán:\n" + loi.getMessage(),
+                                "Không thể tải hóa đơn tiếp nhận chờ thanh toán:\n" + loi.getMessage(),
                                 "Lỗi cơ sở dữ liệu", JOptionPane.ERROR_MESSAGE);
                     } finally {
                         reload.setEnabled(true);
@@ -589,7 +736,7 @@ public class pnlThanhToan extends JPanel {
         Runnable chonPhieu = () -> {
             int selected = table.getSelectedRow();
             if (selected < 0) {
-                JOptionPane.showMessageDialog(dialog, "Hãy chọn một phiếu trong danh sách.");
+                JOptionPane.showMessageDialog(dialog, "Hãy chọn một hóa đơn trong danh sách.");
                 return;
             }
             int modelRow = table.convertRowIndexToModel(selected);
@@ -622,14 +769,13 @@ public class pnlThanhToan extends JPanel {
     private boolean napPhieuChoThanhToan(ThanhToanDAO.PhieuChoThanhToanDTO phieu) {
         if (phieu.danhSachDichVu.isEmpty()) {
             JOptionPane.showMessageDialog(this,
-                    "Phiếu chưa có dịch vụ gắn với lịch hẹn nên chưa thể nạp vào hóa đơn. "
-                            + "Hãy tạo lại phiếu tiếp nhận để hệ thống tạo đơn dịch vụ tương ứng.",
+                    "Hóa đơn tiếp nhận chưa có dòng dịch vụ để thanh toán.",
                     "Chưa có dữ liệu dịch vụ", JOptionPane.ERROR_MESSAGE);
             return false;
         }
         for (ThanhToanDAO.DichVuHoaDonDTO dichVu : phieu.danhSachDichVu) {
             if (dichVu.maDichVu == null || dichVu.tenDichVu == null || dichVu.donGia < 0) {
-                JOptionPane.showMessageDialog(this, "Dịch vụ trong phiếu chưa có mã, tên hoặc đơn giá hợp lệ.",
+                JOptionPane.showMessageDialog(this, "Dịch vụ trong hóa đơn chưa có mã, tên hoặc đơn giá hợp lệ.",
                         "Thiếu thông tin dịch vụ", JOptionPane.ERROR_MESSAGE);
                 return false;
             }
@@ -638,8 +784,8 @@ public class pnlThanhToan extends JPanel {
                 || !txtPhone.getText().trim().isEmpty() || !txtCustomer.getText().trim().isEmpty();
         if (donDangNhap) {
             int chon = JOptionPane.showConfirmDialog(this,
-                    "Nạp phiếu " + phieu.maTiepNhan + " sẽ thay thế nội dung hóa đơn đang nhập. Tiếp tục?",
-                    "Nạp phiếu chờ thanh toán", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+                    "Nạp hóa đơn tiếp nhận " + phieu.maHoaDon + " sẽ thay thế nội dung đang nhập. Tiếp tục?",
+                    "Nạp hóa đơn tiếp nhận", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
             if (chon != JOptionPane.YES_OPTION) return false;
         }
 
@@ -665,7 +811,7 @@ public class pnlThanhToan extends JPanel {
         } finally {
             dangChonKhachHang = false;
         }
-        maTiepNhanDangLap = phieu.maTiepNhan;
+        maHoaDonTiepNhanDangLap = phieu.maHoaDon;
         maDichVuPhieuDangLap.clear();
         lamMoiThongTinDon();
         for (ThanhToanDAO.DichVuHoaDonDTO dichVu : phieu.danhSachDichVu) {
@@ -673,7 +819,7 @@ public class pnlThanhToan extends JPanel {
             themVaoDon(LOAI_DV, dichVu.maDichVu, dichVu.tenDichVu, dichVu.donGia);
         }
         capNhatTrangThaiDiem();
-        lblGoiY.setText("Đang lập hóa đơn cho phiếu " + phieu.maTiepNhan + " • Thú cưng: " + phieu.tenThuCung);
+        lblGoiY.setText("Đang thanh toán hóa đơn " + phieu.maHoaDon + " • Thú cưng: " + phieu.tenThuCung);
         return true;
     }
 
@@ -1156,7 +1302,7 @@ public class pnlThanhToan extends JPanel {
         final String phuongThuc = rbCash.isSelected() ? "Tiền mặt" : "QR Code";
         final double tyLeGiam = layTyLeGiamGia();
         final int diemSuDung = soDiemSuDung;
-        final String maTiepNhan = maTiepNhanDangLap;
+        final String maHoaDonTiepNhan = maHoaDonTiepNhanDangLap;
         long khachDua;
         try {
             khachDua = rbCash.isSelected() ? parseMoney(txtPaid.getText()) : total;
@@ -1185,9 +1331,9 @@ public class pnlThanhToan extends JPanel {
                         }
 
                         luuHoaDon(con, maKH, maNV, dong, tongTien, phuongThuc,
-                                tyLeGiam, diemSuDung, tienKhachDua);
-                        if (maTiepNhan != null)
-                            tiepNhanThuCungDAO.danhDauDaThanhToan(con, maTiepNhan);
+                                tyLeGiam, diemSuDung, tienKhachDua, maHoaDonTiepNhan);
+                        if (maHoaDonTiepNhan != null)
+                            tiepNhanThuCungDAO.danhDauDaThanhToan(con, maHoaDonTiepNhan);
                         con.commit();
                         return maKH;
                     } catch (Exception ex) {
@@ -1211,9 +1357,9 @@ public class pnlThanhToan extends JPanel {
                 btnConfirm.setEnabled(true);
                 try {
                     String maKH = get();
-                    String ketQua = maTiepNhan == null
+                    String ketQua = maHoaDonTiepNhan == null
                             ? "Đã lập hóa đơn cho khách " + ten + " (mã KH: " + maKH + ")."
-                            : "Đã thanh toán phiếu " + maTiepNhan + " và lập hóa đơn cho khách " + ten + ".";
+                            : "Đã thanh toán hóa đơn tiếp nhận " + maHoaDonTiepNhan + " cho khách " + ten + ".";
                     JOptionPane.showMessageDialog(pnlThanhToan.this,
                             ketQua,
                             "PETPLUS", JOptionPane.INFORMATION_MESSAGE);
@@ -1244,10 +1390,17 @@ public class pnlThanhToan extends JPanel {
     private void luuHoaDon(Connection con, String maKH, String maNV,
             List<Object[]> dong, long tongTien,
             String phuongThuc, double tyLeGiam,
-            int diemSuDung, long tienKhachDua) throws SQLException {
-        String maHD = thanhToanDAO.taoMaHoaDon(con);
+            int diemSuDung, long tienKhachDua, String maHoaDonTiepNhan) throws SQLException {
         String maPTTT = thanhToanDAO.layMaPTTT(con, phuongThuc);
-        thanhToanDAO.themHoaDon(con, maHD, maNV, maKH, maPTTT);
+        String maHD;
+        if (maHoaDonTiepNhan == null) {
+            maHD = thanhToanDAO.taoMaHoaDon(con);
+            thanhToanDAO.themHoaDon(con, maHD, maNV, maKH, maPTTT);
+        } else {
+            maHD = maHoaDonTiepNhan;
+            thanhToanDAO.capNhatThanhToanHoaDon(con, maHD, maNV, maPTTT);
+            thanhToanDAO.xoaChiTietHoaDon(con, maHD);
+        }
         thanhToanDAO.themChiTiet(con, maHD, dong, tienKhachDua);
         thanhToanDAO.truTonKho(con, dong);
         thanhToanDAO.capNhatDiem(con, maKH, diemSuDung, tongTien);
@@ -1255,10 +1408,10 @@ public class pnlThanhToan extends JPanel {
 
     private void cancelPayment() {
         int chon = JOptionPane.showConfirmDialog(this,
-                maTiepNhanDangLap == null
+                maHoaDonTiepNhanDangLap == null
                         ? "Xóa các dòng đã chọn và thông tin đang nhập?"
-                        : "Bỏ hóa đơn đang lập cho " + maTiepNhanDangLap
-                                + "? Phiếu vẫn ở trạng thái Chờ thanh toán.",
+                        : "Bỏ hóa đơn đang lập cho " + maHoaDonTiepNhanDangLap
+                                + "? Hóa đơn tiếp nhận vẫn ở trạng thái Chờ thanh toán.",
                 "Hủy thanh toán", JOptionPane.YES_NO_OPTION);
         if (chon == JOptionPane.YES_OPTION)
             lamMoiDonHang();
@@ -1266,7 +1419,7 @@ public class pnlThanhToan extends JPanel {
 
     private void lamMoiDonHang() {
         modelDon.setRowCount(0);
-        maTiepNhanDangLap = null;
+        maHoaDonTiepNhanDangLap = null;
         maDichVuPhieuDangLap.clear();
         txtDiscount.setText("0");
         chkSuDungDiem.setSelected(false);

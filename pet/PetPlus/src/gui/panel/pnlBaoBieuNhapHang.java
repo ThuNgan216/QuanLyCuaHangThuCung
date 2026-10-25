@@ -5,9 +5,18 @@ import dao.PhieuNhapDAO;
 import entity.ChiTietPhieuNhap;
 import entity.PhieuNhap;
 import java.awt.*;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.IOException;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Locale;
 import javax.swing.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableModel;
 import utils.PetPlusTheme;
 
@@ -19,7 +28,7 @@ public class pnlBaoBieuNhapHang extends JPanel {
 
     private final JLabel lblTongPhieu = new JLabel("0");
     private final JLabel lblTongChiPhi = new JLabel("0 đ");
-    private final JButton btnLamMoi = new JButton("Làm Mới Thống Kê");
+    private final JButton btnXuatBaoBieu = new JButton("Xuất báo biểu");
 
     public pnlBaoBieuNhapHang() {
         setLayout(new BorderLayout(15, 15));
@@ -36,7 +45,7 @@ public class pnlBaoBieuNhapHang extends JPanel {
         JPanel pnlNorth = new JPanel(new BorderLayout(10, 10));
         pnlNorth.setOpaque(false);
 
-        JLabel lblTitle = new JLabel("BÁO BIỂU & THỐNG KÊ NHẬP HÀNG");
+        JLabel lblTitle = new JLabel("THỐNG KÊ NHẬP HÀNG");
         lblTitle.setFont(new Font("Arial", Font.BOLD, 22));
         lblTitle.setForeground(new Color(224, 25, 91));
         pnlNorth.add(lblTitle, BorderLayout.WEST);
@@ -70,14 +79,18 @@ public class pnlBaoBieuNhapHang extends JPanel {
         // --- 3. THANH TÁC VỤ (SOUTH) ---
         JPanel pnlSouth = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 5));
         pnlSouth.setOpaque(false);
-        btnLamMoi.setBackground(new Color(250, 48, 115));
-        btnLamMoi.setForeground(Color.WHITE);
-        pnlSouth.add(btnLamMoi);
+        btnXuatBaoBieu.setBackground(new Color(250, 48, 115));
+        btnXuatBaoBieu.setForeground(Color.WHITE);
+        pnlSouth.add(btnXuatBaoBieu);
 
         add(pnlSouth, BorderLayout.SOUTH);
 
         // Sự kiện
-        btnLamMoi.addActionListener(e -> taiDuLieuBaoBieu());
+        btnXuatBaoBieu.addActionListener(e -> {
+            if (taiDuLieuBaoBieu()) {
+                xuatBaoBieuCsv();
+            }
+        });
     }
 
     private JPanel createCard(String title, JLabel lblValue, Color bg) {
@@ -100,7 +113,7 @@ public class pnlBaoBieuNhapHang extends JPanel {
         return card;
     }
 
-    private void taiDuLieuBaoBieu() {
+    private boolean taiDuLieuBaoBieu() {
         try {
             model.setRowCount(0);
             List<PhieuNhap> ds = phieuNhapDAO.layDanhSach();
@@ -142,9 +155,68 @@ public class pnlBaoBieuNhapHang extends JPanel {
             // Hiển thị lên các thẻ card tổng quan
             lblTongPhieu.setText(String.valueOf(tongSoPhieu));
             lblTongChiPhi.setText(String.format("%,.0f đ", tongChiPhiAll.doubleValue()));
+            return true;
 
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Không thể tải dữ liệu báo biểu: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+            return false;
         }
+    }
+
+    private void xuatBaoBieuCsv() {
+        JFileChooser chooser = new JFileChooser();
+        chooser.setDialogTitle("Lưu báo biểu nhập hàng");
+        chooser.setFileFilter(new FileNameExtensionFilter("Tệp CSV (*.csv)", "csv"));
+        chooser.setSelectedFile(new File("BaoCaoNhapHang_" + LocalDate.now().format(
+                DateTimeFormatter.ofPattern("yyyyMMdd")) + ".csv"));
+        if (chooser.showSaveDialog(this) != JFileChooser.APPROVE_OPTION) return;
+
+        File tep = chooser.getSelectedFile();
+        if (!tep.getName().toLowerCase(Locale.ROOT).endsWith(".csv")) {
+            tep = new File(tep.getAbsoluteFile().getParentFile(), tep.getName() + ".csv");
+        }
+        if (tep.exists()) {
+            int luaChon = JOptionPane.showConfirmDialog(this,
+                    "Tệp đã tồn tại. Bạn có muốn ghi đè không?", "Xác nhận ghi đè",
+                    JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+            if (luaChon != JOptionPane.YES_OPTION) return;
+        }
+
+        try (BufferedWriter writer = Files.newBufferedWriter(tep.toPath(), StandardCharsets.UTF_8)) {
+            writer.write('\uFEFF');
+            ghiDongCsv(writer, "Thống kê nhập hàng");
+            ghiDongCsv(writer, "Tổng số phiếu nhập", lblTongPhieu.getText());
+            ghiDongCsv(writer, "Tổng chi phí nhập kho", lblTongChiPhi.getText());
+            writer.newLine();
+
+            Object[] cot = new Object[model.getColumnCount()];
+            for (int i = 0; i < model.getColumnCount(); i++) {
+                cot[i] = model.getColumnName(i);
+            }
+            ghiDongCsv(writer, cot);
+            for (int row = 0; row < model.getRowCount(); row++) {
+                Object[] dong = new Object[model.getColumnCount()];
+                for (int column = 0; column < model.getColumnCount(); column++) {
+                    dong[column] = model.getValueAt(row, column);
+                }
+                ghiDongCsv(writer, dong);
+            }
+            JOptionPane.showMessageDialog(this, "Đã xuất báo biểu đến:\n" + tep.getAbsolutePath(),
+                    "Xuất báo biểu thành công", JOptionPane.INFORMATION_MESSAGE);
+        } catch (IOException ex) {
+            JOptionPane.showMessageDialog(this, "Không thể lưu tệp báo biểu: " + ex.getMessage(),
+                    "Lỗi xuất báo biểu", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void ghiDongCsv(BufferedWriter writer, Object... giaTri) throws IOException {
+        for (int i = 0; i < giaTri.length; i++) {
+            if (i > 0) writer.write(';');
+            String chuoi = String.valueOf(giaTri[i]).replace("\"", "\"\"");
+            writer.write('"');
+            writer.write(chuoi);
+            writer.write('"');
+        }
+        writer.newLine();
     }
 }

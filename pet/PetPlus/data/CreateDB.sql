@@ -224,37 +224,6 @@ CREATE TABLE LichHen
 GO
 
 /* ============================================================
-   12A. PHIEU TIEP NHAN THUC TE
-   maLichHen NULL cho khach den truc tiep; co gia tri khi check-in lich da dat.
-   ============================================================ */
-CREATE TABLE TiepNhanThuCung
-(
-    maTiepNhan       VARCHAR(20)    NOT NULL,
-    maLichHen        VARCHAR(20)    NULL,
-    thoiGianTiepNhan DATETIME2      NOT NULL,
-    gioHenTra        DATETIME2      NOT NULL,
-    maNV             VARCHAR(20)    NOT NULL,
-    maKH             VARCHAR(20)    NOT NULL,
-    maThuCung        VARCHAR(20)    NOT NULL,
-    dichVuYeuCau     NVARCHAR(500)  NOT NULL,
-    tinhTrangBanGiao NVARCHAR(1000) NULL,
-    ghiChu           NVARCHAR(1000) NULL,
-    phiDuKien        DECIMAL(18,2)  NULL,
-    trangThai        NVARCHAR(50)   NOT NULL CONSTRAINT DF_TiepNhanThuCung_TrangThai DEFAULT N'Đã tiếp nhận',
-    CONSTRAINT PK_TiepNhanThuCung PRIMARY KEY (maTiepNhan),
-    CONSTRAINT FK_TiepNhanThuCung_LichHen FOREIGN KEY (maLichHen) REFERENCES LichHen(maLichHen),
-    CONSTRAINT FK_TiepNhanThuCung_NhanVien FOREIGN KEY (maNV) REFERENCES NhanVien(maNV),
-    CONSTRAINT FK_TiepNhanThuCung_KhachHang FOREIGN KEY (maKH) REFERENCES KhachHang(maKH),
-    CONSTRAINT FK_TiepNhanThuCung_ThuCung FOREIGN KEY (maThuCung) REFERENCES ThuCung(maThuCung),
-    CONSTRAINT CK_TiepNhanThuCung_Phi CHECK (phiDuKien IS NULL OR phiDuKien >= 0),
-    CONSTRAINT CK_TiepNhanThuCung_ThoiGian CHECK (gioHenTra > thoiGianTiepNhan)
-);
-GO
-CREATE UNIQUE INDEX UX_TiepNhanThuCung_LichHen
-    ON TiepNhanThuCung(maLichHen) WHERE maLichHen IS NOT NULL;
-GO
-
-/* ============================================================
    13. DICH VU
    ============================================================ */
 CREATE TABLE DichVu
@@ -308,14 +277,45 @@ CREATE TABLE HoaDon
     ngayLapHD    DATE        NOT NULL,
     maNV         VARCHAR(20) NOT NULL,
     maKH         VARCHAR(20) NOT NULL,
-    maKhuyenMai  VARCHAR(20) NOT NULL,
-    maPTTT       VARCHAR(20) NOT NULL,
+    maKhuyenMai  VARCHAR(20) NULL,
+    maPTTT       VARCHAR(20) NULL,
+    laTiepNhan   BIT NOT NULL CONSTRAINT DF_HoaDon_LaTiepNhan DEFAULT (0),
+    maLichHen    VARCHAR(20) NULL,
+    maThuCung    VARCHAR(20) NULL,
+    maNVTiepNhan VARCHAR(20) NULL,
+    thoiGianTiepNhan DATETIME2 NULL,
+    gioHenTra    DATETIME2 NULL,
+    dichVuYeuCau NVARCHAR(500) NULL,
+    tinhTrangBanGiao NVARCHAR(1000) NULL,
+    ghiChuTiepNhan NVARCHAR(1000) NULL,
+    phiDuKien    DECIMAL(18,2) NULL,
+    trangThaiTiepNhan NVARCHAR(50) NULL,
     CONSTRAINT PK_HoaDon PRIMARY KEY (maHoaDon),
     CONSTRAINT FK_HoaDon_NhanVien FOREIGN KEY (maNV) REFERENCES NhanVien(maNV),
     CONSTRAINT FK_HoaDon_KhachHang FOREIGN KEY (maKH) REFERENCES KhachHang(maKH),
     CONSTRAINT FK_HoaDon_KhuyenMai FOREIGN KEY (maKhuyenMai) REFERENCES KhuyenMai(maKhuyenMai),
-    CONSTRAINT FK_HoaDon_PhuongThucThanhToan FOREIGN KEY (maPTTT) REFERENCES PhuongThucThanhToan(maPTTT)
+    CONSTRAINT FK_HoaDon_PhuongThucThanhToan FOREIGN KEY (maPTTT) REFERENCES PhuongThucThanhToan(maPTTT),
+    CONSTRAINT FK_HoaDon_LichHen FOREIGN KEY (maLichHen) REFERENCES LichHen(maLichHen),
+    CONSTRAINT FK_HoaDon_ThuCung FOREIGN KEY (maThuCung) REFERENCES ThuCung(maThuCung),
+    CONSTRAINT FK_HoaDon_NVTiepNhan FOREIGN KEY (maNVTiepNhan) REFERENCES NhanVien(maNV),
+    CONSTRAINT CK_HoaDon_PhiDuKien CHECK (phiDuKien IS NULL OR phiDuKien >= 0),
+    CONSTRAINT CK_HoaDon_ThoiGianTiepNhan CHECK (
+        laTiepNhan = 0 OR (thoiGianTiepNhan IS NOT NULL AND gioHenTra IS NOT NULL
+            AND gioHenTra > thoiGianTiepNhan
+            AND maThuCung IS NOT NULL AND maNVTiepNhan IS NOT NULL AND trangThaiTiepNhan IS NOT NULL))
 );
+GO
+
+SET ANSI_NULLS ON;
+SET ANSI_PADDING ON;
+SET ANSI_WARNINGS ON;
+SET ARITHABORT ON;
+SET CONCAT_NULL_YIELDS_NULL ON;
+SET QUOTED_IDENTIFIER ON;
+SET NUMERIC_ROUNDABORT OFF;
+GO
+CREATE UNIQUE INDEX UX_HoaDon_TiepNhan_LichHen
+    ON HoaDon(maLichHen) WHERE laTiepNhan = 1 AND maLichHen IS NOT NULL;
 GO
 
 /* ============================================================
@@ -372,8 +372,6 @@ CREATE TABLE TichDiem
     CONSTRAINT CK_TichDiem_Diem CHECK (diemTichLuy >= 0)
 );
 GO
-ALTER TABLE HoaDon ALTER COLUMN maKhuyenMai VARCHAR(20) NULL;
-
 ALTER TABLE ChiTietHoaDon DROP CONSTRAINT PK_ChiTietHoaDon;
 
 ALTER TABLE ChiTietHoaDon ADD maChiTiet INT IDENTITY(1,1) NOT NULL;

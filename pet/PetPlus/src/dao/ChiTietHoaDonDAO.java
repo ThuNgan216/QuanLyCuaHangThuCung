@@ -36,7 +36,7 @@ public class ChiTietHoaDonDAO {
             + "LEFT JOIN KhachHang kh ON hd.maKH = kh.maKH "
             + "LEFT JOIN KhuyenMai km ON hd.maKhuyenMai = km.maKhuyenMai "
             + "LEFT JOIN PhuongThucThanhToan pt ON hd.maPTTT = pt.maPTTT "
-            + "WHERE hd.maHoaDon = ?";
+            + "WHERE hd.maHoaDon = ? AND hd.maPTTT IS NOT NULL";
 
     private static final String SQL_CHITIET = "SELECT COALESCE(dv.tenDichVu, sp.tenSP) AS tenMuc, "
             + "       ct.soLuong, ct.donGia, ct.tienKhachDua "

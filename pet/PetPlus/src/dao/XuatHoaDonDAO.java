@@ -66,7 +66,7 @@ public class XuatHoaDonDAO {
             + "LEFT JOIN PhuongThucThanhToan pt ON hd.maPTTT = pt.maPTTT "
             + "LEFT JOIN ChiTietHoaDon ct ON hd.maHoaDon = ct.maHoaDon "
             + "WHERE (hd.maHoaDon LIKE ? OR kh.tenKH LIKE ?) "
-            + "  AND hd.ngayLapHD BETWEEN ? AND ? "
+            + "  AND hd.maPTTT IS NOT NULL AND hd.ngayLapHD BETWEEN ? AND ? "
             + "GROUP BY hd.maHoaDon, hd.ngayLapHD, nv.tenNV, kh.tenKH, pt.tenPTTT, "
             + "         km.tenKhuyenMai, km.phanTramGiam "
             + "ORDER BY hd.ngayLapHD DESC, hd.maHoaDon DESC";

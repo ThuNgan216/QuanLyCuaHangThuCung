@@ -14,7 +14,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.UUID;
 
 /** Nghiệp vụ check-in và theo dõi thú cưng tại cửa hàng. */
 public class TiepNhanThuCungService {
@@ -25,7 +24,7 @@ public class TiepNhanThuCungService {
     public static final String HOAN_TAT = "Hoàn tất";
     public static final String DA_HUY = "Đã hủy";
     public static final List<String> TRANG_THAI = Arrays.asList(
-            DA_TIEP_NHAN, DANG_PHUC_VU, CHO_KHACH_DON, CHO_THANH_TOAN, HOAN_TAT, DA_HUY);
+            DA_TIEP_NHAN, DANG_PHUC_VU, CHO_KHACH_DON, CHO_THANH_TOAN, DA_HUY);
 
     private final TiepNhanThuCungDAO dao = new TiepNhanThuCungDAO();
 
@@ -43,10 +42,7 @@ public class TiepNhanThuCungService {
 
     public boolean tiepNhan(PhieuTiepNhanThuCung phieu) {
         kiemTra(phieu);
-        // Mã phiếu không dựa vào giờ hiển thị (chỉ chính xác đến phút), tránh trùng khi
-        // tiếp nhận nhiều thú cưng liên tiếp trong cùng một phút.
-        phieu.setMaTiepNhan("TN" + UUID.randomUUID().toString().replace("-", "")
-                .substring(0, 18).toUpperCase());
+        // DAO cấp mã hóa đơn và lưu thông tin tiếp nhận trực tiếp trên HoaDon.
         phieu.setTrangThai(DA_TIEP_NHAN);
         return dao.them(phieu);
     }

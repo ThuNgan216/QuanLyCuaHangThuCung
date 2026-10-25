@@ -239,7 +239,7 @@ btnEdit.addActionListener(e -> {
 
         JPanel bottom = new JPanel(new BorderLayout(0, 8));
         bottom.setOpaque(false);
-        lblBarcodePreview.setPreferredSize(new Dimension(0, 74));
+        lblBarcodePreview.setPreferredSize(new Dimension(0, 122));
         lblBarcodePreview.setBorder(BorderFactory.createDashedBorder(BORDER));
         bottom.add(lblBarcodePreview, BorderLayout.NORTH);
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
@@ -247,6 +247,7 @@ btnEdit.addActionListener(e -> {
         JButton btnView = button("Xem mã vạch", false);
         JButton btnPrint = button("In tem mã vạch", false);
         btnCreateBarcode.addActionListener(e -> taoMaVachChoSanPham());
+        btnCreateBarcode.setToolTipText("Dựng lại hình từ số mã vạch đang lưu trong cơ sở dữ liệu; không đổi số mã.");
         btnView.addActionListener(e -> xemMaVach());
         btnPrint.addActionListener(e -> notice("In tem mã vạch"));
         btnCreateBarcode.setEnabled(false);
@@ -429,8 +430,11 @@ btnEdit.addActionListener(e -> {
                     txtBarcode.setText(ma == null ? "" : ma);
                     if (ma == null) {
                         lblBarcodePreview.setText("Chưa có mã vạch - Nhấn Tạo mã vạch");
+                        btnCreateBarcode.setText("Tạo mã vạch");
                         btnCreateBarcode.setEnabled(true);
                     } else {
+                        btnCreateBarcode.setText("Tạo lại mã vạch");
+                        btnCreateBarcode.setEnabled(true);
                         hienThiHinhMaVach(ma);
                     }
                 } catch (Exception ex) {
@@ -446,6 +450,7 @@ btnEdit.addActionListener(e -> {
     private void clearSelected() {
         phienChon++;
         btnCreateBarcode.setEnabled(false);
+        btnCreateBarcode.setText("Tạo mã vạch");
         lblBarcodePreview.setIcon(null);
         txtBarcode.setText("");
         txtName.setText("");
@@ -456,7 +461,7 @@ btnEdit.addActionListener(e -> {
         lblBarcodePreview.setText("Chưa chọn sản phẩm");
     }
 
-    // Tạo mã nội bộ Code 128 và lưu khi sản phẩm chưa có mã vạch
+    // Vẽ lại bằng đúng mã đã lưu; chỉ sinh mã nội bộ khi sản phẩm chưa có mã.
     private void taoMaVachChoSanPham() {
         int row = table.getSelectedRow();
         if (row < 0)
@@ -467,11 +472,15 @@ btnEdit.addActionListener(e -> {
         final String maSP = sanPhamDangHienThi.get(index).getMaSP();
         final int phien = phienChon;
         btnCreateBarcode.setEnabled(false);
-        lblBarcodePreview.setText("Đang tạo mã vạch...");
+        lblBarcodePreview.setText("Đang dựng lại mã vạch từ dữ liệu đã lưu...");
         new SwingWorker<String, Void>() {
             @Override
             protected String doInBackground() throws Exception {
-                return new MaVachDAO().taoMaVachNeuChuaCo(maSP);
+                MaVachDAO dao = new MaVachDAO();
+                String ma = dao.layMaVachTheoSanPham(maSP);
+                return ma == null || ma.trim().isEmpty()
+                        ? dao.taoMaVachNeuChuaCo(maSP)
+                        : ma;
             }
 
             @Override
@@ -482,7 +491,11 @@ btnEdit.addActionListener(e -> {
                     String ma = get();
                     txtBarcode.setText(ma);
                     hienThiHinhMaVach(ma);
+                    btnCreateBarcode.setText("Tạo lại mã vạch");
+                    btnCreateBarcode.setEnabled(true);
                 } catch (Exception ex) {
+                    btnCreateBarcode.setText(txtBarcode.getText().trim().isEmpty()
+                            ? "Tạo mã vạch" : "Tạo lại mã vạch");
                     btnCreateBarcode.setEnabled(true);
                     lblBarcodePreview.setText("Tạo mã vạch thất bại");
                     JOptionPane.showMessageDialog(pnlSanPham.this,
@@ -510,12 +523,13 @@ btnEdit.addActionListener(e -> {
         }
     }
 
-    // Hiển thị ảnh mã vạch Code 128 ở phần thông tin sản phẩm
+    // Hiển thị ảnh Code 128 có giữ nguyên tỷ lệ để không làm méo các vạch.
     private void hienThiHinhMaVach(String ma) {
         try {
             BufferedImage image = BarcodeUtils.taoMaVach(ma);
-            int width = Math.min(300, Math.max(160, lblBarcodePreview.getWidth() - 20));
-            Image scaled = image.getScaledInstance(width, 63, Image.SCALE_SMOOTH);
+            int width = Math.min(450, Math.max(240, lblBarcodePreview.getWidth() - 36));
+            int height = Math.max(1, image.getHeight() * width / image.getWidth());
+            Image scaled = image.getScaledInstance(width, height, Image.SCALE_FAST);
             lblBarcodePreview.setIcon(new ImageIcon(scaled));
             lblBarcodePreview.setText("");
             lblBarcodePreview.setHorizontalAlignment(SwingConstants.CENTER);

@@ -63,7 +63,7 @@ public class HoaDonDAO {
                         "LEFT JOIN KhuyenMai km " +
                         "    ON h.maKhuyenMai = km.maKhuyenMai " +
                         JOIN_TONG_GOC +
-                        "WHERE 1 = 1 ");
+                        "WHERE h.maPTTT IS NOT NULL ");
 
         List<Object> params = new ArrayList<>();
 
@@ -215,6 +215,7 @@ public class HoaDonDAO {
                 "LEFT JOIN KhuyenMai km " +
                 "    ON h.maKhuyenMai = km.maKhuyenMai " +
                 JOIN_TONG_GOC +
+                "WHERE h.maPTTT IS NOT NULL " +
                 "ORDER BY h.ngayLapHD DESC, h.maHoaDon DESC";
 
         List<Object[]> danhSach = new ArrayList<>();
@@ -255,6 +256,7 @@ public class HoaDonDAO {
                 " FROM HoaDon h " +
                 " LEFT JOIN ChiTietHoaDon ct ON h.maHoaDon = ct.maHoaDon " +
                 " LEFT JOIN KhuyenMai km ON h.maKhuyenMai = km.maKhuyenMai " +
+                " WHERE h.maPTTT IS NOT NULL " +
                 " GROUP BY h.maHoaDon, h.ngayLapHD, km.phanTramGiam " +
                 ") " +
                 "SELECT n.ngay, COALESCE(SUM(t.doanhThu), 0) AS doanhThu " +
@@ -293,7 +295,7 @@ public class HoaDonDAO {
                 " FROM dbo.HoaDon h " +
                 " LEFT JOIN dbo.ChiTietHoaDon ct ON h.maHoaDon = ct.maHoaDon " +
                 " LEFT JOIN dbo.KhuyenMai km ON h.maKhuyenMai = km.maKhuyenMai " +
-                " WHERE h.ngayLapHD >= ? AND h.ngayLapHD < DATEADD(DAY, 1, ?) " +
+                " WHERE h.maPTTT IS NOT NULL AND h.ngayLapHD >= ? AND h.ngayLapHD < DATEADD(DAY, 1, ?) " +
                 " GROUP BY h.maHoaDon, CAST(h.ngayLapHD AS DATE), km.phanTramGiam " +
                 ") " +
                 "SELECT ngay, COUNT(*) AS soHoaDon, COALESCE(SUM(doanhThu), 0) AS doanhThu " +
@@ -334,7 +336,7 @@ public class HoaDonDAO {
                 " ON h.maHoaDon = ct.maHoaDon " +
                 " LEFT JOIN dbo.KhuyenMai km " +
                 " ON h.maKhuyenMai = km.maKhuyenMai " +
-                " WHERE h.ngayLapHD = CAST(GETDATE() AS DATE) " +
+                " WHERE h.maPTTT IS NOT NULL AND h.ngayLapHD = CAST(GETDATE() AS DATE) " +
                 " GROUP BY h.maHoaDon, km.phanTramGiam " +
                 ") " +
                 "SELECT COUNT(*) AS soDonHang, " +

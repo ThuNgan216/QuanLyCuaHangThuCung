@@ -111,4 +111,88 @@ public class MaVachDAO {
             }
         }
     }
+
+    /** Gán mã vạch đã quét cho sản phẩm; thay mã hiện có nếu sản phẩm đã có mã. */
+    public SanPhamQuet ganMaVachChoSanPham(String maVach, String maSP) throws SQLException {
+        if (maVach == null || maVach.trim().isEmpty())
+            throw new IllegalArgumentException("Mã vạch không được để trống.");
+        if (maVach.trim().length() > 50)
+            throw new IllegalArgumentException("Mã vạch vượt quá 50 ký tự.");
+        if (maSP == null || maSP.trim().isEmpty())
+            throw new IllegalArgumentException("Chưa chọn sản phẩm.");
+
+        String maVachSach = maVach.trim();
+        String maSPSach = maSP.trim();
+        try (Connection conn = ConnectDB.getConnection()) {
+            boolean autoCommit = conn.getAutoCommit();
+            int isolation = conn.getTransactionIsolation();
+            try {
+                conn.setAutoCommit(false);
+                conn.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
+
+                try (PreparedStatement ps = conn.prepareStatement(
+                        "SELECT maSP FROM dbo.SanPham WITH (UPDLOCK, HOLDLOCK) WHERE maSP = ?")) {
+                    ps.setString(1, maSPSach);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (!rs.next()) throw new SQLException("Sản phẩm không tồn tại: " + maSPSach);
+                    }
+                }
+
+                try (PreparedStatement ps = conn.prepareStatement(
+                        "SELECT maSP FROM dbo.MaVach WITH (UPDLOCK, HOLDLOCK) WHERE maVach = ?")) {
+                    ps.setString(1, maVachSach);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (rs.next() && !maSPSach.equals(rs.getString("maSP"))) {
+                            throw new SQLException("Mã vạch " + maVachSach + " đã được gán cho sản phẩm "
+                                    + rs.getString("maSP") + ".");
+                        }
+                    }
+                }
+
+                String maVachCu = null;
+                try (PreparedStatement ps = conn.prepareStatement(
+                        "SELECT maVach FROM dbo.MaVach WITH (UPDLOCK, HOLDLOCK) WHERE maSP = ?")) {
+                    ps.setString(1, maSPSach);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (rs.next()) maVachCu = rs.getString("maVach");
+                    }
+                }
+
+                if (maVachCu == null) {
+                    try (PreparedStatement ps = conn.prepareStatement(
+                            "INSERT INTO dbo.MaVach (maVach, maSP) VALUES (?, ?)")) {
+                        ps.setString(1, maVachSach);
+                        ps.setString(2, maSPSach);
+                        ps.executeUpdate();
+                    }
+                } else if (!maVachSach.equals(maVachCu)) {
+                    try (PreparedStatement ps = conn.prepareStatement(
+                            "UPDATE dbo.MaVach SET maVach = ? WHERE maSP = ?")) {
+                        ps.setString(1, maVachSach);
+                        ps.setString(2, maSPSach);
+                        ps.executeUpdate();
+                    }
+                }
+
+                SanPhamQuet sanPham;
+                try (PreparedStatement ps = conn.prepareStatement(
+                        "SELECT maSP, tenSP, giaBan, soLuongTon FROM dbo.SanPham WHERE maSP = ?")) {
+                    ps.setString(1, maSPSach);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (!rs.next()) throw new SQLException("Không tải lại được sản phẩm " + maSPSach + ".");
+                        sanPham = new SanPhamQuet(rs.getString("maSP"), rs.getString("tenSP"),
+                                rs.getDouble("giaBan"), rs.getInt("soLuongTon"));
+                    }
+                }
+                conn.commit();
+                return sanPham;
+            } catch (SQLException | RuntimeException ex) {
+                conn.rollback();
+                throw ex;
+            } finally {
+                conn.setTransactionIsolation(isolation);
+                conn.setAutoCommit(autoCommit);
+            }
+        }
+    }
 }

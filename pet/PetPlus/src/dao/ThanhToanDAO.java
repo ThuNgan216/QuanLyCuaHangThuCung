@@ -14,9 +14,9 @@ import java.util.regex.Pattern;
 
 public class ThanhToanDAO {
 
-    /** Dữ liệu cần hiển thị và nạp nhanh vào hóa đơn từ phiếu tiếp nhận. */
+    /** Dữ liệu cần hiển thị và nạp nhanh từ hóa đơn tiếp nhận đang chờ thanh toán. */
     public static class PhieuChoThanhToanDTO {
-        public final String maTiepNhan;
+        public final String maHoaDon;
         public final LocalDateTime thoiGianTiepNhan;
         public final String maKH, tenKH, sdt, diaChi, maThuCung, tenThuCung;
         public final int hangThanhVien, diemTichLuy;
@@ -24,11 +24,11 @@ public class ThanhToanDAO {
         public final long phiDuKien;
         public final List<DichVuHoaDonDTO> danhSachDichVu = new ArrayList<>();
 
-        public PhieuChoThanhToanDTO(String maTiepNhan, LocalDateTime thoiGianTiepNhan,
+        public PhieuChoThanhToanDTO(String maHoaDon, LocalDateTime thoiGianTiepNhan,
                 String maKH, String tenKH, String sdt, String diaChi,
                 int hangThanhVien, int diemTichLuy, String maThuCung, String tenThuCung,
                 String dichVuYeuCau, long phiDuKien) {
-            this.maTiepNhan = maTiepNhan;
+            this.maHoaDon = maHoaDon;
             this.thoiGianTiepNhan = thoiGianTiepNhan;
             this.maKH = maKH;
             this.tenKH = tenKH;
@@ -60,31 +60,33 @@ public class ThanhToanDAO {
     }
 
     public List<PhieuChoThanhToanDTO> layPhieuChoThanhToan() throws SQLException {
-        String sql = "SELECT tn.maTiepNhan, tn.thoiGianTiepNhan, tn.maKH, kh.tenKH, kh.sdt, kh.diaChi, "
-                + "kh.hangThanhVien, kh.diemTichLuy, tn.maThuCung, tc.tenThuCung, tn.dichVuYeuCau, tn.phiDuKien, "
-                + "dv.maDichVu, dv.tenDichVu, dv.donGia AS giaDichVu "
-                + "FROM TiepNhanThuCung tn "
-                + "INNER JOIN KhachHang kh ON kh.maKH = tn.maKH "
-                + "INNER JOIN ThuCung tc ON tc.maThuCung = tn.maThuCung "
-                + "LEFT JOIN DichVu dv ON dv.maLichHen = tn.maLichHen "
-                + "WHERE tn.trangThai = N'Chờ thanh toán' "
-                + "ORDER BY tn.thoiGianTiepNhan, tn.maTiepNhan, dv.tenDichVu";
+        String sql = "SELECT h.maHoaDon, h.thoiGianTiepNhan, h.maKH, kh.tenKH, kh.sdt, kh.diaChi, "
+                + "kh.hangThanhVien, kh.diemTichLuy, h.maThuCung, tc.tenThuCung, "
+                + "h.dichVuYeuCau, h.phiDuKien, ct.maDichVu, dv.tenDichVu, ct.donGia AS giaDichVu "
+                + "FROM HoaDon h "
+                + "INNER JOIN KhachHang kh ON kh.maKH = h.maKH "
+                + "INNER JOIN ThuCung tc ON tc.maThuCung = h.maThuCung "
+                + "LEFT JOIN ChiTietHoaDon ct ON ct.maHoaDon = h.maHoaDon AND ct.maDichVu IS NOT NULL "
+                + "LEFT JOIN DichVu dv ON dv.maDichVu = ct.maDichVu "
+                + "WHERE h.laTiepNhan = 1 AND h.maPTTT IS NULL "
+                + "AND h.trangThaiTiepNhan = N'Chờ thanh toán' "
+                + "ORDER BY h.thoiGianTiepNhan, h.maHoaDon, dv.tenDichVu";
         Map<String, PhieuChoThanhToanDTO> theoMa = new LinkedHashMap<>();
         try (Connection con = ConnectDB.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql);
                 ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 Timestamp ts = rs.getTimestamp("thoiGianTiepNhan");
-                String maTiepNhan = rs.getString("maTiepNhan");
-                PhieuChoThanhToanDTO phieu = theoMa.get(maTiepNhan);
+                String maHoaDon = rs.getString("maHoaDon");
+                PhieuChoThanhToanDTO phieu = theoMa.get(maHoaDon);
                 if (phieu == null) {
                     BigDecimal phiDuKien = rs.getBigDecimal("phiDuKien");
-                    phieu = new PhieuChoThanhToanDTO(maTiepNhan, ts == null ? null : ts.toLocalDateTime(),
+                    phieu = new PhieuChoThanhToanDTO(maHoaDon, ts == null ? null : ts.toLocalDateTime(),
                             rs.getString("maKH"), rs.getString("tenKH"), rs.getString("sdt"),
                             rs.getString("diaChi"), rs.getInt("hangThanhVien"), rs.getInt("diemTichLuy"),
                             rs.getString("maThuCung"), rs.getString("tenThuCung"),
                             rs.getString("dichVuYeuCau"), phiDuKien == null ? 0L : phiDuKien.longValue());
-                    theoMa.put(maTiepNhan, phieu);
+                    theoMa.put(maHoaDon, phieu);
                 }
                 String maDichVu = rs.getString("maDichVu");
                 if (maDichVu != null) {
@@ -255,7 +257,8 @@ public class ThanhToanDAO {
 
     // Sinh mã hóa đơn dạng HD001, HD002...
     public String taoMaHoaDon(Connection con) throws SQLException {
-        String sql = "SELECT TOP 1 maHoaDon FROM HoaDon ORDER BY LEN(maHoaDon) DESC, maHoaDon DESC";
+        String sql = "SELECT TOP 1 maHoaDon FROM HoaDon WITH (UPDLOCK, HOLDLOCK) "
+                + "WHERE maHoaDon LIKE 'HD[0-9]%' ORDER BY LEN(maHoaDon) DESC, maHoaDon DESC";
         String last = null;
         try (Statement st = con.createStatement(); ResultSet rs = st.executeQuery(sql)) {
             if (rs.next())
@@ -293,6 +296,31 @@ public class ThanhToanDAO {
             ps.setString(3, maNV);
             ps.setString(4, maKH);
             ps.setString(5, maPTTT);
+            ps.executeUpdate();
+        }
+    }
+
+    /** Hoàn tất phần thanh toán trên hóa đơn đã được tạo lúc tiếp nhận. */
+    public void capNhatThanhToanHoaDon(Connection con, String maHD, String maNV, String maPTTT)
+            throws SQLException {
+        String sql = "UPDATE HoaDon SET maNV = ?, maPTTT = ?, ngayLapHD = CAST(GETDATE() AS DATE) "
+                + "WHERE maHoaDon = ? AND laTiepNhan = 1 AND maPTTT IS NULL "
+                + "AND trangThaiTiepNhan = N'Chờ thanh toán'";
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, maNV);
+            ps.setString(2, maPTTT);
+            ps.setString(3, maHD);
+            if (ps.executeUpdate() != 1) {
+                throw new SQLException("Hóa đơn tiếp nhận " + maHD
+                        + " không còn chờ thanh toán hoặc đã được thanh toán.");
+            }
+        }
+    }
+
+    public void xoaChiTietHoaDon(Connection con, String maHD) throws SQLException {
+        try (PreparedStatement ps = con.prepareStatement(
+                "DELETE FROM ChiTietHoaDon WHERE maHoaDon = ?")) {
+            ps.setString(1, maHD);
             ps.executeUpdate();
         }
     }

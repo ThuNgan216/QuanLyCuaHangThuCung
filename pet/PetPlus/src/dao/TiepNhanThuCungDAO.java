@@ -4,43 +4,44 @@ import database.ConnectDB;
 import entity.DichVu;
 import entity.KhachHang;
 import entity.LichHen;
-import entity.LichHen;
 import entity.NhanVien;
 import entity.PhieuTiepNhanThuCung;
 import entity.TaiKhoan;
 import entity.ThuCung;
 
+import java.math.BigDecimal;
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-/** Đọc và ghi các phiếu tiếp nhận thú cưng. */
+/** Tiếp nhận và theo dõi thú cưng bằng dữ liệu lưu trực tiếp trên hóa đơn. */
 public class TiepNhanThuCungDAO {
     private static final String SELECT =
-            "SELECT tn.maTiepNhan, tn.maLichHen, tn.thoiGianTiepNhan, tn.gioHenTra, "
-            + "tn.maNV, nv.tenNV, tn.maKH, kh.tenKH, kh.sdt, tn.maThuCung, tc.tenThuCung, tc.loai, "
-            + "tn.dichVuYeuCau, tn.tinhTrangBanGiao, tn.ghiChu, tn.phiDuKien, tn.trangThai "
-            + "FROM TiepNhanThuCung tn "
-            + "INNER JOIN NhanVien nv ON tn.maNV = nv.maNV "
-            + "INNER JOIN KhachHang kh ON tn.maKH = kh.maKH "
-            + "INNER JOIN ThuCung tc ON tn.maThuCung = tc.maThuCung ";
+            "SELECT h.maHoaDon AS maTiepNhan, h.maLichHen, h.thoiGianTiepNhan, h.gioHenTra, "
+            + "h.maNVTiepNhan AS maNV, nv.tenNV, h.maKH, kh.tenKH, kh.sdt, h.maThuCung, "
+            + "tc.tenThuCung, tc.loai, h.dichVuYeuCau, h.tinhTrangBanGiao, h.ghiChuTiepNhan AS ghiChu, "
+            + "h.phiDuKien, h.trangThaiTiepNhan AS trangThai "
+            + "FROM HoaDon h "
+            + "INNER JOIN NhanVien nv ON h.maNVTiepNhan = nv.maNV "
+            + "INNER JOIN KhachHang kh ON h.maKH = kh.maKH "
+            + "INNER JOIN ThuCung tc ON h.maThuCung = tc.maThuCung ";
 
     public List<PhieuTiepNhanThuCung> layDanhSach(String tuKhoa) {
-        String sql = SELECT;
+        String sql = SELECT + "WHERE h.laTiepNhan = 1 AND h.trangThaiTiepNhan <> N'Chờ thanh toán' ";
         String key = tuKhoa == null ? "" : tuKhoa.trim();
         if (!key.isEmpty()) {
-            sql += "WHERE tn.trangThai <> N'Chờ thanh toán' AND (tn.maTiepNhan LIKE ? OR tn.maLichHen LIKE ? OR kh.tenKH LIKE ? "
-                    + "OR kh.sdt LIKE ? OR tc.tenThuCung LIKE ? OR tn.dichVuYeuCau LIKE ? "
-                    + "OR tn.trangThai LIKE ?) ";
-        } else {
-            sql += "WHERE tn.trangThai <> N'Chờ thanh toán' ";
+            sql += "AND (h.maHoaDon LIKE ? OR h.maLichHen LIKE ? OR kh.tenKH LIKE ? "
+                    + "OR kh.sdt LIKE ? OR tc.tenThuCung LIKE ? OR h.dichVuYeuCau LIKE ? "
+                    + "OR h.trangThaiTiepNhan LIKE ?) ";
         }
-        sql += "ORDER BY tn.thoiGianTiepNhan DESC";
+        sql += "ORDER BY h.thoiGianTiepNhan DESC";
 
         List<PhieuTiepNhanThuCung> danhSach = new ArrayList<>();
         try (Connection con = ConnectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
@@ -57,7 +58,7 @@ public class TiepNhanThuCungDAO {
         return danhSach;
     }
 
-    /** Lịch đang chờ/đã xác nhận chưa được check-in và chưa có phiếu tiếp nhận. */
+    /** Lịch đã xác nhận chưa có hóa đơn tiếp nhận. */
     public List<LichHen> layLichHenChoTiepNhan() {
         String sql = "SELECT l.maLichHen, l.thoiGianHen, l.trangThai, l.maNV, nv.tenNV, "
                 + "l.maKH, kh.tenKH, l.maThuCung, tc.tenThuCung "
@@ -66,11 +67,11 @@ public class TiepNhanThuCungDAO {
                 + "INNER JOIN KhachHang kh ON l.maKH = kh.maKH "
                 + "INNER JOIN ThuCung tc ON l.maThuCung = tc.maThuCung "
                 + "WHERE l.trangThai = N'Đã xác nhận' "
-                + "AND NOT EXISTS (SELECT 1 FROM TiepNhanThuCung tn WHERE tn.maLichHen = l.maLichHen) "
-                + "ORDER BY l.thoiGianHen";
+                + "AND NOT EXISTS (SELECT 1 FROM HoaDon h WHERE h.laTiepNhan = 1 "
+                + "AND h.maLichHen = l.maLichHen) ORDER BY l.thoiGianHen";
         List<LichHen> danhSach = new ArrayList<>();
         try (Connection con = ConnectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+                ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 LichHen lichHen = new LichHen();
                 lichHen.setMaLichHen(rs.getString("maLichHen"));
@@ -96,20 +97,12 @@ public class TiepNhanThuCungDAO {
 
     public List<DichVu> layDichVuTheoLichHen(String maLichHen) {
         List<DichVu> danhSach = new ArrayList<>();
-        String sql = "SELECT maDichVu, tenDichVu, donGia, moTa, trangThai "
+        String sql = "SELECT maDichVu, tenDichVu, donGia, moTa, trangThai, maLichHen "
                 + "FROM DichVu WHERE maLichHen = ? ORDER BY tenDichVu";
         try (Connection con = ConnectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, maLichHen);
             try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    DichVu dichVu = new DichVu();
-                    dichVu.setMaDichVu(rs.getString("maDichVu"));
-                    dichVu.setTenDichVu(rs.getString("tenDichVu"));
-                    dichVu.setDonGia(rs.getBigDecimal("donGia"));
-                    dichVu.setMoTa(rs.getString("moTa"));
-                    dichVu.setTrangThai(rs.getString("trangThai"));
-                    danhSach.add(dichVu);
-                }
+                while (rs.next()) danhSach.add(docDichVu(rs));
             }
         } catch (SQLException e) {
             throw new IllegalStateException("Không thể tải dịch vụ của lịch hẹn: " + e.getMessage(), e);
@@ -117,7 +110,7 @@ public class TiepNhanThuCungDAO {
         return danhSach;
     }
 
-    /** Danh sách dịch vụ có thể chọn cho khách đến trực tiếp, lấy giá hiện tại từ database. */
+    /** Dịch vụ đang hoạt động, dùng làm danh sách chọn tại quầy. */
     public List<DichVu> layDichVuChoTiepNhan() {
         List<DichVu> danhSach = new ArrayList<>();
         String sql = "WITH DichVuMau AS ("
@@ -128,7 +121,7 @@ public class TiepNhanThuCungDAO {
                 + "SELECT maDichVu, tenDichVu, donGia, moTa, trangThai, maLichHen "
                 + "FROM DichVuMau WHERE thuTu = 1 ORDER BY tenDichVu";
         try (Connection con = ConnectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+                ResultSet rs = ps.executeQuery()) {
             while (rs.next()) danhSach.add(docDichVu(rs));
         } catch (SQLException e) {
             throw new IllegalStateException("Không thể tải danh sách dịch vụ: " + e.getMessage(), e);
@@ -140,10 +133,8 @@ public class TiepNhanThuCungDAO {
     public List<KhachHang> timKhachHangTheoSdt(String soDienThoai) {
         List<KhachHang> danhSach = new ArrayList<>();
         String sql = "SELECT maKH, tenKH, sdt, diaChi, hangThanhVien, diemTichLuy "
-                + "FROM KhachHang "
-                + "WHERE REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(COALESCE(sdt, ''), ' ', ''), "
-                + "'-', ''), '.', ''), '+', ''), '(', ''), ')', '') LIKE ? "
-                + "ORDER BY tenKH";
+                + "FROM KhachHang WHERE REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(COALESCE(sdt, ''), ' ', ''), "
+                + "'-', ''), '.', ''), '+', ''), '(', ''), ')', '') LIKE ? ORDER BY tenKH";
         try (Connection con = ConnectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, "%" + soDienThoai + "%");
             try (ResultSet rs = ps.executeQuery()) {
@@ -169,7 +160,7 @@ public class TiepNhanThuCungDAO {
         String sql = "SELECT maThuCung, tenThuCung, loai, giong, gioiTinh, canNang, ngaySinh, "
                 + "tinhTrangSK, tiemChung, maKH FROM ThuCung ORDER BY tenThuCung";
         try (Connection con = ConnectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+                ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 ThuCung thuCung = new ThuCung();
                 thuCung.setMaThuCung(rs.getString("maThuCung"));
@@ -179,7 +170,7 @@ public class TiepNhanThuCungDAO {
                 thuCung.setGioiTinh(rs.getString("gioiTinh"));
                 float canNang = rs.getFloat("canNang");
                 thuCung.setCanNang(rs.wasNull() ? -1 : canNang);
-                java.sql.Date ngaySinh = rs.getDate("ngaySinh");
+                Date ngaySinh = rs.getDate("ngaySinh");
                 thuCung.setNgaySinh(ngaySinh == null ? null : ngaySinh.toLocalDate());
                 thuCung.setTinhTrangSK(rs.getString("tinhTrangSK"));
                 thuCung.setTiemChung(rs.getString("tiemChung"));
@@ -198,18 +189,16 @@ public class TiepNhanThuCungDAO {
                 + "tk.vaiTro, tk.trangThai FROM NhanVien nv "
                 + "INNER JOIN TaiKhoan tk ON nv.maTK = tk.maTK "
                 + "WHERE tk.tenDangNhap <> N'admin' AND tk.trangThai = N'Hoạt động' "
-                + "AND (UPPER(tk.vaiTro) IN (N'CHAM_SOC', N'CHĂM SÓC') "
-                + "OR nv.chucVu LIKE N'%chăm sóc%') "
-                + "AND NOT EXISTS (SELECT 1 FROM TiepNhanThuCung tn "
-                + "WHERE tn.maNV = nv.maNV AND tn.trangThai IN "
+                + "AND (UPPER(tk.vaiTro) IN (N'CHAM_SOC', N'CHĂM SÓC') OR nv.chucVu LIKE N'%chăm sóc%') "
+                + "AND NOT EXISTS (SELECT 1 FROM HoaDon h WHERE h.laTiepNhan = 1 "
+                + "AND h.maNVTiepNhan = nv.maNV AND h.trangThaiTiepNhan IN "
                 + "(N'Đã tiếp nhận', N'Đang phục vụ', N'Chờ khách đón')) "
                 + "AND NOT EXISTS (SELECT 1 FROM LichHen lh WHERE lh.maNV = nv.maNV "
                 + "AND lh.trangThai IN (N'Chờ xác nhận', N'Đã xác nhận', N'Đã tiếp nhận', N'Đang thực hiện') "
                 + "AND lh.thoiGianHen >= DATEADD(HOUR, -2, GETDATE()) "
-                + "AND lh.thoiGianHen < DATEADD(HOUR, 2, GETDATE())) "
-                + "ORDER BY nv.tenNV";
+                + "AND lh.thoiGianHen < DATEADD(HOUR, 2, GETDATE())) ORDER BY nv.tenNV";
         try (Connection con = ConnectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+                ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 TaiKhoan taiKhoan = new TaiKhoan();
                 taiKhoan.setMaTK(rs.getString("maTK"));
@@ -226,24 +215,21 @@ public class TiepNhanThuCungDAO {
     }
 
     public List<PhieuTiepNhanThuCung> timChiTietTiepNhan(String maTiepNhan) {
-        String sql = SELECT + "WHERE tn.maTiepNhan = ?";
+        String sql = SELECT + "WHERE h.laTiepNhan = 1 AND h.maHoaDon = ?";
         try (Connection con = ConnectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, maTiepNhan);
             try (ResultSet rs = ps.executeQuery()) {
-                List<PhieuTiepNhanThuCung> ds = new ArrayList<>();
-                while (rs.next()) ds.add(docPhieu(rs));
-                return ds;
+                List<PhieuTiepNhanThuCung> danhSach = new ArrayList<>();
+                while (rs.next()) danhSach.add(docPhieu(rs));
+                return danhSach;
             }
         } catch (SQLException e) {
-            throw loiSchema("Không thể đọc phiếu tiếp nhận", e);
+            throw loiSchema("Không thể đọc thông tin tiếp nhận", e);
         }
     }
 
+    /** Tạo lịch hẹn nếu cần, rồi lưu tiếp nhận và các dịch vụ ngay trên hóa đơn. */
     public boolean them(PhieuTiepNhanThuCung phieu) {
-        String sql = "INSERT INTO TiepNhanThuCung "
-                + "(maTiepNhan, maLichHen, thoiGianTiepNhan, gioHenTra, maNV, maKH, maThuCung, "
-                + "dichVuYeuCau, tinhTrangBanGiao, ghiChu, phiDuKien, trangThai) "
-                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection con = ConnectDB.getConnection()) {
             boolean autoCommit = con.getAutoCommit();
             try {
@@ -284,29 +270,50 @@ public class TiepNhanThuCungDAO {
                         ps.setString(4, dichVu.getMoTa());
                         ps.setString(5, phieu.getMaLichHen());
                         ps.addBatch();
-                        DichVu daGan = new DichVu(maDichVuMoi, dichVu.getTenDichVu(), dichVu.getDonGia(),
-                                dichVu.getMoTa(), "Đã đặt", new LichHen(phieu.getMaLichHen()));
-                        dichVuDaGanVaoLich.add(daGan);
+                        dichVuDaGanVaoLich.add(new DichVu(maDichVuMoi, dichVu.getTenDichVu(), dichVu.getDonGia(),
+                                dichVu.getMoTa(), "Đã đặt", new LichHen(phieu.getMaLichHen())));
                     }
                     ps.executeBatch();
                 }
                 phieu.setDanhSachDichVu(dichVuDaGanVaoLich);
 
-                try (PreparedStatement ps = con.prepareStatement(sql)) {
-                    ps.setString(1, phieu.getMaTiepNhan());
-                    ps.setString(2, phieu.getMaLichHen());
-                    ps.setTimestamp(3, Timestamp.valueOf(phieu.getThoiGianTiepNhan()));
-                    ps.setTimestamp(4, Timestamp.valueOf(phieu.getGioHenTra()));
-                    ps.setString(5, phieu.getMaNV());
-                    ps.setString(6, phieu.getMaKH());
-                    ps.setString(7, phieu.getMaThuCung());
-                    ps.setString(8, phieu.getDichVuYeuCau());
-                    ps.setString(9, phieu.getTinhTrangBanGiao());
-                    ps.setString(10, phieu.getGhiChu());
-                    ps.setBigDecimal(11, phieu.getPhiDuKien());
-                    ps.setString(12, phieu.getTrangThai());
+                String maHoaDon = new ThanhToanDAO().taoMaHoaDon(con);
+                phieu.setMaTiepNhan(maHoaDon);
+                String sqlHoaDon = "INSERT INTO HoaDon (maHoaDon, ngayLapHD, maNV, maKH, maKhuyenMai, maPTTT, "
+                        + "laTiepNhan, maLichHen, maThuCung, maNVTiepNhan, thoiGianTiepNhan, gioHenTra, "
+                        + "dichVuYeuCau, tinhTrangBanGiao, ghiChuTiepNhan, phiDuKien, trangThaiTiepNhan) "
+                        + "VALUES (?, ?, ?, ?, NULL, NULL, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                try (PreparedStatement ps = con.prepareStatement(sqlHoaDon)) {
+                    ps.setString(1, maHoaDon);
+                    ps.setDate(2, Date.valueOf(phieu.getThoiGianTiepNhan().toLocalDate()));
+                    ps.setString(3, phieu.getMaNV());
+                    ps.setString(4, phieu.getMaKH());
+                    ps.setString(5, phieu.getMaLichHen());
+                    ps.setString(6, phieu.getMaThuCung());
+                    ps.setString(7, phieu.getMaNV());
+                    ps.setTimestamp(8, Timestamp.valueOf(phieu.getThoiGianTiepNhan()));
+                    ps.setTimestamp(9, Timestamp.valueOf(phieu.getGioHenTra()));
+                    ps.setString(10, phieu.getDichVuYeuCau());
+                    ps.setString(11, phieu.getTinhTrangBanGiao());
+                    ps.setString(12, phieu.getGhiChu());
+                    ps.setBigDecimal(13, phieu.getPhiDuKien());
+                    ps.setString(14, phieu.getTrangThai());
                     ps.executeUpdate();
                 }
+
+                String sqlChiTiet = "INSERT INTO ChiTietHoaDon "
+                        + "(maHoaDon, maDichVu, maSP, soLuong, donGia, tienKhachDua) "
+                        + "VALUES (?, ?, NULL, 1, ?, NULL)";
+                try (PreparedStatement ps = con.prepareStatement(sqlChiTiet)) {
+                    for (DichVu dichVu : phieu.getDanhSachDichVu()) {
+                        ps.setString(1, maHoaDon);
+                        ps.setString(2, dichVu.getMaDichVu());
+                        ps.setBigDecimal(3, dichVu.getDonGia());
+                        ps.addBatch();
+                    }
+                    ps.executeBatch();
+                }
+
                 if (!taoLichHenMoi) {
                     try (PreparedStatement ps = con.prepareStatement(
                             "UPDATE LichHen SET trangThai = N'Đã tiếp nhận' "
@@ -326,29 +333,30 @@ public class TiepNhanThuCungDAO {
                 con.setAutoCommit(autoCommit);
             }
         } catch (SQLException e) {
-            throw new IllegalStateException("Không thể tạo phiếu tiếp nhận: " + e.getMessage(), e);
+            throw loiSchema("Không thể tạo hóa đơn tiếp nhận", e);
         }
     }
 
     public boolean capNhatTrangThai(String maTiepNhan, String trangThai) {
-        String sql = "UPDATE TiepNhanThuCung SET trangThai = ? WHERE maTiepNhan = ?";
         try (Connection con = ConnectDB.getConnection()) {
             boolean autoCommit = con.getAutoCommit();
             try {
                 con.setAutoCommit(false);
                 String maLichHen;
-                try (PreparedStatement ps = con.prepareStatement(sql)) {
-                    ps.setString(1, trangThai);
-                    ps.setString(2, maTiepNhan);
-                    if (ps.executeUpdate() != 1) throw new SQLException("Không tìm thấy phiếu tiếp nhận.");
-                }
                 try (PreparedStatement ps = con.prepareStatement(
-                        "SELECT maLichHen FROM TiepNhanThuCung WHERE maTiepNhan = ?")) {
+                        "SELECT maLichHen FROM HoaDon WHERE maHoaDon = ? AND laTiepNhan = 1 AND maPTTT IS NULL")) {
                     ps.setString(1, maTiepNhan);
                     try (ResultSet rs = ps.executeQuery()) {
-                        if (!rs.next()) throw new SQLException("Không đọc được phiếu tiếp nhận vừa cập nhật.");
+                        if (!rs.next()) throw new SQLException("Không tìm thấy hóa đơn tiếp nhận chưa thanh toán.");
                         maLichHen = rs.getString("maLichHen");
                     }
+                }
+                try (PreparedStatement ps = con.prepareStatement(
+                        "UPDATE HoaDon SET trangThaiTiepNhan = ? "
+                                + "WHERE maHoaDon = ? AND laTiepNhan = 1 AND maPTTT IS NULL")) {
+                    ps.setString(1, trangThai);
+                    ps.setString(2, maTiepNhan);
+                    if (ps.executeUpdate() != 1) throw new SQLException("Không cập nhật được trạng thái tiếp nhận.");
                 }
                 String trangThaiHen = trangThaiLichHen(trangThai);
                 if (maLichHen != null && trangThaiHen != null) {
@@ -372,24 +380,25 @@ public class TiepNhanThuCungDAO {
         }
     }
 
-    /** Chốt trạng thái phiếu trong cùng transaction tạo hóa đơn. */
-    public void danhDauDaThanhToan(Connection con, String maTiepNhan) throws SQLException {
-        String sql = "UPDATE TiepNhanThuCung SET trangThai = N'Hoàn tất' "
-                + "WHERE maTiepNhan = ? AND trangThai = N'Chờ thanh toán'";
-        try (PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setString(1, maTiepNhan);
-            if (ps.executeUpdate() != 1) {
-                throw new SQLException("Phiếu " + maTiepNhan
-                        + " không còn ở trạng thái Chờ thanh toán hoặc đã được thanh toán.");
+    /** Hoàn tất hóa đơn tiếp nhận trong cùng transaction với thao tác thanh toán. */
+    public void danhDauDaThanhToan(Connection con, String maHoaDon) throws SQLException {
+        String maLichHen;
+        try (PreparedStatement ps = con.prepareStatement(
+                "SELECT maLichHen FROM HoaDon WHERE maHoaDon = ? AND laTiepNhan = 1 "
+                        + "AND trangThaiTiepNhan = N'Chờ thanh toán' AND maPTTT IS NOT NULL")) {
+            ps.setString(1, maHoaDon);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) throw new SQLException("Hóa đơn " + maHoaDon
+                        + " không còn ở trạng thái Chờ thanh toán hoặc chưa ghi nhận phương thức thanh toán.");
+                maLichHen = rs.getString("maLichHen");
             }
         }
-        String maLichHen = null;
         try (PreparedStatement ps = con.prepareStatement(
-                "SELECT maLichHen FROM TiepNhanThuCung WHERE maTiepNhan = ?")) {
-            ps.setString(1, maTiepNhan);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) maLichHen = rs.getString("maLichHen");
-            }
+                "UPDATE HoaDon SET trangThaiTiepNhan = N'Hoàn tất' "
+                        + "WHERE maHoaDon = ? AND laTiepNhan = 1 AND trangThaiTiepNhan = N'Chờ thanh toán' "
+                        + "AND maPTTT IS NOT NULL")) {
+            ps.setString(1, maHoaDon);
+            if (ps.executeUpdate() != 1) throw new SQLException("Không thể hoàn tất hóa đơn tiếp nhận " + maHoaDon);
         }
         if (maLichHen != null) {
             try (PreparedStatement ps = con.prepareStatement(
@@ -440,14 +449,18 @@ public class TiepNhanThuCungDAO {
         dichVu.setDonGia(rs.getBigDecimal("donGia"));
         dichVu.setMoTa(rs.getString("moTa"));
         dichVu.setTrangThai(rs.getString("trangThai"));
+        String maLichHen = rs.getString("maLichHen");
+        if (maLichHen != null) dichVu.setMaLichHen(new LichHen(maLichHen));
         return dichVu;
     }
 
     private IllegalStateException loiSchema(String hanhDong, SQLException e) {
-        if (e.getMessage() != null && e.getMessage().contains("TiepNhanThuCung")) {
-            return new IllegalStateException(hanhDong + ". Hãy chạy file data/Migration_TiepNhanThuCung.sql "
-                    + "trong cơ sở dữ liệu PETPLUS. Chi tiết: " + e.getMessage(), e);
+        String chiTiet = e.getMessage() == null ? "" : e.getMessage();
+        if (chiTiet.contains("Invalid column name") || chiTiet.contains("laTiepNhan")
+                || chiTiet.contains("maNVTiepNhan") || chiTiet.contains("trangThaiTiepNhan")) {
+            return new IllegalStateException(hanhDong + ". Hãy chạy file data/Migration_HoaDon_TiepNhan.sql "
+                    + "trong cơ sở dữ liệu PETPLUS. Chi tiết: " + chiTiet, e);
         }
-        return new IllegalStateException(hanhDong + ": " + e.getMessage(), e);
+        return new IllegalStateException(hanhDong + ": " + chiTiet, e);
     }
 }
