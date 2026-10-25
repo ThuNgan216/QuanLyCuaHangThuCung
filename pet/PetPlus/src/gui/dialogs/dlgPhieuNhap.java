@@ -68,13 +68,33 @@ public class dlgPhieuNhap extends JDialog {
         JPanel pnlTop = new JPanel(new GridBagLayout());
         pnlTop.setBorder(BorderFactory.createTitledBorder("Thông tin phiếu nhập"));
         GridBagConstraints g = new GridBagConstraints();
-        g.insets = new GridBagConstraints().insets;
         g.insets = new Insets(8, 12, 8, 12);
         g.fill = GridBagConstraints.HORIZONTAL;
 
         txtMaPN.setEditable(false);
         txtNgayLap.setText(LocalDate.now().toString());
         txtNgayLap.setEditable(false);
+
+        JButton btnThemNhanhSP = new JButton("+");
+        btnThemNhanhSP.setToolTipText("Thêm mới sản phẩm nhanh vào hệ thống");
+        btnThemNhanhSP.setPreferredSize(new Dimension(45, 28));
+        btnThemNhanhSP.setBackground(new Color(250, 48, 115));
+        btnThemNhanhSP.setForeground(Color.WHITE);
+
+        // Sự kiện click nút dấu cộng (+) để tạo nhanh sản phẩm
+        btnThemNhanhSP.addActionListener(e -> {
+            gui.dialogs.dlgSanPham dlg = new gui.dialogs.dlgSanPham(SwingUtilities.getWindowAncestor(this), null);
+            dlg.setVisible(true);
+            if (dlg.isDaLuu()) {
+                NhaCungCap ncc = (NhaCungCap) cboNhaCungCap.getSelectedItem();
+                if (ncc != null) {
+                    capNhatDanhSachSanPhamTheoNCC(ncc.getMaNCC());
+                    if (cboSanPham.getItemCount() > 0) {
+                        cboSanPham.setSelectedIndex(cboSanPham.getItemCount() - 1);
+                    }
+                }
+            }
+        });
 
         // Custom Renderer cho ComboBox Nhà Cung Cấp
         cboNhaCungCap.setRenderer(new DefaultListCellRenderer() {
@@ -90,12 +110,11 @@ public class dlgPhieuNhap extends JDialog {
         });
 
         cboNhaCungCap.addActionListener(e -> {
-    NhaCungCap nccSelected = (NhaCungCap) cboNhaCungCap.getSelectedItem();
-    if (nccSelected != null) {
-        // Mỗi lần click đổi NCC, gọi hàm tải lại sản phẩm tương ứng
-        capNhatDanhSachSanPhamTheoNCC(nccSelected.getMaNCC());
-    }
-});
+            NhaCungCap nccSelected = (NhaCungCap) cboNhaCungCap.getSelectedItem();
+            if (nccSelected != null) {
+                capNhatDanhSachSanPhamTheoNCC(nccSelected.getMaNCC());
+            }
+        });
 
         // Custom Renderer cho ComboBox Nhân Viên
         cboNhanVien.setRenderer(new DefaultListCellRenderer() {
@@ -127,9 +146,15 @@ public class dlgPhieuNhap extends JDialog {
         // --- 2. PHẦN CHI TIẾT SẢN PHẨM & BẢNG (CENTER) ---
         JPanel pnlCenter = new JPanel(new BorderLayout(8, 8));
         pnlCenter.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 10));
-        JPanel pnlAddSP = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 8));
+        
+        // Chia 2 dòng rõ rệt cho khu vực thêm sản phẩm
+        JPanel pnlAddSP = new JPanel(new GridLayout(2, 1, 5, 8));
         pnlAddSP.setBorder(BorderFactory.createTitledBorder("Thêm sản phẩm vào phiếu nhập"));
 
+        // === DÒNG 1: Chọn sản phẩm + Nút thêm nhanh (+) ===
+        JPanel pnlRow1 = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        pnlRow1.setOpaque(false);
+        cboSanPham.setPreferredSize(new Dimension(400, 28));
         cboSanPham.setRenderer(new DefaultListCellRenderer() {
             @Override
             public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
@@ -141,37 +166,46 @@ public class dlgPhieuNhap extends JDialog {
                 return this;
             }
         });
-        cboSanPham.setPreferredSize(new Dimension(220, 28));
+        pnlRow1.add(new JLabel("Sản phẩm:"));
+        pnlRow1.add(cboSanPham);
+        pnlRow1.add(btnThemNhanhSP);
+
+        // === DÒNG 2: Số lượng, Đơn giá, HSD, Nút Thêm SP ===
+        JPanel pnlRow2 = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        pnlRow2.setOpaque(false);
+        txtSoLuong.setPreferredSize(new Dimension(70, 28));
+        txtDonGia.setPreferredSize(new Dimension(120, 28));
         spnTrangThaiHSD.setPreferredSize(new Dimension(120, 28));
 
-        // Khóa ô nhập tay vì giá sẽ tự nhảy
-txtDonGia.setEditable(false);
+        pnlRow2.add(new JLabel("Số lượng:"));
+        pnlRow2.add(txtSoLuong);
+        pnlRow2.add(new JLabel("Đơn giá:"));
+        pnlRow2.add(txtDonGia);
+        pnlRow2.add(new JLabel("Hạn sử dụng:"));
+        pnlRow2.add(spnTrangThaiHSD);
+        pnlRow2.add(btnThemSP);
 
-// Sự kiện: Khi chọn Sản phẩm, tự động kéo giá nhập tương ứng với NCC đang chọn ở trên
-cboSanPham.addActionListener(e -> {
-    SanPham sp = (SanPham) cboSanPham.getSelectedItem();
-    NhaCungCap ncc = (NhaCungCap) cboNhaCungCap.getSelectedItem();
-    if (sp != null && ncc != null) {
-        try {
-            float giaNhap = sanPhamDAO.layGiaNhap(sp.getMaSP(), ncc.getMaNCC());
-            txtDonGia.setText(String.format("%.0f", giaNhap)); // Điền tự động
-        } catch (Exception ex) {}
-    }
-});
-
-        pnlAddSP.add(new JLabel("Sản phẩm:"));
-        pnlAddSP.add(cboSanPham);
-        pnlAddSP.add(new JLabel("SL:"));
-        pnlAddSP.add(txtSoLuong);
-        pnlAddSP.add(new JLabel("Đơn giá:"));
-        pnlAddSP.add(txtDonGia);
-        pnlAddSP.add(new JLabel("HSD:"));
-        pnlAddSP.add(spnTrangThaiHSD);
-        pnlAddSP.add(btnThemSP);
-
+        pnlAddSP.add(pnlRow1);
+        pnlAddSP.add(pnlRow2);
         pnlCenter.add(pnlAddSP, BorderLayout.NORTH);
 
-        // Bảng chi tiết sản phẩm nhập (Bọc trong JScrollPane có thanh cuộn)
+        // Sự kiện: Khi chọn Sản phẩm, tự động gợi ý giá nhập gần nhất
+        cboSanPham.addActionListener(e -> {
+            SanPham sp = (SanPham) cboSanPham.getSelectedItem();
+            NhaCungCap ncc = (NhaCungCap) cboNhaCungCap.getSelectedItem();
+            if (sp != null && ncc != null) {
+                try {
+                    float giaCu = sanPhamDAO.layGiaNhapGanNhat(sp.getMaSP(), ncc.getMaNCC());
+                    if (giaCu > 0) {
+                        txtDonGia.setText(String.format("%.0f", giaCu));
+                    } else {
+                        txtDonGia.setText("");
+                    }
+                } catch (Exception ignored) {}
+            }
+        });
+
+        // Bảng chi tiết sản phẩm nhập
         String[] columns = {"Mã SP", "Tên Sản Phẩm", "Số Lượng", "Đơn Giá Nhập", "Hạn Sử Dụng", "Thành Tiền"};
         modelChiTiet = new DefaultTableModel(columns, 0) {
             @Override
@@ -216,31 +250,30 @@ cboSanPham.addActionListener(e -> {
         }
     }
 
-    // Hàm sinh mã phiếu nhập tự động tăng dần (Ví dụ: PN004, PN005,...)
     private void tuDongSinhMaPhieuNhap() {
-    try {
-        dao.PhieuNhapDAO dao = new dao.PhieuNhapDAO();
-        List<PhieuNhap> ds = dao.layDanhSach(); // Gọi trực tiếp từ DAO
-        int stt = ds.size() + 1;
-        String maMoi;
-        
-        while (true) {
-            maMoi = String.format("PN%03d", stt);
-            boolean trung = false;
-            for (PhieuNhap pn : ds) {
-                if (pn.getMaPN().equalsIgnoreCase(maMoi)) {
-                    trung = true;
-                    break;
+        try {
+            dao.PhieuNhapDAO dao = new dao.PhieuNhapDAO();
+            List<PhieuNhap> ds = dao.layDanhSach();
+            int stt = ds.size() + 1;
+            String maMoi;
+            
+            while (true) {
+                maMoi = String.format("PN%03d", stt);
+                boolean trung = false;
+                for (PhieuNhap pn : ds) {
+                    if (pn.getMaPN().equalsIgnoreCase(maMoi)) {
+                        trung = true;
+                        break;
+                    }
                 }
+                if (!trung) break;
+                stt++;
             }
-            if (!trung) break;
-            stt++;
+            txtMaPN.setText(maMoi);
+        } catch (Exception e) {
+            txtMaPN.setText("PN001");
         }
-        txtMaPN.setText(maMoi);
-    } catch (Exception e) {
-        txtMaPN.setText("PN001");
     }
-}
 
     private void xuLyThemSanPham() {
         try {
@@ -293,7 +326,8 @@ cboSanPham.addActionListener(e -> {
             JOptionPane.showMessageDialog(this, ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
         }
     }
-private void xuLyHoanTat() {
+
+    private void xuLyHoanTat() {
         try {
             if (danhSachChiTiet.isEmpty()) {
                 JOptionPane.showMessageDialog(this, "Phiếu nhập chưa có sản phẩm nào.", "Cảnh báo", JOptionPane.WARNING_MESSAGE);
@@ -316,7 +350,6 @@ private void xuLyHoanTat() {
             pn.setMaNV(nv);
             pn.setMaNCC(ncc);
 
-            // Tự thực hiện transaction trực tiếp an toàn tuyệt đối, không sợ lỗi biên dịch
             try (java.sql.Connection con = database.ConnectDB.getConnection()) {
                 con.setAutoCommit(false);
                 try {
@@ -329,8 +362,7 @@ private void xuLyHoanTat() {
                     for (ChiTietPhieuNhap ct : danhSachChiTiet) {
                         ctDao.them(ct, con);
 
-                        // Cộng dồn tồn kho
-                        entity.SanPham spCu = spDao.timTheoMa(ct.getMaSP().getMaSP());
+                        SanPham spCu = spDao.timTheoMa(ct.getMaSP().getMaSP());
                         if (spCu != null) {
                             int tonKhoMoi = spCu.getSoLuongTon() + ct.getSoLuongNhap();
                             String sqlUpdate = "UPDATE SanPham SET soLuongTon = ? WHERE maSP = ?";
@@ -358,19 +390,20 @@ private void xuLyHoanTat() {
             JOptionPane.showMessageDialog(this, "Lỗi khi lưu phiếu nhập: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
         }
     }
+
     public boolean isDaLuu() {
         return daLuu;
     }
 
     private void capNhatDanhSachSanPhamTheoNCC(String maNCC) {
-    try {
-        cboSanPham.removeAllItems(); // Xóa sạch list cũ
-        List<SanPham> dsSP = sanPhamDAO.laySanPhamTheoNhaCungCap(maNCC); // Gọi hàm mới tạo ở DAO
-        for (SanPham sp : dsSP) {
-            cboSanPham.addItem(sp); // Đổ data mới vào
+        try {
+            cboSanPham.removeAllItems();
+            List<SanPham> dsSP = sanPhamDAO.laySanPhamTheoNhaCungCapTuLichSu(maNCC);
+            for (SanPham sp : dsSP) {
+                cboSanPham.addItem(sp);
+            }
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Lỗi tải sản phẩm theo NCC: " + ex.getMessage());
         }
-    } catch (Exception ex) {
-        JOptionPane.showMessageDialog(this, "Lỗi tải sản phẩm theo NCC: " + ex.getMessage());
     }
-}
 }
