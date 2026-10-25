@@ -830,7 +830,7 @@ public class pnlThanhToan extends JPanel {
                         phieuData.addAll(get());
                         model.setRowCount(0);
                         for (ThanhToanDAO.PhieuChoThanhToanDTO phieu : phieuData) {
-                            model.addRow(new Object[] { phieu.maTiepNhan,
+                            model.addRow(new Object[] { phieu.maHoaDon,
                                     phieu.thoiGianTiepNhan == null ? "—"
                                             : phieu.thoiGianTiepNhan.format(
                                                     DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")),
@@ -913,7 +913,7 @@ public class pnlThanhToan extends JPanel {
                 || !txtPhone.getText().trim().isEmpty() || !txtCustomer.getText().trim().isEmpty();
         if (donDangNhap) {
             int chon = JOptionPane.showConfirmDialog(this,
-                    "Nạp phiếu " + phieu.maTiepNhan + " sẽ thay thế nội dung hóa đơn đang nhập. Tiếp tục?",
+                    "Nạp phiếu " + phieu.maHoaDon + " sẽ thay thế nội dung hóa đơn đang nhập. Tiếp tục?",
                     "Nạp phiếu chờ thanh toán", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
             if (chon != JOptionPane.YES_OPTION)
                 return false;
@@ -941,7 +941,7 @@ public class pnlThanhToan extends JPanel {
         } finally {
             dangChonKhachHang = false;
         }
-        maTiepNhanDangLap = phieu.maTiepNhan;
+        maTiepNhanDangLap = phieu.maHoaDon;
         maDichVuPhieuDangLap.clear();
         lamMoiThongTinDon();
         for (ThanhToanDAO.DichVuHoaDonDTO dichVu : phieu.danhSachDichVu) {
@@ -949,7 +949,7 @@ public class pnlThanhToan extends JPanel {
             themVaoDon(LOAI_DV, dichVu.maDichVu, dichVu.tenDichVu, dichVu.donGia);
         }
         capNhatTrangThaiDiem();
-        lblGoiY.setText("Đang lập hóa đơn cho phiếu " + phieu.maTiepNhan + " • Thú cưng: " + phieu.tenThuCung);
+        lblGoiY.setText("Đang lập hóa đơn cho phiếu " + phieu.maHoaDon + " • Thú cưng: " + phieu.tenThuCung);
         return true;
     }
 
