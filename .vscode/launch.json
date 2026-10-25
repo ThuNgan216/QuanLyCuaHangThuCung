@@ -4,6 +4,22 @@
     "configurations": [
         {
             "type": "java",
+            "name": "ConnectDB",
+            "request": "launch",
+            "mainClass": "database.ConnectDB",
+            "projectName": "QuanLyCuaHangThuCung_6ae16dc2",
+            "env": {"PETPLUS_DB_PASSWORD": "sapassword"}
+                 
+        },
+        {
+            "type": "java",
+            "name": "MainFrame",
+            "request": "launch",
+            "mainClass": "gui.main.MainFrame",
+            "projectName": "QuanLyCuaHangThuCung_6ae16dc2"
+        },
+        {
+            "type": "java",
             "name": "pnlThanhToan",
             "request": "launch",
             "mainClass": "gui.panel.pnlThanhToan",

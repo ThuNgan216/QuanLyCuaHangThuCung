@@ -399,19 +399,25 @@ SET XACT_ABORT ON;
 BEGIN TRY
     BEGIN TRANSACTION;
 
-    INSERT INTO TaiKhoan (maTK, tenDangNhap, matKhau, vaiTro, trangThai) VALUES
-    ('TK001', N'admin', N'123456', N'ADMIN', N'Hoạt động'),
-    ('TK002', N'nguyenvana', N'123456', N'NHANVIEN', N'Hoạt động'),
-    ('TK003', N'tranthib', N'123456', N'NHANVIEN', N'Hoạt động'),
-    ('TK004', N'levanc', N'123456', N'NHANVIEN', N'Hoạt động'),
-    ('TK005', N'phamthid', N'123456', N'NHANVIEN', N'Hoạt động');
+    -- THÊM DỮ LIỆU TÀI KHOẢN
+INSERT INTO TaiKhoan (maTK, tenDangNhap, matKhau, vaiTro, trangThai) VALUES
+    ('TK001', N'NV01', N'123456', N'QUAN_LY', N'Hoạt động'),
+    ('TK002', N'nguyenvana', N'123456', N'BAN_HANG', N'Hoạt động'),
+    ('TK003', N'tranthib', N'123456', N'CHAM_SOC', N'Hoạt động'),
+    ('TK004', N'levanc', N'123456', N'BAN_HANG', N'Hoạt động'),
+    ('TK005', N'phamthid', N'123456', N'CHAM_SOC', N'Hoạt động');
 
-    INSERT INTO NhanVien (maNV, tenNV, sdt, cccd, diaChi, email, chucVu, maTK) VALUES
-    ('NV001', N'Nguyễn Văn An', '0901000001', '079201000001', N'Quận 12, TP.HCM', 'an@petplus.vn', N'Quản lý', 'TK001'),
-    ('NV002', N'Trần Thị Bình', '0901000002', '079201000002', N'Gò Vấp, TP.HCM', 'binh@petplus.vn', N'Thu ngân', 'TK002'),
-    ('NV003', N'Lê Văn Cường', '0901000003', '079201000003', N'Tân Bình, TP.HCM', 'cuong@petplus.vn', N'Chăm sóc thú cưng', 'TK003'),
-    ('NV004', N'Phạm Thị Dung', '0901000004', '079201000004', N'Thủ Đức, TP.HCM', 'dung@petplus.vn', N'Bán hàng', 'TK004'),
-    ('NV005', N'Võ Minh Đức', '0901000005', '079201000005', N'Bình Thạnh, TP.HCM', 'duc@petplus.vn', N'Chăm sóc thú cưng', 'TK005');
+INSERT INTO NhanVien (maNV, tenNV, sdt, cccd, diaChi, email, chucVu, maTK) VALUES
+    ('NV001', N'Nguyễn Văn An', '0901000001', '079201000001',
+     N'Quận 12, TP.HCM', 'an@petplus.vn', N'Quản lý', 'TK001'),
+    ('NV002', N'Trần Thị Bình', '0901000002', '079201000002',
+     N'Gò Vấp, TP.HCM', 'binh@petplus.vn', N'Bán hàng / Thu ngân', 'TK002'),
+    ('NV003', N'Lê Văn Cường', '0901000003', '079201000003',
+     N'Tân Bình, TP.HCM', 'cuong@petplus.vn', N'Chăm sóc thú cưng', 'TK003'),
+    ('NV004', N'Phạm Thị Dung', '0901000004', '079201000004',
+     N'Thủ Đức, TP.HCM', 'dung@petplus.vn', N'Bán hàng / Thu ngân', 'TK004'),
+    ('NV005', N'Võ Minh Đức', '0901000005', '079201000005',
+     N'Bình Thạnh, TP.HCM', 'duc@petplus.vn', N'Chăm sóc thú cưng', 'TK005');
 
     INSERT INTO CaLamViec (maCa, gioBatDau, gioKetThuc, tenCa) VALUES
     ('CA001', '07:00', '12:00', N'Ca sáng'),
