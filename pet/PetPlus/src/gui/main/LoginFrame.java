@@ -104,7 +104,6 @@ public class LoginFrame extends JFrame {
 					Graphics2D g2 = (Graphics2D) g.create();
 					g2.setColor(Color.GRAY);
 					g2.setFont(getFont().deriveFont(Font.ITALIC));
-					// Căn giữa chữ chìm theo chiều dọc
 					int y = (getHeight() - g.getFontMetrics().getHeight()) / 2 + g.getFontMetrics().getAscent();
 					g2.drawString("Mã nhân viên (VD: NV01)", 12, y);
 					g2.dispose();
