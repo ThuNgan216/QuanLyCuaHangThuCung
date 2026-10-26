@@ -363,7 +363,25 @@ public class pnlKhachHang extends JPanel {
         JTextField txtMa = new JTextField(dangSua ? khCu.getMaKH() : khachHangService.taoMaMoi());
         JTextField txtTen = new JTextField(dangSua ? khCu.getTenKH() : "");
         JTextField txtSDT = new JTextField(dangSua ? giaTri(khCu.getSdt()) : "");
-        JTextField txtDiaChi = new JTextField(dangSua ? giaTri(khCu.getDiaChi()) : "");
+        JTextField txtDiaChi = new JTextField(dangSua ? giaTri(khCu.getDiaChi()) : "") {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                if (getText().isEmpty() && !isFocusOwner()) {
+                    Graphics2D g2 = (Graphics2D) g.create();
+                    g2.setColor(new Color(150, 150, 150));
+                    FontMetrics metrics = g2.getFontMetrics(getFont());
+                    Insets insets = getInsets();
+                    int y = (getHeight() - metrics.getHeight()) / 2 + metrics.getAscent();
+                    g2.drawString("Nhập tỉnh", insets.left + 2, y);
+                    g2.dispose();
+                }
+            }
+        };
+        txtDiaChi.addFocusListener(new java.awt.event.FocusAdapter() {
+            @Override public void focusGained(java.awt.event.FocusEvent e) { txtDiaChi.repaint(); }
+            @Override public void focusLost(java.awt.event.FocusEvent e) { txtDiaChi.repaint(); }
+        });
         JTextField txtHang = new JTextField(dangSua ? String.valueOf(khCu.getHangThanhVien()) : "1");
         JTextField txtDiem = new JTextField(dangSua ? String.valueOf(khCu.getDiemTichLuy()) : "0");
         txtMa.setEditable(false);

@@ -10,13 +10,16 @@ public final class ConnectDB {
             + "encrypt=true;"
             + "trustServerCertificate=true;";
 
-    private static final String USERNAME = "sa";
-    private static final String PASSWORD = "123456";
+    private static final String USERNAME = System.getenv().getOrDefault("PETPLUS_DB_USERNAME", "sa");
+    private static final String PASSWORD = System.getenv("PETPLUS_DB_PASSWORD");
 
     private ConnectDB() {
     }
 
     public static Connection getConnection() throws SQLException {
+        if (PASSWORD == null || PASSWORD.isBlank()) {
+            throw new SQLException("Missing PETPLUS_DB_PASSWORD environment variable.");
+        }
         return DriverManager.getConnection(
                 URL,
                 USERNAME,

@@ -77,8 +77,9 @@ public class dlgNhaCungCap extends JDialog {
                 String maMoi = nccDAO.phatSinhMaNCCMoi();
                 txtMaNCC.setText(maMoi);
             } catch (SQLException ex) {
-                txtMaNCC.setText("Lỗi tạo mã");
-                ex.printStackTrace();
+                txtMaNCC.setText("");
+                txtMaNCC.setToolTipText("Không thể phát sinh mã nhà cung cấp: " + ex.getMessage());
+                btnLuu.setEnabled(false);
             }
         }
 
