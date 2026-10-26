@@ -311,4 +311,46 @@ public void luuGiaNhap(String maSP, String maNCC, float giaNhap) throws SQLExcep
         }
         return list;
     }
+
+    // Lấy dữ liệu tổng hợp phục vụ Gợi ý nhập hàng (Tồn kho, Tốc độ bán 30 ngày, Lịch sử NCC)
+    public List<Object[]> layDuLieuGoiYNhapHang() throws SQLException {
+        List<Object[]> list = new ArrayList<>();
+        String sql = 
+            "SELECT sp.maSP, sp.tenSP, sp.soLuongTon, " +
+            "       ISNULL(sales.TongBan30Ngay, 0) AS TongBan30Ngay, " +
+            "       lastImport.maNCC, lastImport.tenNCC, lastImport.donGiaNhap " +
+            "FROM dbo.SanPham sp " +
+            "LEFT JOIN ( " +
+            "    SELECT ct.maSP, SUM(ct.soLuong) AS TongBan30Ngay " +
+            "    FROM dbo.ChiTietHoaDon ct " +
+            "    INNER JOIN dbo.HoaDon hd ON ct.maHoaDon = hd.maHoaDon " +
+            "    WHERE hd.ngayLapHD >= DATEADD(day, -30, GETDATE()) " +
+            "    GROUP BY ct.maSP " +
+            ") sales ON sp.maSP = sales.maSP " +
+            "OUTER APPLY ( " +
+            "    SELECT TOP 1 pn.maNCC, ncc.tenNCC, ct.donGiaNhap " +
+            "    FROM dbo.ChiTietPhieuNhap ct " +
+            "    INNER JOIN dbo.PhieuNhap pn ON ct.maPN = pn.maPN " +
+            "    INNER JOIN dbo.NhaCungCap ncc ON pn.maNCC = ncc.maNCC " +
+            "    WHERE ct.maSP = sp.maSP " +
+            "    ORDER BY pn.ngayNhap DESC, pn.maPN DESC " +
+            ") AS lastImport";
+
+        try (Connection con = database.ConnectDB.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                list.add(new Object[]{
+                    rs.getString("maSP"), 
+                    rs.getString("tenSP"), 
+                    rs.getInt("soLuongTon"),
+                    rs.getInt("TongBan30Ngay"),
+                    rs.getString("maNCC"), 
+                    rs.getString("tenNCC") != null ? rs.getString("tenNCC") : "Chưa có",
+                    rs.getFloat("donGiaNhap")
+                });
+            }
+        }
+        return list;
+    }
 }

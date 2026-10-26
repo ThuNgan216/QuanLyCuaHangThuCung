@@ -83,9 +83,11 @@ public class pnlNhapHang extends JPanel {
             }
         });
 
-        // Đã có thể gọi btnGoiY bình thường
-        btnGoiY.addActionListener(e -> hienThiGoiYNhapHang());
-
+        btnGoiY.addActionListener(e -> {
+            gui.dialogs.dlgGoiYNhapHang dlg = new gui.dialogs.dlgGoiYNhapHang(SwingUtilities.getWindowAncestor(this));
+            dlg.setVisible(true);
+            taiDanhSach(); // Tải lại bảng phiếu nhập đề phòng có phiếu mới được tạo ra từ gợi ý
+        });
         btnXemChiTiet.addActionListener(e -> hienThiChiTietPhieuNhap());
 
         table.addMouseListener(new MouseAdapter() {
