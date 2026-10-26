@@ -278,4 +278,37 @@ public void luuGiaNhap(String maSP, String maNCC, float giaNhap) throws SQLExcep
         return 0;
     }
 
+    // Lấy danh sách gợi ý nhập hàng (Tồn kho dưới 10) kèm theo gợi ý NCC và Giá từ lịch sử
+    public List<Object[]> layDanhSachGoiYNhapHang(int nguongTonKho) throws SQLException {
+        List<Object[]> list = new ArrayList<>();
+        String sql = 
+            "SELECT sp.maSP, sp.tenSP, sp.soLuongTon, " +
+            "       ISNULL(lastImport.tenNCC, N'Chưa từng nhập (Hàng tự do)') AS nccGoiY, " +
+            "       ISNULL(lastImport.donGiaNhap, 0) AS giaGoiY " +
+            "FROM dbo.SanPham sp " +
+            "OUTER APPLY ( " +
+            "    SELECT TOP 1 ncc.tenNCC, ct.donGiaNhap " +
+            "    FROM dbo.ChiTietPhieuNhap ct " +
+            "    INNER JOIN dbo.PhieuNhap pn ON ct.maPN = pn.maPN " +
+            "    INNER JOIN dbo.NhaCungCap ncc ON pn.maNCC = ncc.maNCC " +
+            "    WHERE ct.maSP = sp.maSP " +
+            "    ORDER BY pn.ngayNhap DESC, pn.maPN DESC " +
+            ") AS lastImport " +
+            "WHERE sp.soLuongTon <= ? " +
+            "ORDER BY sp.soLuongTon ASC";
+
+        try (Connection con = database.ConnectDB.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, nguongTonKho);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(new Object[]{
+                        rs.getString("maSP"), rs.getString("tenSP"), rs.getInt("soLuongTon"),
+                        rs.getString("nccGoiY"), rs.getFloat("giaGoiY")
+                    });
+                }
+            }
+        }
+        return list;
+    }
 }
