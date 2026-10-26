@@ -49,15 +49,14 @@ public class pnlSanPham extends JPanel {
     private final JTextField txtPrice = new JTextField();
     private final JTextField txtStock = new JTextField();
     private final JTextField txtSupplier = new JTextField();
-    private final JTextArea txtNote = new JTextArea(2, 16);
     private final JComboBox<NhaCungCapItem> cboCategory = new JComboBox<>();
     private final Map<String, Set<String>> nhaCungCapTheoSanPham = new HashMap<>();
     private final Map<String, String> tenNhaCungCap = new HashMap<>();
-    private final JComboBox<String> cboStatus = new JComboBox<>(new String[] { "Tất cả", "Còn hàng", "Hết hàng" });
-    private final JComboBox<String> cboType = new JComboBox<>(new String[] { "Sản phẩm", "Dịch vụ" });
+    private final JComboBox<String> cboStatus = new JComboBox<>(new String[] { "Tất cả", "Còn hàng", "Hết hàng", "Chờ nhập" });
     private final JComboBox<String> cboDetailStatus = new JComboBox<>(new String[] { "Còn hàng", "Hết hàng" });
     private final JLabel lblBarcodePreview = new JLabel("Chưa có hình mã vạch", SwingConstants.CENTER);
     private final JLabel lblCount = new JLabel();
+    private final JTextField txtGiaNhap = new JTextField();
 
     public pnlSanPham() {
         setLayout(new BorderLayout(0, 12));
@@ -67,7 +66,6 @@ public class pnlSanPham extends JPanel {
         add(createContent(), BorderLayout.CENTER);
         cboCategory.addItem(new NhaCungCapItem("all", "Tất cả nhà cung cấp"));
         cboCategory.addActionListener(e -> filterTable());
-        cboType.setEnabled(false);
         cboDetailStatus.setEnabled(false);
         txtSearch.getDocument().addDocumentListener(new DocumentListener() {
             public void insertUpdate(DocumentEvent e) {
@@ -192,24 +190,25 @@ btnAdd.addActionListener(e -> {
         JPanel top = new JPanel(new BorderLayout());
         top.setOpaque(false);
         top.add(label("Thông tin sản phẩm", 19, PINK, true), BorderLayout.WEST);
-       JButton btnEdit = button("Chỉnh sửa", false);
-btnEdit.addActionListener(e -> {
-    int selectedRow = table.getSelectedRow();
-    if (selectedRow < 0) {
-        JOptionPane.showMessageDialog(this, "Vui lòng chọn sản phẩm cần chỉnh sửa trên bảng.", "Thông báo", JOptionPane.WARNING_MESSAGE);
-        return;
-    }
-    SanPham spDangChon = sanPhamDangHienThi.get(selectedRow);
-    gui.dialogs.dlgSanPham dlg = new gui.dialogs.dlgSanPham(SwingUtilities.getWindowAncestor(this), spDangChon);
-    dlg.setVisible(true);
-    if (dlg.isDaLuu()) {
-        loadSanPhamFromDB(); // Tải lại bảng sau khi cập nhật
-    }
-});
+        
+        JButton btnEdit = button("Chỉnh sửa", false);
+        btnEdit.addActionListener(e -> {
+            int selectedRow = table.getSelectedRow();
+            if (selectedRow < 0) {
+                JOptionPane.showMessageDialog(this, "Vui lòng chọn sản phẩm cần chỉnh sửa trên bảng.", "Thông báo", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            SanPham spDangChon = sanPhamDangHienThi.get(selectedRow);
+            gui.dialogs.dlgSanPham dlg = new gui.dialogs.dlgSanPham(SwingUtilities.getWindowAncestor(this), spDangChon);
+            dlg.setVisible(true);
+            if (dlg.isDaLuu()) {
+                loadSanPhamFromDB(); // Tải lại bảng sau khi cập nhật
+            }
+        });
         top.add(btnEdit, BorderLayout.EAST);
         panel.add(top, BorderLayout.NORTH);
 
-        JPanel fields = new JPanel(new GridBagLayout());
+JPanel fields = new JPanel(new GridBagLayout());
         fields.setOpaque(false);
         GridBagConstraints gc = new GridBagConstraints();
         gc.gridx = 0;
@@ -219,48 +218,69 @@ btnEdit.addActionListener(e -> {
         int y = 0;
         addField(fields, gc, y++, "Mã vạch", txtBarcode);
         addField(fields, gc, y++, "Tên sản phẩm", txtName);
-        addField(fields, gc, y++, "Danh mục", cboCategoryCopy());
-        addField(fields, gc, y++, "Loại", cboType);
+        addField(fields, gc, y++, "Giá nhập gần nhất", txtGiaNhap);
         addField(fields, gc, y++, "Đơn giá bán", txtPrice);
         addField(fields, gc, y++, "Số lượng tồn", txtStock);
         addField(fields, gc, y++, "Trạng thái", cboDetailStatus);
         addField(fields, gc, y++, "Nhà cung cấp", txtSupplier);
-        txtNote.setLineWrap(true);
-        txtNote.setWrapStyleWord(true);
-        addField(fields, gc, y++, "Mô tả / Ghi chú", new JScrollPane(txtNote));
-        for (JTextField field : new JTextField[] { txtBarcode, txtName, txtPrice, txtStock, txtSupplier }) {
+        
+        for (JTextField field : new JTextField[] { txtBarcode, txtName, txtGiaNhap, txtPrice, txtStock, txtSupplier }) {
             field.setEditable(false);
         }
-        txtNote.setEditable(false);
         txtSupplier.setText("Chưa có dữ liệu");
-        txtNote.setText("Chưa có dữ liệu mô tả.");
         panel.add(new JScrollPane(fields, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
                 JScrollPane.HORIZONTAL_SCROLLBAR_NEVER), BorderLayout.CENTER);
-
         JPanel bottom = new JPanel(new BorderLayout(0, 8));
         bottom.setOpaque(false);
         lblBarcodePreview.setPreferredSize(new Dimension(0, 122));
         lblBarcodePreview.setBorder(BorderFactory.createDashedBorder(BORDER));
         bottom.add(lblBarcodePreview, BorderLayout.NORTH);
+        
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         actions.setOpaque(false);
+        
         JButton btnView = button("Xem mã vạch", false);
         JButton btnPrint = button("In tem mã vạch", false);
+        JButton btnDelete = button("Xóa sản phẩm", false);
+        btnDelete.setForeground(Color.RED);
+        btnDelete.addActionListener(e -> xoaSanPhamDangChon());
+
         btnCreateBarcode.addActionListener(e -> taoMaVachChoSanPham());
         btnCreateBarcode.setToolTipText("Dựng lại hình từ số mã vạch đang lưu trong cơ sở dữ liệu; không đổi số mã.");
         btnView.addActionListener(e -> xemMaVach());
         btnPrint.addActionListener(e -> notice("In tem mã vạch"));
         btnCreateBarcode.setEnabled(false);
+        
         actions.add(btnCreateBarcode);
         actions.add(btnView);
         actions.add(btnPrint);
+        actions.add(btnDelete); // Thêm nút xóa vào panel actions
+        
         bottom.add(actions, BorderLayout.SOUTH);
         panel.add(bottom, BorderLayout.SOUTH);
         return panel;
     }
 
-    private JComboBox<String> cboCategoryCopy() {
-        return new JComboBox<>(new String[] { "Thức ăn cho chó", "Thức ăn cho mèo", "Phụ kiện", "Vệ sinh" });
+    private void xoaSanPhamDangChon() {
+        int viewRow = table.getSelectedRow();
+        if (viewRow < 0) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn sản phẩm cần xóa trên bảng.", "Thông báo", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        int row = table.convertRowIndexToModel(viewRow);
+        SanPham sp = sanPhamDangHienThi.get(row);
+
+        int confirm = JOptionPane.showConfirmDialog(this, "Bạn có chắc muốn xóa sản phẩm " + sp.getTenSP() + "?", "Xác nhận xóa", JOptionPane.YES_NO_OPTION);
+        if (confirm == JOptionPane.YES_OPTION) {
+            try {
+                if (new SanPhamDAO().xoa(sp.getMaSP())) {
+                    JOptionPane.showMessageDialog(this, "Xóa sản phẩm thành công!");
+                    loadSanPhamFromDB();
+                }
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Không thể xóa sản phẩm do đã phát sinh dữ liệu liên quan: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+            }
+        }
     }
 
     private void addField(JPanel parent, GridBagConstraints gc, int index, String title, JComponent field) {
@@ -368,7 +388,13 @@ btnEdit.addActionListener(e -> {
             if (!ten.toLowerCase(Locale.ROOT).contains(keyword)
                     && !ma.toLowerCase(Locale.ROOT).contains(keyword))
                 continue;
-            String trangThai = sp.getSoLuongTon() > 0 ? "Còn hàng" : "Hết hàng";
+            String trangThai;
+            if (sp.getSoLuongTon() > 0) {
+                trangThai = "Còn hàng";
+            } else {
+                boolean daTungNhap = nhaCungCapTheoSanPham.containsKey(ma) && !nhaCungCapTheoSanPham.get(ma).isEmpty();
+                trangThai = daTungNhap ? "Hết hàng" : "Chờ nhập";
+            }
             if (!"Tất cả".equals(status) && !status.equals(trangThai))
                 continue;
             if (!"all".equals(maNCC) && !nhaCungCapTheoSanPham
@@ -400,7 +426,19 @@ btnEdit.addActionListener(e -> {
         txtName.setText(sp.getTenSP());
         txtPrice.setText(tienVietNam.format(sp.getGiaBan()) + " đ");
         txtStock.setText(String.valueOf(sp.getSoLuongTon()));
-        cboDetailStatus.setSelectedItem(sp.getSoLuongTon() > 0 ? "Còn hàng" : "Hết hàng");
+        cboDetailStatus.setSelectedItem(sp.getSoLuongTon() > 0 ? "Còn hàng" : (sp.getSoLuongTon() == 0 && nhaCungCapTheoSanPham.containsKey(sp.getMaSP()) ? "Hết hàng" : "Chờ nhập"));
+        
+        // Truy vấn hiển thị giá nhập gần nhất
+        try {
+            float giaNhap = new SanPhamDAO().layGiaNhapGanNhatTongQuat(sp.getMaSP());
+            if (giaNhap > 0) {
+                txtGiaNhap.setText(tienVietNam.format(giaNhap) + " đ");
+            } else {
+                txtGiaNhap.setText("Chưa có (Hàng chờ nhập)");
+            }
+        } catch (Exception ex) {
+            txtGiaNhap.setText("Không tải được giá nhập");
+        }
         txtBarcode.setText("");
         Set<String> codes = nhaCungCapTheoSanPham.getOrDefault(sp.getMaSP(), java.util.Collections.emptySet());
         List<String> names = new ArrayList<>();
@@ -409,7 +447,6 @@ btnEdit.addActionListener(e -> {
         java.util.Collections.sort(names);
         txtSupplier.setText(names.isEmpty() ? "Chưa có phiếu nhập" : String.join(", ", names));
         txtSupplier.setToolTipText(txtSupplier.getText());
-        txtNote.setText("Chưa có dữ liệu mô tả.");
         lblBarcodePreview.setIcon(null);
         lblBarcodePreview.setText("Đang kiểm tra mã vạch...");
         btnCreateBarcode.setEnabled(false);
@@ -457,7 +494,6 @@ btnEdit.addActionListener(e -> {
         txtPrice.setText("");
         txtStock.setText("");
         txtSupplier.setText("");
-        txtNote.setText("");
         lblBarcodePreview.setText("Chưa chọn sản phẩm");
     }
 

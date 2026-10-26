@@ -1,11 +1,13 @@
 package gui.dialogs;
 
+import dao.NhaCungCapDAO;
 import entity.NhaCungCap;
 import service.NhaCungCapService;
 import utils.PetPlusTheme;
 
 import javax.swing.*;
 import java.awt.*;
+import java.sql.SQLException;
 
 public class dlgNhaCungCap extends JDialog {
     private final JTextField txtMaNCC = new JTextField(15);
@@ -15,6 +17,7 @@ public class dlgNhaCungCap extends JDialog {
     private final JTextField txtDiaChi = new JTextField(15);
 
     private final NhaCungCapService service = new NhaCungCapService();
+    private final NhaCungCapDAO nccDAO = new NhaCungCapDAO(); // Thêm DAO để lấy mã tự động
     private final NhaCungCap nccHienTai;
     private boolean daLuu = false;
 
@@ -35,7 +38,7 @@ public class dlgNhaCungCap extends JDialog {
         g.weightx = 1;
 
         int y = 0;
-        themDong(pnlForm, g, y++, "Mã Nhà Cung Cấp (*):", txtMaNCC);
+        themDong(pnlForm, g, y++, "Mã Nhà Cung Cấp:", txtMaNCC); // Bỏ dấu (*) vì không cần tự nhập nữa
         themDong(pnlForm, g, y++, "Tên Nhà Cung Cấp (*):", txtTenNCC);
         themDong(pnlForm, g, y++, "Số Điện Thoại:", txtSoDienThoai);
         themDong(pnlForm, g, y++, "Email:", txtEmail);
@@ -55,14 +58,28 @@ public class dlgNhaCungCap extends JDialog {
         btnLuu.addActionListener(e -> xuLyLuu());
         btnHuy.addActionListener(e -> dispose());
 
-        // Nếu là chế độ cập nhật, đổ dữ liệu lên form và khóa mã NCC
+        // CHẾ ĐỘ READ-ONLY CHO MÃ NHÀ CUNG CẤP
+        txtMaNCC.setEditable(false);
+        txtMaNCC.setBackground(new Color(240, 240, 240));
+        txtMaNCC.setToolTipText("Mã nhà cung cấp được phát sinh tự động");
+
+        // ĐỔ DỮ LIỆU LÊN FORM DỰA VÀO TRẠNG THÁI (THÊM / SỬA)
         if (nccHienTai != null) {
+            // Chế độ CẬP NHẬT: Hiện mã cũ
             txtMaNCC.setText(nccHienTai.getMaNCC());
-            txtMaNCC.setEditable(false); // Khóa cứng mã NCC không cho sửa khi cập nhật
             txtTenNCC.setText(nccHienTai.getTenNCC());
             txtSoDienThoai.setText(nccHienTai.getSoDienThoai());
             txtEmail.setText(nccHienTai.getEmail());
             txtDiaChi.setText(nccHienTai.getDiaChi());
+        } else {
+            // Chế độ THÊM MỚI: Tự động phát sinh mã NCC mới
+            try {
+                String maMoi = nccDAO.phatSinhMaNCCMoi();
+                txtMaNCC.setText(maMoi);
+            } catch (SQLException ex) {
+                txtMaNCC.setText("Lỗi tạo mã");
+                ex.printStackTrace();
+            }
         }
 
         PetPlusTheme.apply(getContentPane());

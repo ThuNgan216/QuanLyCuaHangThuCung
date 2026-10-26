@@ -1,18 +1,17 @@
 package gui.dialogs;
 
 import entity.SanPham;
+import java.awt.*;
+import java.util.List;
+import javax.swing.*;
 import service.SanPhamService;
 import utils.PetPlusTheme;
-
-import javax.swing.*;
-import java.awt.*;
 
 public class dlgSanPham extends JDialog {
     private final JTextField txtMaSP = new JTextField(15);
     private final JTextField txtTenSP = new JTextField(15);
     private final JTextField txtGiaBan = new JTextField(15);
-    private final JTextField txtSoLuongTon = new JTextField(15);
-    private final JComboBox<String> cboLoai = new JComboBox<>();
+    // Đã xóa txtSoLuongTon vì không dùng đến trên UI này
 
     private final SanPhamService service = new SanPhamService();
     private final SanPham sanPhamHienTai;
@@ -22,7 +21,6 @@ public class dlgSanPham extends JDialog {
         super(owner, sp == null ? "Thêm Sản Phẩm Mới" : "Cập Nhật Sản Phẩm", ModalityType.APPLICATION_MODAL);
         this.sanPhamHienTai = sp;
         khoiTaoGiaoDien();
-        taiDuLieuBanDau();
     }
 
     private void khoiTaoGiaoDien() {
@@ -37,12 +35,12 @@ public class dlgSanPham extends JDialog {
 
         int y = 0;
         themDong(pnlForm, g, y++, "Mã sản phẩm (*):", txtMaSP);
-        themDong(pnlForm, g, y++, "Tên sản phẩm (*):", txtTenSP);
-        themDong(pnlForm, g, y++, "Loại sản phẩm:", cboLoai);
-        themDong(pnlForm, g, y++, "Giá bán (VNĐ) (*):", txtGiaBan);
-        themDong(pnlForm, g, y++, "Số lượng tồn:", txtSoLuongTon);
+        txtMaSP.setEditable(false);
 
-        // Nút thao tác
+        themDong(pnlForm, g, y++, "Tên sản phẩm (*):", txtTenSP);
+        themDong(pnlForm, g, y++, "Giá bán (VNĐ) (*):", txtGiaBan);
+        // Đã xóa dòng add Số lượng tồn ra khỏi giao diện form
+
         JButton btnLuu = new JButton("Lưu");
         JButton btnHuy = new JButton("Hủy");
         JPanel pnlButtons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 10));
@@ -52,17 +50,20 @@ public class dlgSanPham extends JDialog {
         add(pnlForm, BorderLayout.CENTER);
         add(pnlButtons, BorderLayout.SOUTH);
 
-        // Sự kiện nút bấm
         btnLuu.addActionListener(e -> xuLyLuu());
         btnHuy.addActionListener(e -> dispose());
 
         if (sanPhamHienTai != null) {
+            // Chế độ Cập nhật: Chỉ sửa Tên và Giá bán
             txtMaSP.setText(sanPhamHienTai.getMaSP());
-            txtMaSP.setEditable(false); // Không cho sửa mã khi cập nhật
             txtTenSP.setText(sanPhamHienTai.getTenSP());
             txtGiaBan.setText(String.valueOf(sanPhamHienTai.getGiaBan()));
-            txtSoLuongTon.setText(String.valueOf(sanPhamHienTai.getSoLuongTon()));
-            txtSoLuongTon.setEditable(false); // Số lượng tồn thay đổi qua phiếu nhập
+            txtGiaBan.setEditable(true);
+        } else {
+            // Chế độ Thêm mới: Tự sinh mã, giá bán khóa mặc định bằng 0
+            tuDongSinhMaSP();
+            txtGiaBan.setText("0");
+            txtGiaBan.setEditable(false);
         }
 
         PetPlusTheme.apply(getContentPane());
@@ -77,30 +78,45 @@ public class dlgSanPham extends JDialog {
         p.add(c, g);
     }
 
-    private void taiDuLieuBanDau() {
-        // Có thể load danh sách loại sản phẩm từ DB hoặc cứng tạm thời
-        cboLoai.addItem("LSP001 - Thức ăn cho chó");
-        cboLoai.addItem("LSP002 - Thức ăn cho mèo");
-        cboLoai.addItem("LSP003 - Đồ chơi thú cưng");
-        cboLoai.addItem("LSP004 - Phụ kiện thú cưng");
-        cboLoai.addItem("LSP005 - Sản phẩm chăm sóc");
+    private void tuDongSinhMaSP() {
+        try {
+            List<SanPham> ds = new dao.SanPhamDAO().layDanhSachSanPham();
+            int maxId = 0;
+            for (SanPham sp : ds) {
+                String ma = sp.getMaSP();
+                if (ma != null && ma.startsWith("SP")) {
+                    try {
+                        int num = Integer.parseInt(ma.substring(2));
+                        if (num > maxId) maxId = num;
+                    } catch (Exception ignored) {}
+                }
+            }
+            txtMaSP.setText(String.format("SP%03d", maxId + 1));
+        } catch (Exception ex) {
+            txtMaSP.setText("SP001");
+        }
     }
 
     private void xuLyLuu() {
         try {
             String ma = txtMaSP.getText().trim();
             String ten = txtTenSP.getText().trim();
-            if (ma.isEmpty() || ten.isEmpty()) {
-                throw new IllegalArgumentException("Mã và tên sản phẩm không được để trống.");
+            if (ten.isEmpty()) {
+                throw new IllegalArgumentException("Tên sản phẩm không được để trống.");
             }
-            float gia = Float.parseFloat(txtGiaBan.getText().trim());
-            int ton = txtSoLuongTon.getText().trim().isEmpty() ? 0 : Integer.parseInt(txtSoLuongTon.getText().trim());
+            float gia = txtGiaBan.getText().trim().isEmpty() ? 0 : Float.parseFloat(txtGiaBan.getText().trim());
 
-            SanPham sp = new SanPham(ma, ten, gia, ton);
+            // Khi lưu giữ nguyên hoặc mặc định số lượng tồn cũ, không cho form ghi đè bừa bãi
+            int tonCu = 0;
+            if (sanPhamHienTai != null) {
+                tonCu = sanPhamHienTai.getSoLuongTon();
+            }
+
+            SanPham sp = new SanPham(ma, ten, gia, tonCu);
 
             if (sanPhamHienTai == null) {
                 service.them(sp);
-                JOptionPane.showMessageDialog(this, "Thêm sản phẩm thành công!");
+                JOptionPane.showMessageDialog(this, "Thêm sản phẩm mới thành công (Trạng thái: Chờ nhập)!");
             } else {
                 service.capNhat(sp);
                 JOptionPane.showMessageDialog(this, "Cập nhật sản phẩm thành công!");
@@ -108,7 +124,7 @@ public class dlgSanPham extends JDialog {
             daLuu = true;
             dispose();
         } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "Giá bán và số lượng tồn phải là định dạng số hợp lệ.", "Lỗi định dạng", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Giá bán phải là định dạng số hợp lệ.", "Lỗi định dạng", JOptionPane.ERROR_MESSAGE);
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, ex.getMessage(), "Lỗi nghiệp vụ", JOptionPane.ERROR_MESSAGE);
         }

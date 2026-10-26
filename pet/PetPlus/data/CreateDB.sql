@@ -578,3 +578,8 @@ UNION ALL SELECT N'ChiTietHoaDon', COUNT(*) FROM ChiTietHoaDon
 UNION ALL SELECT N'KhuyenMaiSanPham', COUNT(*) FROM KhuyenMaiSanPham
 UNION ALL SELECT N'TichDiem', COUNT(*) FROM TichDiem;
 GO
+
+
+USE PETPLUS;
+GO
+
