@@ -40,7 +40,7 @@ public class dlgNhaCungCap extends JDialog {
         int y = 0;
         themDong(pnlForm, g, y++, "Mã Nhà Cung Cấp:", txtMaNCC); // Bỏ dấu (*) vì không cần tự nhập nữa
         themDong(pnlForm, g, y++, "Tên Nhà Cung Cấp (*):", txtTenNCC);
-        themDong(pnlForm, g, y++, "Số Điện Thoại:", txtSoDienThoai);
+        themDong(pnlForm, g, y++, "Số Điện Thoại (*):", txtSoDienThoai);
         themDong(pnlForm, g, y++, "Email:", txtEmail);
         themDong(pnlForm, g, y++, "Địa Chỉ:", txtDiaChi);
 
@@ -105,6 +105,9 @@ public class dlgNhaCungCap extends JDialog {
 
             if (ma.isEmpty() || ten.isEmpty()) {
                 throw new IllegalArgumentException("Mã và tên nhà cung cấp không được để trống.");
+            }
+            if (!sdt.matches("0\\d{9}")) {
+                throw new IllegalArgumentException("Số điện thoại phải bắt đầu bằng 0 và gồm đúng 10 chữ số.");
             }
 
             NhaCungCap ncc = new NhaCungCap(ma, ten, sdt, diaChi, email);

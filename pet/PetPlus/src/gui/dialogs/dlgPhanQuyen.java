@@ -27,6 +27,7 @@ public class dlgPhanQuyen extends JDialog {
         main.add(PetPlusUI.label("Tên đăng nhập: " + nv.getMaTK().getTenDangNhap()));
         main.add(PetPlusUI.label("Vai trò / Chức vụ được cấp:"));
         PetPlusUI.decorateInput(cbo);
+        cbo.setPrototypeDisplayValue("Chăm sóc thú cưng");
         cbo.setFont(new Font("Arial", Font.PLAIN, 15));
         cbo.setSelectedItem(VaiTroHelper.tenVaiTro(maVaiTroCu));
         JPanel pnlCombo = new JPanel(new BorderLayout());

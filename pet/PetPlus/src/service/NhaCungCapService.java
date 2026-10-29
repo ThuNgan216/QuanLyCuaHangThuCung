@@ -88,7 +88,7 @@ public List<NhaCungCap> timKiem(String tuKhoa) {
         if (ten.isEmpty()) throw new IllegalArgumentException("Tên nhà cung cấp không được để trống.");
         if (ten.length() > 150) throw new IllegalArgumentException("Tên nhà cung cấp tối đa 150 ký tự.");
 
-        if (!sdt.isEmpty() && !sdt.matches("^0\\d{9}$")) {
+        if (!sdt.matches("^0\\d{9}$")) {
             throw new IllegalArgumentException("Số điện thoại phải gồm 10 chữ số và bắt đầu bằng số 0.");
         }
 

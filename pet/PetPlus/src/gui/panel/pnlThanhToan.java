@@ -52,19 +52,19 @@ public class pnlThanhToan extends JPanel {
     private static final Color READONLY_BG = new Color(246, 247, 249);
     private static final Font FONT = new Font("Times New Roman", Font.PLAIN, 13);
     private static final NumberFormat MONEY = NumberFormat.getIntegerInstance(new Locale("vi", "VN"));
-    private static final Pattern SDT_HOP_LE = Pattern.compile("^0\\d{9,10}$");
+    private static final Pattern SDT_HOP_LE = Pattern.compile("^0\\d{9}$");
     private static final long GIA_TRI_MOI_DIEM = 100L;
 
     private static final String LOAI_SP = "Sản phẩm";
     private static final String LOAI_DV = "Dịch vụ";
-    private static final int C_LOAI = 0, C_TEN = 1, C_SL = 2, C_GIA = 3, C_TIEN = 4, C_MA = 5;
+    private static final int C_LOAI = 0, C_TEN = 1, C_SL = 2, C_GIA = 3, C_TIEN = 4, C_GIAM = 5, C_MA = 6;
 
     private final ThanhToanDAO thanhToanDAO = new ThanhToanDAO();
     private final TiepNhanThuCungDAO tiepNhanThuCungDAO = new TiepNhanThuCungDAO();
     private final MaVachDAO maVachDAO = new MaVachDAO();
 
     private final DefaultTableModel modelDon = new DefaultTableModel(
-            new String[] { "Loại", "Tên", "SL", "Đơn giá", "Thành tiền", "Mã" }, 0) {
+            new String[] { "Loại", "Tên", "SL", "Đơn giá", "Thành tiền", "Giảm KM", "Mã" }, 0) {
         @Override
         public boolean isCellEditable(int r, int c) {
             return false;
@@ -101,12 +101,17 @@ public class pnlThanhToan extends JPanel {
     // Thanh toán
     private final JLabel lblSubtotal = valueLabel("0 đ");
     private final JLabel lblDiscount = valueLabel("0 đ");
+    private final JLabel lblTenKhuyenMaiSanPham = valueLabel("Không áp dụng");
+    private final JLabel lblGiamKhuyenMaiSanPham = valueLabel("0 đ");
     private final JCheckBox chkSuDungDiem = new JCheckBox("Dùng điểm tích lũy");
     private final JLabel lblGiamDiem = valueLabel("0 đ");
     private final JLabel lblTotal = valueLabel("0 đ");
     private final JLabel lblChange = valueLabel("0 đ");
     private final JTextField txtPaid = new JTextField("0");
     private final JComboBox<KhuyenMai> cboKhuyenMai = new JComboBox<>();
+    private List<KhuyenMai> khuyenMaiSanPhamHieuLuc = new ArrayList<>();
+    private KhuyenMai khuyenMaiSanPhamDangApDung;
+    private long tienGiamKhuyenMaiSanPham;
     private boolean dangNapKhuyenMai = false;
     private final JRadioButton rbCash = new JRadioButton("Tiền mặt", true);
     private final JRadioButton rbQR = new JRadioButton("QR Code");
@@ -328,7 +333,7 @@ public class pnlThanhToan extends JPanel {
             }
         }
         if (dong < 0) {
-            modelDon.addRow(new Object[] { loai, ten, 1, gia, gia, ma });
+            modelDon.addRow(new Object[] { loai, ten, 1, gia, gia, 0L, ma });
             dong = modelDon.getRowCount() - 1;
         }
         updateTotals();
@@ -378,11 +383,20 @@ public class pnlThanhToan extends JPanel {
             protected void done() {
                 try {
                     List<KhuyenMai> ds = get();
+                    khuyenMaiSanPhamHieuLuc = new ArrayList<>();
+                    List<KhuyenMai> khuyenMaiHoaDon = new ArrayList<>();
+                    for (KhuyenMai km : ds) {
+                        if (KhuyenMai.PHAM_VI_SAN_PHAM.equals(km.getPhamViApDung())) {
+                            khuyenMaiSanPhamHieuLuc.add(km);
+                        } else {
+                            khuyenMaiHoaDon.add(km);
+                        }
+                    }
                     KhuyenMai dangChon = (KhuyenMai) cboKhuyenMai.getSelectedItem();
                     dangNapKhuyenMai = true;
                     try {
                         cboKhuyenMai.removeAllItems();
-                        for (KhuyenMai km : ds)
+                        for (KhuyenMai km : khuyenMaiHoaDon)
                             cboKhuyenMai.addItem(km);
 
                         boolean daChon = false;
@@ -431,6 +445,39 @@ public class pnlThanhToan extends JPanel {
     private double layTyLeGiamGia() {
         KhuyenMai km = layKhuyenMaiDangChon();
         return km == null ? 0 : Math.max(0, Math.min(100, km.getPhanTramGiam()));
+    }
+
+    private KhuyenMai layKhuyenMaiSanPhamApDung() {
+        int hangKhach = selectedKh == null ? 0 : selectedKh.hangThanhVien;
+        KhuyenMai totNhat = null;
+        for (KhuyenMai km : khuyenMaiSanPhamHieuLuc) {
+            int hangApDung = km.getHangKhachHangApDung();
+            // Hạng cao hơn được hưởng ưu đãi của hạng thấp hơn; khách mới chỉ dùng được loại "Tất cả".
+            if (hangApDung != 0 && hangKhach < hangApDung) continue;
+            if (layMaSanPhamDatNguong(km).isEmpty()) continue;
+            if (totNhat == null || km.getPhanTramGiam() > totNhat.getPhanTramGiam()) {
+                totNhat = km;
+            }
+        }
+        return totNhat;
+    }
+
+    /** Trả về các mã sản phẩm có số lượng đạt ngưỡng riêng cho từng mã. */
+    private java.util.Set<String> layMaSanPhamDatNguong(KhuyenMai km) {
+        java.util.Set<String> maSanPhamApDung = new java.util.HashSet<>(km.getMaSanPhamApDung());
+        java.util.Map<String, Long> soLuongTheoMa = new java.util.HashMap<>();
+        for (int row = 0; row < modelDon.getRowCount(); row++) {
+            if (!LOAI_SP.equals(modelDon.getValueAt(row, C_LOAI))) continue;
+            String maSP = String.valueOf(modelDon.getValueAt(row, C_MA));
+            if (!maSanPhamApDung.contains(maSP)) continue;
+            long soLuong = ((Number) modelDon.getValueAt(row, C_SL)).longValue();
+            soLuongTheoMa.put(maSP, Math.addExact(soLuongTheoMa.getOrDefault(maSP, 0L), soLuong));
+        }
+        java.util.Set<String> maDatNguong = new java.util.HashSet<>();
+        for (java.util.Map.Entry<String, Long> entry : soLuongTheoMa.entrySet()) {
+            if (entry.getValue() >= km.getSoLuongToiThieu()) maDatNguong.add(entry.getKey());
+        }
+        return maDatNguong;
     }
 
     // ================== NHÂN VIÊN ==================
@@ -1055,7 +1102,7 @@ public class pnlThanhToan extends JPanel {
         pay.setOpaque(false);
         pay.setLayout(new BoxLayout(pay, BoxLayout.Y_AXIS));
 
-        JPanel sumGrid = new JPanel(new GridLayout(4, 2, 6, 4));
+        JPanel sumGrid = new JPanel(new GridLayout(5, 2, 6, 4));
         sumGrid.setOpaque(false);
         sumGrid.add(label("Tạm tính:", 13, TEXT, false));
         sumGrid.add(lblSubtotal);
@@ -1067,6 +1114,13 @@ public class pnlThanhToan extends JPanel {
         disc.add(cboKhuyenMai, BorderLayout.CENTER);
         sumGrid.add(disc);
         sumGrid.add(lblDiscount);
+
+        JPanel productDiscount = new JPanel(new BorderLayout(6, 0));
+        productDiscount.setOpaque(false);
+        productDiscount.add(lblTenKhuyenMaiSanPham, BorderLayout.CENTER);
+        productDiscount.add(lblGiamKhuyenMaiSanPham, BorderLayout.EAST);
+        sumGrid.add(label("KM sản phẩm tự động:", 13, TEXT, false));
+        sumGrid.add(productDiscount);
 
         chkSuDungDiem.setOpaque(false);
         chkSuDungDiem.setFont(FONT);
@@ -1201,7 +1255,7 @@ public class pnlThanhToan extends JPanel {
         header.setFont(new Font("Times New Roman", Font.BOLD, 12));
         header.setBackground(LIGHT_PINK);
         header.setPreferredSize(new Dimension(0, 30));
-        int[] widths = { 58, 120, 34, 72, 84 };
+        int[] widths = { 58, 120, 34, 72, 78, 68 };
         for (int i = 0; i < widths.length; i++)
             tblDon.getColumnModel().getColumn(i).setPreferredWidth(widths[i]);
 
@@ -1211,6 +1265,7 @@ public class pnlThanhToan extends JPanel {
         tblDon.getColumnModel().getColumn(C_SL).setCellRenderer(center);
         tblDon.getColumnModel().getColumn(C_GIA).setCellRenderer(taoCurrencyRenderer());
         tblDon.getColumnModel().getColumn(C_TIEN).setCellRenderer(taoCurrencyRenderer());
+        tblDon.getColumnModel().getColumn(C_GIAM).setCellRenderer(taoCurrencyRenderer());
         tblDon.removeColumn(tblDon.getColumnModel().getColumn(C_MA));
 
         tblDon.addMouseListener(new MouseAdapter() {
@@ -1322,6 +1377,7 @@ public class pnlThanhToan extends JPanel {
                 long price = ((Number) modelDon.getValueAt(i, C_GIA)).longValue();
                 long line = Math.multiplyExact((long) qty, price);
                 modelDon.setValueAt(line, i, C_TIEN);
+                modelDon.setValueAt(0L, i, C_GIAM);
                 subtotal = Math.addExact(subtotal, line);
             }
         } catch (ArithmeticException ex) {
@@ -1330,7 +1386,28 @@ public class pnlThanhToan extends JPanel {
         }
 
         double discountRate = layTyLeGiamGia();
-        long discount = Math.round(subtotal * discountRate / 100.0);
+        long discountInvoice = Math.round(subtotal * discountRate / 100.0);
+        khuyenMaiSanPhamDangApDung = layKhuyenMaiSanPhamApDung();
+        tienGiamKhuyenMaiSanPham = 0;
+        if (khuyenMaiSanPhamDangApDung != null) {
+            double rate = Math.max(0, Math.min(100, khuyenMaiSanPhamDangApDung.getPhanTramGiam()));
+            java.util.Set<String> maSanPhamDatNguong = layMaSanPhamDatNguong(khuyenMaiSanPhamDangApDung);
+            try {
+                for (int i = 0; i < modelDon.getRowCount(); i++) {
+                    if (!LOAI_SP.equals(modelDon.getValueAt(i, C_LOAI))) continue;
+                    String maSP = String.valueOf(modelDon.getValueAt(i, C_MA));
+                    if (!maSanPhamDatNguong.contains(maSP)) continue;
+                    long line = ((Number) modelDon.getValueAt(i, C_TIEN)).longValue();
+                    long giamDong = Math.round(line * rate / 100.0);
+                    modelDon.setValueAt(giamDong, i, C_GIAM);
+                    tienGiamKhuyenMaiSanPham = Math.addExact(tienGiamKhuyenMaiSanPham, giamDong);
+                }
+            } catch (ArithmeticException ex) {
+                JOptionPane.showMessageDialog(this, "Giá trị khuyến mãi sản phẩm vượt giới hạn tính toán.");
+                return;
+            }
+        }
+        long discount = discountInvoice + tienGiamKhuyenMaiSanPham;
         long afterPercentDiscount = Math.max(0L, subtotal - discount);
 
         // Chỉ trừ điểm khi người dùng chủ động chọn checkbox và có khách hàng hợp lệ.
@@ -1347,7 +1424,15 @@ public class pnlThanhToan extends JPanel {
 
         total = Math.max(0L, afterPercentDiscount - giamBangDiem);
         lblSubtotal.setText(MONEY.format(subtotal) + " đ");
-        lblDiscount.setText("-" + MONEY.format(discount) + " đ");
+        lblDiscount.setText("-" + MONEY.format(discountInvoice) + " đ");
+        lblTenKhuyenMaiSanPham.setText(khuyenMaiSanPhamDangApDung == null
+                ? "Không áp dụng" : khuyenMaiSanPhamDangApDung.getTenKhuyenMai());
+        lblTenKhuyenMaiSanPham.setToolTipText(khuyenMaiSanPhamDangApDung == null
+                ? null : "Sản phẩm: " + String.join(", ", khuyenMaiSanPhamDangApDung.getMaSanPhamApDung())
+                        + " | Số lượng tối thiểu mỗi loại: " + khuyenMaiSanPhamDangApDung.getSoLuongToiThieu()
+                        + (khuyenMaiSanPhamDangApDung.getDieuKienApDung().isEmpty() ? ""
+                                : " | Điều kiện: " + khuyenMaiSanPhamDangApDung.getDieuKienApDung()));
+        lblGiamKhuyenMaiSanPham.setText("-" + MONEY.format(tienGiamKhuyenMaiSanPham) + " đ");
         lblGiamDiem.setText("-" + MONEY.format(giamBangDiem) + " đ");
         lblTotal.setText(MONEY.format(total) + " đ");
 
@@ -1376,12 +1461,17 @@ public class pnlThanhToan extends JPanel {
         if (khachMoi) {
             if (!SDT_HOP_LE.matcher(txtPhone.getText().trim()).matches()) {
                 JOptionPane.showMessageDialog(this,
-                        "Số điện thoại không hợp lệ (bắt đầu bằng 0, gồm 10 hoặc 11 chữ số).");
+                        "Số điện thoại không hợp lệ (phải bắt đầu bằng 0 và gồm đúng 10 chữ số).");
                 txtPhone.requestFocusInWindow();
                 return;
             }
             if (txtCustomer.getText().trim().isEmpty()) {
                 JOptionPane.showMessageDialog(this, "Hãy nhập họ và tên khách hàng.");
+                txtCustomer.requestFocusInWindow();
+                return;
+            }
+            if (!txtCustomer.getText().trim().matches("[\\p{L}]+(?:\\s+[\\p{L}]+)*")) {
+                JOptionPane.showMessageDialog(this, "Họ tên chỉ được chứa chữ cái và khoảng trắng.");
                 txtCustomer.requestFocusInWindow();
                 return;
             }
@@ -1433,6 +1523,7 @@ public class pnlThanhToan extends JPanel {
         final String phuongThuc = rbCash.isSelected() ? "Tiền mặt" : "QR Code";
         final KhuyenMai khuyenMai = layKhuyenMaiDangChon();
         final String maKhuyenMai = khuyenMai == null ? null : khuyenMai.getMaKhuyenMai();
+        final KhuyenMai khuyenMaiSanPham = khuyenMaiSanPhamDangApDung;
         final int diemSuDung = soDiemSuDung;
         final String maTiepNhan = maTiepNhanDangLap;
 
@@ -1441,6 +1532,8 @@ public class pnlThanhToan extends JPanel {
         final String tenNV = txtEmployee.getText();
         final String tamTinhTxt = lblSubtotal.getText();
         final String giamKMTxt = lblDiscount.getText();
+        final String tenKMSanPhamTxt = lblTenKhuyenMaiSanPham.getText();
+        final String giamKMSanPhamTxt = lblGiamKhuyenMaiSanPham.getText();
         final String giamDiemTxt = lblGiamDiem.getText();
 
         long khachDua;
@@ -1472,7 +1565,7 @@ public class pnlThanhToan extends JPanel {
 
                         // ĐỔI: nhận về maHD
                         String maHD = luuHoaDon(con, maKH, maNV, dong, tongTien, phuongThuc,
-                                maKhuyenMai, diemSuDung, tienKhachDua);
+                                maKhuyenMai, khuyenMaiSanPham, diemSuDung, tienKhachDua);
                         if (maTiepNhan != null)
                             tiepNhanThuCungDAO.danhDauDaThanhToan(con, maTiepNhan);
                         con.commit();
@@ -1509,7 +1602,8 @@ public class pnlThanhToan extends JPanel {
 
                     // MỚI: xuất file txt sau khi đã lưu DB thành công
                     xuatHoaDon(maHD, maKH, ten, sdt, diaChi, ngayLap, tenNV, phuongThuc, dong,
-                            tamTinhTxt, giamKMTxt, giamDiemTxt, tongTien, tienKhachDua);
+                            tamTinhTxt, giamKMTxt, tenKMSanPhamTxt, giamKMSanPhamTxt,
+                            giamDiemTxt, tongTien, tienKhachDua);
 
                     lamMoiDonHang();
                 } catch (Exception ex) {
@@ -1529,11 +1623,14 @@ public class pnlThanhToan extends JPanel {
     private String luuHoaDon(Connection con, String maKH, String maNV,
             List<Object[]> dong, long tongTien,
             String phuongThuc, String maKhuyenMai,
-            int diemSuDung, long tienKhachDua) throws SQLException {
+            KhuyenMai khuyenMaiSanPham, int diemSuDung, long tienKhachDua) throws SQLException {
         String maHD = thanhToanDAO.taoMaHoaDon(con);
         String maPTTT = thanhToanDAO.layMaPTTT(con, phuongThuc);
         thanhToanDAO.themHoaDon(con, maHD, maNV, maKH, maKhuyenMai, maPTTT);
         thanhToanDAO.themChiTiet(con, maHD, dong, tienKhachDua);
+        if (khuyenMaiSanPham != null) {
+            thanhToanDAO.themKhuyenMaiSanPham(con, maHD, dong, khuyenMaiSanPham);
+        }
         thanhToanDAO.truTonKho(con, dong);
         thanhToanDAO.capNhatDiem(con, maKH, diemSuDung, tongTien);
         return maHD;
@@ -1761,7 +1858,9 @@ public class pnlThanhToan extends JPanel {
         }
         sb.append("</table><hr>");
         sb.append("Tạm tính: ").append(lblSubtotal.getText()).append("<br>");
-        sb.append("Khuyến mãi: ").append(lblDiscount.getText()).append("<br>");
+        sb.append("Khuyến mãi hóa đơn: ").append(lblDiscount.getText()).append("<br>");
+        sb.append("Khuyến mãi sản phẩm: ").append(esc(lblTenKhuyenMaiSanPham.getText()))
+                .append(" ").append(lblGiamKhuyenMaiSanPham.getText()).append("<br>");
         sb.append("Giảm điểm: ").append(lblGiamDiem.getText()).append("<br>");
         sb.append("<p style='font-size:15px;color:#d92560'><b>TỔNG: ")
                 .append(MONEY.format(total)).append(" đ</b></p>");
@@ -1792,7 +1891,8 @@ public class pnlThanhToan extends JPanel {
 
     private void xuatHoaDon(String maHD, String maKH, String tenKH, String sdt, String diaChi,
             String ngay, String nhanVien, String phuongThuc, List<Object[]> dong,
-            String tamTinh, String giamKM, String giamDiem, long tongTien, long khachDua) {
+            String tamTinh, String giamKM, String tenKMSanPham, String giamKMSanPham,
+            String giamDiem, long tongTien, long khachDua) {
         try {
             String gach = "=".repeat(RONG_HD);
             String nhat = "-".repeat(RONG_HD);
@@ -1822,7 +1922,10 @@ public class pnlThanhToan extends JPanel {
             }
             sb.append(nhat).append("\r\n");
             sb.append(canHaiBen("Tạm tính:", tamTinh)).append("\r\n");
-            sb.append(canHaiBen("Khuyến mãi:", giamKM)).append("\r\n");
+            sb.append(canHaiBen("KM hóa đơn:", giamKM)).append("\r\n");
+            sb.append(canHaiBen("KM sản phẩm:", giamKMSanPham)).append("\r\n");
+            if (!"Không áp dụng".equals(tenKMSanPham))
+                sb.append("  ").append(tenKMSanPham).append("\r\n");
             sb.append(canHaiBen("Giảm bằng điểm:", giamDiem)).append("\r\n");
             sb.append(nhat).append("\r\n");
             sb.append(canHaiBen("TỔNG THANH TOÁN:", MONEY.format(tongTien) + " đ")).append("\r\n");

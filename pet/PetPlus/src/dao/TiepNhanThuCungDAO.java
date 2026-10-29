@@ -115,7 +115,8 @@ public class TiepNhanThuCungDAO {
         List<DichVu> danhSach = new ArrayList<>();
         String sql = "WITH DichVuMau AS ("
                 + "SELECT d.maDichVu, d.tenDichVu, d.donGia, d.moTa, d.trangThai, d.maLichHen, "
-                + "ROW_NUMBER() OVER (PARTITION BY d.tenDichVu ORDER BY lh.thoiGianHen DESC, d.maDichVu DESC) AS thuTu "
+                + "ROW_NUMBER() OVER (PARTITION BY d.tenDichVu ORDER BY CASE WHEN d.maLichHen IS NULL THEN 0 ELSE 1 END, "
+                + "lh.thoiGianHen DESC, d.maDichVu DESC) AS thuTu "
                 + "FROM DichVu d LEFT JOIN LichHen lh ON lh.maLichHen = d.maLichHen "
                 + "WHERE d.trangThai <> N'Ngừng hoạt động') "
                 + "SELECT maDichVu, tenDichVu, donGia, moTa, trangThai, maLichHen "

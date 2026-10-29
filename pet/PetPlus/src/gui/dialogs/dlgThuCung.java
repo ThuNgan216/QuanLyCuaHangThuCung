@@ -208,15 +208,14 @@ public class dlgThuCung extends JDialog {
             String giongText = cboGiong.getSelectedItem() == null ? "" : cboGiong.getSelectedItem().toString().trim();
             String gioiTinhText = radDuc.isSelected() ? "Đực" : (radCai.isSelected() ? "Cái" : "");
             if (ten.isEmpty() || loaiText.isEmpty() || giongText.isEmpty() || gioiTinhText.isEmpty()
-                    || ngayText.isEmpty() || txtSucKhoe.getText().trim().isEmpty()
-                    || txtTiemChung.getText().trim().isEmpty() || kh == null) {
+                    || ngayText.isEmpty() || kh == null) {
                 JOptionPane.showMessageDialog(this, "Vui lòng nhập đầy đủ thông tin.", "Thiếu thông tin", JOptionPane.WARNING_MESSAGE);
                 return;
             }
             if (ten.isEmpty() || !ten.matches("^[\\p{L}]+(?:\\s+[\\p{L}]+)*$"))
                 throw new IllegalArgumentException("Tên thú cưng chỉ được chứa chữ cái và khoảng trắng, không có số hoặc ký tự đặc biệt.");
             String sucKhoe = txtSucKhoe.getText().trim();
-            if (!sucKhoe.matches("^[\\p{L}]+(?:\\s+[\\p{L}]+)*$"))
+            if (!sucKhoe.isEmpty() && !sucKhoe.matches("^[\\p{L}]+(?:\\s+[\\p{L}]+)*$"))
                 throw new IllegalArgumentException("Tình trạng sức khỏe chỉ được chứa chữ cái và khoảng trắng, không có số hoặc ký tự đặc biệt.");
             String gioiTinh = radDuc.isSelected() ? "Đực" : (radCai.isSelected() ? "Cái" : "");
             ThuCung t = new ThuCung(txtMa.getText().trim(), txtTen.getText().trim(), String.valueOf(cboLoai.getSelectedItem()),

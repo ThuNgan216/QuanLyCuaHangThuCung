@@ -78,7 +78,7 @@ public class MainFrame extends JFrame {
             { "Đổi mật khẩu tài khoản", "Phân quyền vai trò", "Đăng xuất tài khoản", "Thoát ứng dụng" },
             { "Nhân viên", "Khách hàng", "Nhà cung cấp", "Nhập hàng", "Lịch làm việc" },
             { "Thú cưng", "Lịch hẹn", "Sản phẩm", "Dịch vụ", "Khuyến mãi" },
-            { "Tiếp nhận thú cưng", "Lập hóa đơn", "Quét mã vạch", "Xếp lịch làm việc", "Xuất hóa đơn",
+            { "Tiếp nhận thú cưng", "Lập hóa đơn", "Xếp lịch làm việc", "Xuất hóa đơn",
                     "Cảnh báo tồn kho" },
             { "Sản phẩm", "Khách hàng", "Tích điểm", "Hóa đơn", "Lịch hẹn", "Nhân viên", "Dịch vụ", "Phiếu nhập" },
             { "Doanh thu", "Lợi nhuận", "Nhập hàng" }
@@ -247,15 +247,95 @@ public class MainFrame extends JFrame {
             if (icon != null)
                 menu.setIcon(icon);
 
+            boolean hasVisibleItems = false;
             for (String item : SUB_MENUS[i]) {
+                if (!coQuyen(item, i))
+                    continue;
                 // Đường kẻ ngăn cách trước nhóm đăng xuất / thoát
                 if ("Đăng xuất tài khoản".equals(item))
                     menu.addSeparator();
                 menu.add(createMenuItem(item, i));
+                hasVisibleItems = true;
             }
-            bar.add(menu);
+            if (hasVisibleItems)
+                bar.add(menu);
         }
         return bar;
+    }
+
+    /** Quyền hiển thị và mở chức năng được đối chiếu theo tác nhân trong SRS. */
+    private boolean coQuyen(String action, int menuIndex) {
+        if ("Trang chủ".equals(action)
+                || "Đổi mật khẩu tài khoản".equals(action)
+                || "Đăng xuất tài khoản".equals(action)
+                || "Thoát ứng dụng".equals(action))
+            return true;
+
+        if (Auth.hasFullAccess())
+            return true;
+
+        String vaiTro = Auth.currentRole();
+        if (vaiTro.isEmpty())
+            return false;
+
+        // Mục “Nhập hàng” trong nhóm Thống kê là báo cáo, dành cho quản lý.
+        if ("Nhập hàng".equals(action) && menuIndex == 5)
+            return false;
+
+        switch (menuIndex) {
+            case 0: // Hệ thống
+                return false; // Phân quyền vai trò chỉ dành cho quản lý.
+            case 1: // Danh mục
+                if ("Khách hàng".equals(action))
+                    return "BAN_HANG".equals(vaiTro);
+                if ("Nhà cung cấp".equals(action))
+                    return vaiTroThuocNhom(vaiTro, "BAN_HANG", "CHAM_SOC", "KHO");
+                if ("Nhập hàng".equals(action))
+                    return "KHO".equals(vaiTro);
+                if ("Lịch làm việc".equals(action))
+                    return vaiTroThuocNhom(vaiTro, "BAN_HANG", "CHAM_SOC", "KHO");
+                return false;
+            case 2: // Cập nhật
+                if ("Thú cưng".equals(action))
+                    return vaiTroThuocNhom(vaiTro, "BAN_HANG", "CHAM_SOC");
+                if ("Dịch vụ".equals(action))
+                    return "CHAM_SOC".equals(vaiTro);
+                if ("Lịch hẹn".equals(action))
+                    return "BAN_HANG".equals(vaiTro);
+                if ("Sản phẩm".equals(action))
+                    return "KHO".equals(vaiTro);
+                return false; // Khuyến mãi chỉ dành cho quản lý.
+            case 3: // Xử lý
+                if ("Tiếp nhận thú cưng".equals(action))
+                    return vaiTroThuocNhom(vaiTro, "BAN_HANG", "CHAM_SOC");
+                if ("Lập hóa đơn".equals(action) || "Xuất hóa đơn".equals(action))
+                    return "BAN_HANG".equals(vaiTro);
+                if ("Cảnh báo tồn kho".equals(action))
+                    return vaiTroThuocNhom(vaiTro, "BAN_HANG", "KHO");
+                return false; // Xếp lịch làm việc chỉ dành cho quản lý.
+            case 4: // Tìm kiếm
+                if ("Sản phẩm".equals(action))
+                    return vaiTroThuocNhom(vaiTro, "BAN_HANG", "KHO");
+                if ("Khách hàng".equals(action) || "Dịch vụ".equals(action))
+                    return vaiTroThuocNhom(vaiTro, "BAN_HANG", "CHAM_SOC");
+                if ("Lịch hẹn".equals(action))
+                    return vaiTroThuocNhom(vaiTro, "BAN_HANG", "CHAM_SOC");
+                if ("Tích điểm".equals(action) || "Hóa đơn".equals(action))
+                    return "BAN_HANG".equals(vaiTro);
+                if ("Phiếu nhập".equals(action))
+                    return "KHO".equals(vaiTro);
+                return false; // Tra cứu nhân viên chỉ dành cho quản lý.
+            default: // Báo cáo và thống kê chỉ dành cho quản lý.
+                return false;
+        }
+    }
+
+    private boolean vaiTroThuocNhom(String vaiTro, String... cacVaiTro) {
+        for (String vaiTroDuocPhep : cacVaiTro) {
+            if (vaiTroDuocPhep.equals(vaiTro))
+                return true;
+        }
+        return false;
     }
 
     // Mục con trong menu thả xuống
@@ -297,15 +377,12 @@ public class MainFrame extends JFrame {
             new dlgDoiMatKhau(this).setVisible(true);
             return;
         }
-        // Mở giao diện quét mã vạch
-        if ("Quét mã vạch".equals(action)) {
-            btnLamMoiTrangChu.setVisible(false);
-            pageTitle.setText("Lập hóa đơn");
-            cardLayout.show(cardPanel, "Lập hóa đơn");
-            paymentPanel.moQuetMaVach(this);
+        if (!coQuyen(action, menuIndex)) {
+            JOptionPane.showMessageDialog(this,
+                    "Vai trò của tài khoản hiện tại không có quyền truy cập chức năng này.",
+                    "Không đủ quyền", JOptionPane.WARNING_MESSAGE);
             return;
         }
-
         // Các mục menu có giao diện hiện có được mở trên màn hình tương ứng.
         if ("Thanh toán".equals(action)) {
             cardName = "Lập hóa đơn";

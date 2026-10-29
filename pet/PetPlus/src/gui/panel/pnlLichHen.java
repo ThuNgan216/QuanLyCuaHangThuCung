@@ -18,6 +18,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.TextStyle;
 import java.util.List;
 import java.util.Locale;
+import utils.Auth;
 
 public class pnlLichHen extends JPanel {
 
@@ -102,6 +103,10 @@ public class pnlLichHen extends JPanel {
         JButton bThem = new JButton("Thêm lịch hẹn");
         JButton bSua = new JButton("Sửa");
         JButton bXoa = new JButton("Xóa");
+        boolean coQuyenCapNhat = Auth.hasFullAccess() || Auth.hasRole("BAN_HANG");
+        bThem.setVisible(coQuyenCapNhat);
+        bSua.setVisible(coQuyenCapNhat);
+        bXoa.setVisible(coQuyenCapNhat);
 
         top.add(new JLabel("Tên khách hàng:"));
         top.add(txtTim);
@@ -285,6 +290,12 @@ public class pnlLichHen extends JPanel {
             final LocalDateTime end = den;
 
             ds.removeIf(l -> {
+
+                // Phần quản lý lịch chỉ hiển thị ba trạng thái nghiệp vụ.
+                // Các lịch đã tiếp nhận được theo dõi ở màn hình tiếp nhận.
+                if (!entity.TrangThaiLichHen.laTrangThaiQuanLyHopLe(l.getTrangThai())) {
+                    return true;
+                }
 
                 if (l.getThoiGianHen() == null) {
                     return true;
@@ -480,7 +491,9 @@ public class pnlLichHen extends JPanel {
 
             cboKhungGio.setSelectedIndex(0);
 
-            hienThi(service.layDanhSach());
+            List<LichHen> ds = service.layDanhSach();
+            ds.removeIf(l -> !entity.TrangThaiLichHen.laTrangThaiQuanLyHopLe(l.getTrangThai()));
+            hienThi(ds);
 
         } catch (RuntimeException e) {
             baoLoi(e);

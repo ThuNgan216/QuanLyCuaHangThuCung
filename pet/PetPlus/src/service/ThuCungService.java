@@ -44,7 +44,6 @@ public class ThuCungService {
         if (!themMoi && ma.length() > 20) throw new IllegalArgumentException("Mã thú cưng tối đa 20 ký tự.");
         if (ten.isEmpty() || loai.isEmpty() || trim(t.getGiong()).isEmpty()
                 || trim(t.getGioiTinh()).isEmpty() || t.getNgaySinh() == null
-                || trim(t.getTinhTrangSK()).isEmpty() || trim(t.getTiemChung()).isEmpty()
                 || t.getMaKH() == null || trim(t.getMaKH().getMaKH()).isEmpty()) {
             throw new IllegalArgumentException("Vui lòng nhập đầy đủ thông tin.");
         }
@@ -54,7 +53,7 @@ public class ThuCungService {
         if (loai.isEmpty()) throw new IllegalArgumentException("Vui lòng nhập loài thú cưng.");
         if (loai.length() > 50) throw new IllegalArgumentException("Loài tối đa 50 ký tự.");
         String sucKhoe = trim(t.getTinhTrangSK());
-        if (!sucKhoe.matches("^[\\p{L}]+(?:\\s+[\\p{L}]+)*$"))
+        if (!sucKhoe.isEmpty() && !sucKhoe.matches("^[\\p{L}]+(?:\\s+[\\p{L}]+)*$"))
             throw new IllegalArgumentException("Tình trạng sức khỏe chỉ được chứa chữ cái và khoảng trắng, không có số hoặc ký tự đặc biệt.");
         if (trim(t.getGiong()).length() > 100 || trim(t.getGioiTinh()).length() > 20 || sucKhoe.length() > 255 || trim(t.getTiemChung()).length() > 255)
             throw new IllegalArgumentException("Độ dài giống/giới tính/tình trạng sức khỏe/tiêm chủng vượt quá giới hạn.");

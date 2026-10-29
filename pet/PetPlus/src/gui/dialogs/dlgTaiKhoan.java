@@ -34,6 +34,7 @@ public class dlgTaiKhoan extends JDialog {
         PetPlusUI.decorateInput(txtMatKhau);
         PetPlusUI.decorateInput(txtNhapLai);
         PetPlusUI.decorateInput(cboVaiTro);
+        cboVaiTro.setPrototypeDisplayValue("Chăm sóc thú cưng");
         PetPlusUI.decorateInput(cboTrangThai);
         JPanel body = new JPanel(new GridBagLayout());
         body.setBackground(Color.WHITE);

@@ -3,6 +3,7 @@ package gui.panel;
 import entity.DichVu;
 import gui.dialogs.dlgDichVu;
 import service.DichVuService;
+import utils.Auth;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -12,7 +13,7 @@ import java.util.List;
 public class pnlDichVu extends JPanel {
     private final DichVuService service = new DichVuService();
     private final JTextField txtTim = new JTextField(22);
-    private final DefaultTableModel model = new DefaultTableModel(new Object[]{"Mã dịch vụ", "Tên dịch vụ", "Đơn giá", "Mô tả", "Trạng thái", "Mã lịch hẹn"}, 0) {
+    private final DefaultTableModel model = new DefaultTableModel(new Object[]{"Mã dịch vụ", "Tên dịch vụ", "Đơn giá", "Mô tả", "Trạng thái"}, 0) {
         @Override public boolean isCellEditable(int row, int col) { return false; }
     };
     private final JTable table = new JTable(model);
@@ -23,6 +24,8 @@ public class pnlDichVu extends JPanel {
         JPanel top = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 8)); top.setOpaque(false);
         top.add(new JLabel("Tìm kiếm:")); top.add(txtTim);
         JButton btnTim = new JButton("Tìm"); JButton btnTai = new JButton("Tải lại"); JButton btnThem = new JButton("Thêm"); JButton btnSua = new JButton("Sửa"); JButton btnXoa = new JButton("Xóa");
+        boolean coQuyenCapNhat = Auth.hasFullAccess() || Auth.hasRole("CHAM_SOC");
+        btnThem.setVisible(coQuyenCapNhat); btnSua.setVisible(coQuyenCapNhat); btnXoa.setVisible(coQuyenCapNhat);
         top.add(btnTim); top.add(btnTai); top.add(btnThem); top.add(btnSua); top.add(btnXoa); add(top, BorderLayout.BEFORE_FIRST_LINE);
         table.setRowHeight(27); table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION); table.getTableHeader().setFont(new Font("Arial", Font.BOLD, 12)); add(new JScrollPane(table), BorderLayout.CENTER);
         btnTim.addActionListener(e -> tim()); txtTim.addActionListener(e -> tim()); btnTai.addActionListener(e -> { txtTim.setText(""); tai(); });
@@ -35,7 +38,7 @@ public class pnlDichVu extends JPanel {
     private void tim() { try { hienThi(service.timKiem(txtTim.getText())); } catch (Exception ex) { loi("Không thể tìm dịch vụ", ex); } }
     private void hienThi(List<DichVu> ds) {
         model.setRowCount(0);
-        for (DichVu d : ds) model.addRow(new Object[]{d.getMaDichVu(), d.getTenDichVu(), d.getDonGia(), d.getMoTa(), d.getTrangThai(), d.getMaLichHen() == null ? "" : d.getMaLichHen().getMaLichHen()});
+        for (DichVu d : ds) model.addRow(new Object[]{d.getMaDichVu(), d.getTenDichVu(), d.getDonGia(), d.getMoTa(), d.getTrangThai()});
     }
     private DichVu chon() {
         int row = table.getSelectedRow(); if (row < 0) { JOptionPane.showMessageDialog(this, "Vui lòng chọn một dịch vụ."); return null; }

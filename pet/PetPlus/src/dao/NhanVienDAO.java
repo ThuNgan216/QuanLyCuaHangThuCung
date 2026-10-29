@@ -13,6 +13,25 @@ import java.util.List;
 
 public class NhanVienDAO {
 
+    /** Phát sinh mã NV tiếp theo, tránh trùng cả mã nhân viên và tên đăng nhập cũ. */
+    public String taoMaNVMoi() throws SQLException {
+        String sql = "SELECT ISNULL(MAX(TRY_CONVERT(INT, SUBSTRING(maCode, 3, 18))), 0) + 1 AS soMoi "
+                + "FROM ("
+                + "SELECT maNV AS maCode FROM dbo.NhanVien WHERE maNV LIKE 'NV[0-9]%' "
+                + "UNION ALL "
+                + "SELECT tenDangNhap AS maCode FROM dbo.TaiKhoan WHERE tenDangNhap LIKE N'NV[0-9]%'"
+                + ") AS maHienCo";
+
+        try (Connection conn = ConnectDB.getConnection();
+                PreparedStatement ps = conn.prepareStatement(sql);
+                ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                return String.format(java.util.Locale.ROOT, "NV%03d", rs.getInt("soMoi"));
+            }
+        }
+        return "NV001";
+    }
+
     // 1. Lấy danh sách nhân viên, không hiển thị tài khoản admin
     public List<NhanVien> layDanhSach() throws SQLException {
         List<NhanVien> danhSach = new ArrayList<>();
@@ -36,6 +55,24 @@ public class NhanVienDAO {
         }
 
         return danhSach;
+    }
+
+    /** Tải nhân viên gắn với tài khoản đang đăng nhập, kể cả tài khoản quản lý hệ thống. */
+    public NhanVien timTheoMa(String maNV) throws SQLException {
+        if (maNV == null || maNV.trim().isEmpty()) {
+            return null;
+        }
+        String sql = "SELECT nv.maNV, nv.tenNV, nv.sdt, nv.cccd, nv.diaChi, nv.email, nv.chucVu, "
+                + "tk.maTK, tk.tenDangNhap, tk.matKhau, tk.vaiTro, tk.trangThai "
+                + "FROM dbo.NhanVien nv INNER JOIN dbo.TaiKhoan tk ON tk.maTK = nv.maTK "
+                + "WHERE nv.maNV = ? AND tk.trangThai = N'Hoạt động'";
+        try (Connection conn = ConnectDB.getConnection();
+                PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, maNV.trim());
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? docNhanVien(rs) : null;
+            }
+        }
     }
 
     // 2. Tìm kiếm nhân viên, loại trừ tài khoản admin

@@ -1,5 +1,6 @@
 package gui.dialogs;
 
+import dao.NhanVienDAO;
 import entity.NhanVien;
 import entity.TaiKhoan;
 
@@ -8,8 +9,8 @@ import javax.swing.table.JTableHeader;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import java.awt.*;
+import java.sql.SQLException;
 import java.util.Arrays;
 
 public class dlgNhanVien extends JDialog {
@@ -21,10 +22,11 @@ public class dlgNhanVien extends JDialog {
     private final JTextField txtCCCD = PetPlusUI.textField();
     private final JTextField txtDiaChi = PetPlusUI.textField();
     private final JTextField txtEmail = PetPlusUI.textField();
-    private final JTextField txtTenDN = PetPlusUI.textField();
     private final JPasswordField txtMatKhau = new JPasswordField();
     private final JComboBox<String> cboChucVu = new JComboBox<>(VaiTroHelper.CHUC_VU);
     private final JComboBox<String> cboTrangThai = new JComboBox<>(new String[] { "Hoạt động", "Ngừng hoạt động" });
+    private boolean maNVTaoThatBai;
+    private String loiTaoMa;
 
     public dlgNhanVien(Window owner, NhanVien nhanVienCu) {
         super(owner, nhanVienCu == null ? "Thêm nhân viên" : "Sửa nhân viên", ModalityType.APPLICATION_MODAL);
@@ -39,6 +41,7 @@ public class dlgNhanVien extends JDialog {
 
         PetPlusUI.decorateInput(txtMatKhau);
         PetPlusUI.decorateInput(cboChucVu);
+        cboChucVu.setPrototypeDisplayValue("Chăm sóc thú cưng");
         PetPlusUI.decorateInput(cboTrangThai);
         JPanel form = new JPanel(new GridBagLayout());
         form.setBackground(PetPlusUI.WHITE);
@@ -52,7 +55,6 @@ public class dlgNhanVien extends JDialog {
         addRow(form, r++, "Email", txtEmail);
         addRow(form, r++, "Chức vụ", cboChucVu);
         addRow(form, r++, "Trạng thái", cboTrangThai);
-        addRow(form, r++, "Tên đăng nhập *", txtTenDN);
         if (nhanVienCu == null) {
             addRow(form, r++, "Mật khẩu mới *", txtMatKhau);
             JCheckBox show = new JCheckBox("Hiện mật khẩu");
@@ -85,7 +87,7 @@ public class dlgNhanVien extends JDialog {
         if (nhanVienCu != null)
             napDuLieuCu();
         else
-            caiDatTuDongTenDN();
+            caiDatMaNVMoi();
         setSize(700, 680);
         setMinimumSize(new Dimension(580, 560));
         setLocationRelativeTo(owner);
@@ -126,57 +128,49 @@ public class dlgNhanVien extends JDialog {
             cboChucVu.setSelectedIndex(-1);
         if (tk != null) {
             cboTrangThai.setSelectedItem(tk.getTrangThai());
-            txtTenDN.setText(value(tk.getTenDangNhap()));
         }
-        txtTenDN.setEditable(false);
-        txtTenDN.setToolTipText("Đổi tài khoản ở menu Quản lý tài khoản");
+        txtMa.setToolTipText("Mã nhân viên đã được tạo và không thể sửa.");
     }
 
-    private void caiDatTuDongTenDN() {
-        txtMa.getDocument().addDocumentListener(new DocumentListener() {
-            private String truoc = "";
-
-            private void capNhat() {
-                String maMoi = txtMa.getText().trim();
-                if (txtTenDN.getText().trim().isEmpty() || txtTenDN.getText().equals(truoc))
-                    txtTenDN.setText(maMoi);
-                truoc = maMoi;
-            }
-
-            @Override
-            public void insertUpdate(DocumentEvent e) {
-                capNhat();
-            }
-
-            @Override
-            public void removeUpdate(DocumentEvent e) {
-                capNhat();
-            }
-
-            @Override
-            public void changedUpdate(DocumentEvent e) {
-                capNhat();
-            }
-        });
+    private void caiDatMaNVMoi() {
+        txtMa.setEditable(false);
+        txtMa.setToolTipText("Mã nhân viên được tự sinh từ dữ liệu hiện có.");
+        try {
+            txtMa.setText(new NhanVienDAO().taoMaNVMoi());
+        } catch (SQLException ex) {
+            maNVTaoThatBai = true;
+            loiTaoMa = ex.getMessage();
+            txtMa.setText("");
+            txtMa.setToolTipText("Không thể tự sinh mã. Kiểm tra kết nối database.");
+        }
     }
 
     private void luu() {
+        if (maNVTaoThatBai) {
+            PetPlusDialogs.error(this, "Không thể tạo mã nhân viên",
+                    "Không đọc được mã hiện có từ database. Hãy kiểm tra kết nối rồi mở lại form."
+                            + (loiTaoMa == null ? "" : "\nChi tiết: " + loiTaoMa));
+            return;
+        }
         String ma = txtMa.getText().trim();
         String ten = txtTen.getText().trim();
         String sdt = txtSDT.getText().trim();
         String cccd = txtCCCD.getText().trim();
         String email = txtEmail.getText().trim();
-        String tenDN = txtTenDN.getText().trim();
-        if (ma.isEmpty() || ten.isEmpty() || sdt.isEmpty() || tenDN.isEmpty()) {
-            PetPlusDialogs.error(this, "Dữ liệu chưa đủ", "Vui lòng nhập mã NV, họ tên, số điện thoại và tài khoản.");
+        if (ma.isEmpty() || ten.isEmpty() || sdt.isEmpty()) {
+            PetPlusDialogs.error(this, "Dữ liệu chưa đủ", "Vui lòng nhập họ tên và số điện thoại.");
             return;
         }
         if (!ma.matches("[a-zA-Z0-9_-]{2,25}")) {
             PetPlusDialogs.error(this, "Mã nhân viên", "Mã phải dài 2–25 ký tự, chỉ gồm chữ không dấu, số, _ hoặc -.");
             return;
         }
-        if (!sdt.matches("[0-9]{9,15}")) {
-            PetPlusDialogs.error(this, "Số điện thoại", "Số điện thoại phải có từ 9 đến 15 chữ số.");
+        if (!sdt.matches("0[0-9]{9}")) {
+            PetPlusDialogs.error(this, "Số điện thoại", "Số điện thoại phải bắt đầu bằng 0 và gồm đúng 10 chữ số.");
+            return;
+        }
+        if (!ten.matches("[\\p{L}]+(?:\\s+[\\p{L}]+)*")) {
+            PetPlusDialogs.error(this, "Họ và tên", "Họ tên chỉ được chứa chữ cái và khoảng trắng.");
             return;
         }
         if (!cccd.isEmpty() && !cccd.matches("[0-9]{12}")) {
@@ -185,14 +179,6 @@ public class dlgNhanVien extends JDialog {
         }
         if (!email.isEmpty() && !email.matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")) {
             PetPlusDialogs.error(this, "Email", "Email chưa đúng định dạng.");
-            return;
-        }
-        if (tenDN.equalsIgnoreCase("admin")) {
-            PetPlusDialogs.error(this, "Tên đăng nhập", "Không được sử dụng tên đăng nhập hệ thống: admin.");
-            return;
-        }
-        if (tenDN.contains(" ")) {
-            PetPlusDialogs.error(this, "Tên đăng nhập", "Tên đăng nhập không được chứa khoảng trắng.");
             return;
         }
         String cv = (String) cboChucVu.getSelectedItem();
@@ -210,7 +196,7 @@ public class dlgNhanVien extends JDialog {
                         "Mật khẩu tạo mới cần ít nhất 8 ký tự (không dùng mật khẩu 123).");
                 return;
             }
-            tk = new TaiKhoan("TK" + ma, tenDN, new String(pass), VaiTroHelper.tuChucVu(cv), tt);
+            tk = new TaiKhoan("TK" + ma, ma, new String(pass), VaiTroHelper.tuChucVu(cv), tt);
             Arrays.fill(pass, '\0');
         } else {
             TaiKhoan old = nhanVienCu.getMaTK();

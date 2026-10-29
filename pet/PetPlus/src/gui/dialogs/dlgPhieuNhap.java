@@ -18,6 +18,7 @@ import java.util.List;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import service.NhapHangService;
+import utils.Auth;
 import utils.PetPlusTheme;
 
 public class dlgPhieuNhap extends JDialog {
@@ -35,6 +36,7 @@ public class dlgPhieuNhap extends JDialog {
 
     private DefaultTableModel modelChiTiet;
     private JTable tableChiTiet;
+    private JButton btnHoanTat;
     private final List<ChiTietPhieuNhap> danhSachChiTiet = new ArrayList<>();
 
     private final NhapHangService nhapHangService = new NhapHangService();
@@ -213,12 +215,19 @@ public class dlgPhieuNhap extends JDialog {
         };
         tableChiTiet = new JTable(modelChiTiet);
         tableChiTiet.setRowHeight(28);
+        tableChiTiet.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         pnlCenter.add(new JScrollPane(tableChiTiet), BorderLayout.CENTER);
+        JButton btnXoaDong = new JButton("Xóa dòng đã chọn");
+        JPanel pnlXoaDong = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 4));
+        pnlXoaDong.add(btnXoaDong);
+        pnlCenter.add(pnlXoaDong, BorderLayout.SOUTH);
+        btnXoaDong.addActionListener(e -> xoaDongChiTiet());
 
         add(pnlCenter, BorderLayout.CENTER);
 
         // --- 3. PHẦN NÚT HOÀN TẤT & HỦY (SOUTH) ---
-        JButton btnHoanTat = new JButton("Hoàn Tất & Nhập Kho");
+        btnHoanTat = new JButton("Hoàn Tất & Nhập Kho");
+        btnHoanTat.setEnabled(false);
         JButton btnHuy = new JButton("Hủy Bỏ");
         btnHoanTat.setBackground(new Color(250, 48, 115));
         btnHoanTat.setForeground(Color.WHITE);
@@ -241,12 +250,32 @@ public class dlgPhieuNhap extends JDialog {
                 cboNhaCungCap.addItem(ncc);
             }
 
-            List<NhanVien> dsNV = nhanVienDAO.layDanhSach();
-            for (NhanVien nv : dsNV) {
-                cboNhanVien.addItem(nv);
+            cboNhanVien.setEnabled(false);
+            NhanVien taiKhoanDangNhap = Auth.user == null
+                    ? null : nhanVienDAO.timTheoMa(Auth.user.getMaNV());
+            if (taiKhoanDangNhap == null) {
+                throw new IllegalStateException("Không tìm thấy nhân viên đang đăng nhập trong database.");
             }
+            cboNhanVien.addItem(taiKhoanDangNhap);
+            cboNhanVien.setSelectedIndex(0);
+            btnHoanTat.setEnabled(true);
         } catch (Exception ex) {
+            btnHoanTat.setEnabled(false);
             JOptionPane.showMessageDialog(this, "Lỗi tải dữ liệu danh mục: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void xoaDongChiTiet() {
+        int selected = tableChiTiet.getSelectedRow();
+        if (selected < 0) {
+            JOptionPane.showMessageDialog(this, "Chọn dòng sản phẩm cần xóa.", "Chưa chọn dòng",
+                    JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        int row = tableChiTiet.convertRowIndexToModel(selected);
+        if (row >= 0 && row < danhSachChiTiet.size()) {
+            danhSachChiTiet.remove(row);
+            modelChiTiet.removeRow(row);
         }
     }
 

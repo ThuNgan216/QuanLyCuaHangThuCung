@@ -288,7 +288,16 @@ public class pnlHoaDon extends JPanel {
 
         cboNgay = new JComboBox<>(buildRange("Ngày", 1, 31));
         cboThang = new JComboBox<>(buildRange("Tháng", 1, 12));
-        cboNam = new JComboBox<>(buildRange("Năm", 2024, 2026));
+        cboNam = new JComboBox<>();
+        cboNam.addItem("Năm");
+        try {
+            for (Integer nam : hoaDonDAO.layDanhSachNamHoaDon()) {
+                cboNam.addItem(String.valueOf(nam));
+            }
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, "Không thể tải danh sách năm từ database: " + ex.getMessage(),
+                    "Lỗi lọc hóa đơn", JOptionPane.ERROR_MESSAGE);
+        }
         for (JComboBox<String> c : java.util.List.of(cboNgay, cboThang, cboNam)) {
             c.addActionListener(e -> {
                 if (!dangReset)

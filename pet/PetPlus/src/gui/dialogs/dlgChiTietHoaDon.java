@@ -422,14 +422,22 @@ public class dlgChiTietHoaDon extends JDialog {
 
         // Giảm giá
         BigDecimal phanTram = v.phanTramGiam == null ? BigDecimal.ZERO : v.phanTramGiam;
-        long giamGia = tamTinh.multiply(phanTram).divide(BigDecimal.valueOf(100))
+        BigDecimal giamSanPham = v.giamSanPham == null ? BigDecimal.ZERO : v.giamSanPham;
+        long giamGiaHoaDon = tamTinh.multiply(phanTram).divide(BigDecimal.valueOf(100))
                 .setScale(0, RoundingMode.HALF_UP).longValue();
+        long giamGia = giamGiaHoaDon + giamSanPham.setScale(0, RoundingMode.HALF_UP).longValue();
         long tamTinhLong = tamTinh.longValue();
         long tong = tamTinhLong - giamGia;
 
         lblTamTinh.setText(money(tamTinhLong));
         lblGiamGia.setText(giamGia > 0 ? "-" + money(giamGia) : money(0));
-        lblMaGiamGia.setText(v.maKhuyenMai == null || v.maKhuyenMai.isEmpty() ? "—" : v.maKhuyenMai);
+        StringBuilder maGiamGia = new StringBuilder();
+        if (v.maKhuyenMai != null && !v.maKhuyenMai.isEmpty()) maGiamGia.append(v.maKhuyenMai);
+        if (v.maKhuyenMaiSanPham != null && !v.maKhuyenMaiSanPham.isEmpty()) {
+            if (maGiamGia.length() > 0) maGiamGia.append(" / ");
+            maGiamGia.append(v.maKhuyenMaiSanPham);
+        }
+        lblMaGiamGia.setText(maGiamGia.length() == 0 ? "—" : maGiamGia.toString());
         lblTong.setText(money(tong));
 
         // Phương thức + tiền khách đưa

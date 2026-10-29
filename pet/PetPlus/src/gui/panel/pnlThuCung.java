@@ -3,6 +3,7 @@ package gui.panel;
 import entity.ThuCung;
 import gui.dialogs.dlgThuCung;
 import service.ThuCungService;
+import utils.Auth;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -73,6 +74,10 @@ public class pnlThuCung extends JPanel {
         sc.getViewport().setBackground(Color.WHITE);
         add(sc, BorderLayout.CENTER);
         JButton btnThem = new JButton("Thêm thú cưng"), btnSua = new JButton("Sửa"), btnXoa = new JButton("Xóa");
+        boolean coQuyenCapNhat = Auth.hasFullAccess() || Auth.hasRole("CHAM_SOC");
+        btnThem.setVisible(coQuyenCapNhat);
+        btnSua.setVisible(coQuyenCapNhat);
+        btnXoa.setVisible(coQuyenCapNhat);
         JPanel bottom = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 4));
         bottom.setBackground(Color.WHITE);
         bottom.add(btnThem);
