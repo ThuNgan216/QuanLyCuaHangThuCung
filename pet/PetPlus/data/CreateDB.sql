@@ -105,6 +105,7 @@ CREATE TABLE KhachHang
     hangThanhVien  INT            NULL,
     diemTichLuy    INT            NOT NULL CONSTRAINT DF_KhachHang_Diem DEFAULT 0,
     CONSTRAINT PK_KhachHang PRIMARY KEY (maKH),
+    CONSTRAINT UQ_KhachHang_SDT UNIQUE (sdt),
     CONSTRAINT CK_KhachHang_Diem CHECK (diemTichLuy >= 0)
 );
 GO

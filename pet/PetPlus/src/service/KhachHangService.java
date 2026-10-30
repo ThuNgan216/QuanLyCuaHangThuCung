@@ -45,6 +45,10 @@ public class KhachHangService {
         kh.setHangThanhVien(1);
         kh.setDiemTichLuy(0);
         kiemTraDuLieu(kh);
+        if (khachHangDAO.tonTaiSDT(kh.getSdt(), null)) {
+            throw new IllegalArgumentException(
+                    "Số điện thoại này đã được sử dụng cho khách hàng khác.");
+        }
         return khachHangDAO.them(kh);
     }
 
@@ -54,6 +58,10 @@ public class KhachHangService {
         KhachHang khCu = khachHangDAO.timTheoMa(kh.getMaKH().trim());
         if (khCu == null) {
             throw new IllegalArgumentException("Khách hàng không tồn tại.");
+        }
+        if (khachHangDAO.tonTaiSDT(kh.getSdt(), kh.getMaKH().trim())) {
+            throw new IllegalArgumentException(
+                    "Số điện thoại này đã được sử dụng cho khách hàng khác.");
         }
         // Không cho phép thay đổi hạng/điểm bằng cách gửi dữ liệu giả từ giao diện.
         kh.setHangThanhVien(khCu.getHangThanhVien());
