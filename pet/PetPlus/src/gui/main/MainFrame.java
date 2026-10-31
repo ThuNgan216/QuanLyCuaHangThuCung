@@ -40,6 +40,7 @@ import gui.panel.pnlSanPham;
 import gui.panel.pnlThanhToan;
 import gui.panel.pnlXemLichLamViec;
 import gui.panel.pnlXepLichLamViec;
+import utils.PetPlusTheme;
 
 public class MainFrame extends JFrame {
     private static final Color PRIMARY = new Color(250, 48, 115);
@@ -49,11 +50,13 @@ public class MainFrame extends JFrame {
     private static final Color BG = new Color(252, 250, 251);
     private static final Color BORDER = new Color(240, 225, 231);
     private static final Color WHITE = Color.WHITE;
+    private boolean darkMode = false;
     private CardLayout cardLayout;
     private JPanel cardPanel;
     private JPanel homePage;
     private JLabel pageTitle;
     private JButton btnLamMoiTrangChu;
+    private JButton btnTheme;
     private JPanel topProductsList;
     private DefaultTableModel recentOrdersModel;
     private RevenueChart revenueChart;
@@ -260,7 +263,48 @@ public class MainFrame extends JFrame {
             if (hasVisibleItems)
                 bar.add(menu);
         }
+        btnTheme = new JButton(darkMode ? "Sáng" : "Tối");
+
+        btnTheme.setIcon(loadIcon(
+                darkMode ? "sun.png" : "moon.png",
+                18, 18));
+
+        btnTheme.setIconTextGap(8);
+
+        btnTheme.setFont(new Font("Times New Roman", Font.BOLD, 14));
+        btnTheme.setForeground(TEXT);
+        btnTheme.setBackground(WHITE);
+        btnTheme.setFocusPainted(false);
+        btnTheme.setBorderPainted(false);
+        btnTheme.setContentAreaFilled(false);
+        btnTheme.setBorder(new EmptyBorder(8, 12, 8, 12));
+        btnTheme.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btnTheme.setToolTipText("Chuyển đổi giao diện sáng / tối");
+
+        btnTheme.addActionListener(e -> doiTheme());
+
+        bar.add(btnTheme);
+
         return bar;
+    }
+
+    private void doiTheme() {
+        darkMode = !darkMode;
+
+        PetPlusTheme.setDarkMode(darkMode);
+
+        for (Component c : getJMenuBar().getComponents()) {
+
+        }
+        if (btnTheme != null) {
+            btnTheme.setText(darkMode ? "Sáng" : "Tối");
+
+            btnTheme.setIcon(loadIcon(
+                    darkMode ? "sun.png" : "moon.png",
+                    18, 18));
+
+            btnTheme.repaint();
+        }
     }
 
     /** Quyền hiển thị và mở chức năng được đối chiếu theo tác nhân trong SRS. */
@@ -458,9 +502,12 @@ public class MainFrame extends JFrame {
             return new pnlTonKho();
         return placeholder(title);
     }
+
     private void registerCard(String name, JPanel page) {
-        if (registeredCards.add(name))
+        if (registeredCards.add(name)) {
             cardPanel.add(page, name);
+            PetPlusTheme.applyCurrent(page);
+        }
     }
 
     // Giữ lại các panel thật trong project
@@ -604,7 +651,8 @@ public class MainFrame extends JFrame {
         java.util.List<Object[]> recentOrders;
     }
 
-    // Tải lại toàn bộ dữ liệu Dashboard trong một worker để giao diện không bị treo.
+    // Tải lại toàn bộ dữ liệu Dashboard trong một worker để giao diện không bị
+    // treo.
     private void refreshDashboard() {
         if (btnLamMoiTrangChu != null) {
             btnLamMoiTrangChu.setEnabled(false);
@@ -961,7 +1009,7 @@ public class MainFrame extends JFrame {
         protected void paintComponent(Graphics graphics) {
             Graphics2D g = (Graphics2D) graphics.create();
             g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g.setColor(color);
+            g.setColor(PetPlusTheme.paintColor(color));
             g.fill(new RoundRectangle2D.Double(0, 0, getWidth() - 1, getHeight() - 1, radius, radius));
             g.dispose();
             super.paintComponent(graphics);
