@@ -36,7 +36,7 @@ public class pnlTiepNhanThuCung extends JPanel {
     private final TiepNhanThuCungService service = new TiepNhanThuCungService();
     private final JTextField txtTim = new JTextField(22);
     private final DefaultTableModel model = new DefaultTableModel(new Object[] {
-            "Mã phiếu", "Hình thức", "Giờ tiếp nhận", "Lịch hẹn", "Khách hàng", "Số điện thoại",
+            "Mã hóa đơn", "Hình thức", "Giờ tiếp nhận", "Lịch hẹn", "Khách hàng", "Số điện thoại",
             "Thú cưng", "Dịch vụ / yêu cầu", "Nhân viên", "Hẹn trả", "Phí dự kiến", "Trạng thái"
     }, 0) {
         @Override public boolean isCellEditable(int row, int column) { return false; }
@@ -158,7 +158,7 @@ public class pnlTiepNhanThuCung extends JPanel {
             JOptionPane.showMessageDialog(this, "Chọn phiếu cần xem.");
             return;
         }
-        String noiDung = "Mã phiếu: " + phieu.getMaTiepNhan()
+        String noiDung = "Mã hóa đơn: " + phieu.getMaTiepNhan()
                 + "\nHình thức: " + (phieu.getMaLichHen() == null ? "Khách trực tiếp" : "Theo lịch hẹn " + phieu.getMaLichHen())
                 + "\nThời gian tiếp nhận: " + dinhDang(phieu.getThoiGianTiepNhan())
                 + "\nKhách hàng: " + phieu.getTenKH() + " (" + phieu.getSdtKH() + ")"
@@ -174,7 +174,7 @@ public class pnlTiepNhanThuCung extends JPanel {
         area.setEditable(false);
         area.setLineWrap(true);
         area.setWrapStyleWord(true);
-        JOptionPane.showMessageDialog(this, new JScrollPane(area), "Phiếu tiếp nhận", JOptionPane.INFORMATION_MESSAGE);
+        JOptionPane.showMessageDialog(this, new JScrollPane(area), "Thông tin tiếp nhận", JOptionPane.INFORMATION_MESSAGE);
     }
 
     private PhieuTiepNhanThuCung layDongChon() {

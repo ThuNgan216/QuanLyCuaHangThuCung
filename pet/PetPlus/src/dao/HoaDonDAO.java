@@ -23,8 +23,13 @@ public class HoaDonDAO {
             "     GROUP BY maHoaDon " +
             " ) ct ON ct.maHoaDon = h.maHoaDon ";
 
+    private static final String JOIN_GIAM_SAN_PHAM = " LEFT JOIN ( " +
+            "     SELECT maHoaDon, SUM(mucGiam) AS TongGiamSanPham " +
+            "     FROM KhuyenMaiSanPham GROUP BY maHoaDon " +
+            " ) kmsp ON kmsp.maHoaDon = h.maHoaDon ";
+
     private static final String TONG_TIEN = "(ISNULL(ct.TongGoc, 0) * " +
-            "(1 - ISNULL(km.phanTramGiam, 0) / 100.0))";
+            "(1 - ISNULL(km.phanTramGiam, 0) / 100.0) - ISNULL(kmsp.TongGiamSanPham, 0))";
 
     private static final double[] PRICE_MIN = {
             0,
@@ -39,6 +44,18 @@ public class HoaDonDAO {
             3000000.0,
             null
     };
+
+    public List<Integer> layDanhSachNamHoaDon() throws SQLException {
+        List<Integer> nam = new ArrayList<>();
+        String sql = "SELECT DISTINCT YEAR(ngayLapHD) AS nam FROM dbo.HoaDon "
+                + "WHERE ngayLapHD IS NOT NULL ORDER BY nam DESC";
+        try (Connection con = ConnectDB.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql);
+                ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) nam.add(rs.getInt("nam"));
+        }
+        return nam;
+    }
 
     public List<HoaDon> timKiem(
             String keyword,
@@ -63,7 +80,8 @@ public class HoaDonDAO {
                         "LEFT JOIN KhuyenMai km " +
                         "    ON h.maKhuyenMai = km.maKhuyenMai " +
                         JOIN_TONG_GOC +
-                        "WHERE 1 = 1 ");
+                        JOIN_GIAM_SAN_PHAM +
+                        "WHERE h.maPTTT IS NOT NULL ");
 
         List<Object> params = new ArrayList<>();
 
@@ -215,6 +233,8 @@ public class HoaDonDAO {
                 "LEFT JOIN KhuyenMai km " +
                 "    ON h.maKhuyenMai = km.maKhuyenMai " +
                 JOIN_TONG_GOC +
+                JOIN_GIAM_SAN_PHAM +
+                "WHERE h.maPTTT IS NOT NULL " +
                 "ORDER BY h.ngayLapHD DESC, h.maHoaDon DESC";
 
         List<Object[]> danhSach = new ArrayList<>();
@@ -251,10 +271,14 @@ public class HoaDonDAO {
                 "), TongHoaDon AS ( " +
                 " SELECT h.maHoaDon, h.ngayLapHD, " +
                 " COALESCE(SUM(ct.soLuong * ct.donGia), 0) " +
-                " * (1 - COALESCE(km.phanTramGiam, 0) / 100.0) AS doanhThu " +
+                " * (1 - COALESCE(km.phanTramGiam, 0) / 100.0) " +
+                " - COALESCE(MAX(kmsp.TongGiamSanPham), 0) AS doanhThu " +
                 " FROM HoaDon h " +
                 " LEFT JOIN ChiTietHoaDon ct ON h.maHoaDon = ct.maHoaDon " +
+                " LEFT JOIN (SELECT maHoaDon, SUM(mucGiam) AS TongGiamSanPham FROM KhuyenMaiSanPham GROUP BY maHoaDon) kmsp " +
+                " ON kmsp.maHoaDon = h.maHoaDon " +
                 " LEFT JOIN KhuyenMai km ON h.maKhuyenMai = km.maKhuyenMai " +
+                " WHERE h.maPTTT IS NOT NULL " +
                 " GROUP BY h.maHoaDon, h.ngayLapHD, km.phanTramGiam " +
                 ") " +
                 "SELECT n.ngay, COALESCE(SUM(t.doanhThu), 0) AS doanhThu " +
@@ -289,11 +313,14 @@ public class HoaDonDAO {
         String sql = "WITH TongHoaDon AS ( " +
                 " SELECT h.maHoaDon, CAST(h.ngayLapHD AS DATE) AS ngay, " +
                 " COALESCE(SUM(ct.soLuong * ct.donGia), 0) " +
-                " * (1 - COALESCE(km.phanTramGiam, 0) / 100.0) AS doanhThu " +
+                " * (1 - COALESCE(km.phanTramGiam, 0) / 100.0) " +
+                " - COALESCE(MAX(kmsp.TongGiamSanPham), 0) AS doanhThu " +
                 " FROM dbo.HoaDon h " +
                 " LEFT JOIN dbo.ChiTietHoaDon ct ON h.maHoaDon = ct.maHoaDon " +
+                " LEFT JOIN (SELECT maHoaDon, SUM(mucGiam) AS TongGiamSanPham FROM dbo.KhuyenMaiSanPham GROUP BY maHoaDon) kmsp " +
+                " ON kmsp.maHoaDon = h.maHoaDon " +
                 " LEFT JOIN dbo.KhuyenMai km ON h.maKhuyenMai = km.maKhuyenMai " +
-                " WHERE h.ngayLapHD >= ? AND h.ngayLapHD < DATEADD(DAY, 1, ?) " +
+                " WHERE h.maPTTT IS NOT NULL AND h.ngayLapHD >= ? AND h.ngayLapHD < DATEADD(DAY, 1, ?) " +
                 " GROUP BY h.maHoaDon, CAST(h.ngayLapHD AS DATE), km.phanTramGiam " +
                 ") " +
                 "SELECT ngay, COUNT(*) AS soHoaDon, COALESCE(SUM(doanhThu), 0) AS doanhThu " +
@@ -328,13 +355,16 @@ public class HoaDonDAO {
                 " THEN ct.soLuong ELSE 0 END), 0) AS soSanPham, " +
                 " COALESCE(SUM(ct.soLuong * ct.donGia), 0) " +
                 " * (1 - COALESCE(km.phanTramGiam, 0) / 100.0) " +
+                " - COALESCE(MAX(kmsp.TongGiamSanPham), 0) " +
                 " AS doanhThu " +
                 " FROM dbo.HoaDon h " +
                 " LEFT JOIN dbo.ChiTietHoaDon ct " +
                 " ON h.maHoaDon = ct.maHoaDon " +
+                " LEFT JOIN (SELECT maHoaDon, SUM(mucGiam) AS TongGiamSanPham FROM dbo.KhuyenMaiSanPham GROUP BY maHoaDon) kmsp " +
+                " ON kmsp.maHoaDon = h.maHoaDon " +
                 " LEFT JOIN dbo.KhuyenMai km " +
                 " ON h.maKhuyenMai = km.maKhuyenMai " +
-                " WHERE h.ngayLapHD = CAST(GETDATE() AS DATE) " +
+                " WHERE h.maPTTT IS NOT NULL AND h.ngayLapHD = CAST(GETDATE() AS DATE) " +
                 " GROUP BY h.maHoaDon, km.phanTramGiam " +
                 ") " +
                 "SELECT COUNT(*) AS soDonHang, " +

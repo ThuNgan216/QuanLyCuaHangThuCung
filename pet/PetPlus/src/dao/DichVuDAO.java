@@ -28,22 +28,25 @@ public class DichVuDAO {
     public List<DichVu> timKiem(String tuKhoa) {
         if (tuKhoa == null || tuKhoa.trim().isEmpty()) return layDanhSach();
         List<DichVu> ds = new ArrayList<>();
-        String sql = SELECT + "WHERE d.maDichVu LIKE ? OR d.tenDichVu LIKE ? OR d.moTa LIKE ? OR d.trangThai LIKE ? OR d.maLichHen LIKE ? ORDER BY d.tenDichVu";
+        String sql = SELECT + "WHERE d.maDichVu LIKE ? OR d.tenDichVu LIKE ? OR d.moTa LIKE ? OR d.trangThai LIKE ? ORDER BY d.tenDichVu";
         String key = "%" + tuKhoa.trim() + "%";
         try (Connection con = ConnectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
-            for (int i = 1; i <= 5; i++) ps.setString(i, key);
+            for (int i = 1; i <= 4; i++) ps.setString(i, key);
             try (ResultSet rs = ps.executeQuery()) { while (rs.next()) ds.add(doc(rs)); }
         } catch (SQLException e) { throw new IllegalStateException("Không thể tìm dịch vụ: " + e.getMessage(), e); }
         return ds;
     }
 
-    public List<String> layDanhSachMaLichHen() {
-        List<String> ds = new ArrayList<>();
-        String sql = "SELECT maLichHen FROM LichHen ORDER BY thoiGianHen DESC";
-        try (Connection con = ConnectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) ds.add(rs.getString("maLichHen"));
-        } catch (SQLException e) { throw new IllegalStateException("Không thể tải danh sách lịch hẹn: " + e.getMessage(), e); }
-        return ds;
+    public String taoMaMoi() {
+        String sql = "SELECT ISNULL(MAX(TRY_CONVERT(INT, SUBSTRING(maDichVu, 3, 18))), 0) + 1 AS soMoi "
+                + "FROM dbo.DichVu WHERE maDichVu LIKE 'DV[0-9]%'";
+        try (Connection con = ConnectDB.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql);
+                ResultSet rs = ps.executeQuery()) {
+            return rs.next() ? String.format(java.util.Locale.ROOT, "DV%03d", rs.getInt("soMoi")) : "DV001";
+        } catch (SQLException e) {
+            throw new IllegalStateException("Không thể tự sinh mã dịch vụ: " + e.getMessage(), e);
+        }
     }
 
     public boolean them(DichVu d) {
@@ -57,7 +60,9 @@ public class DichVuDAO {
         String sql = "UPDATE DichVu SET tenDichVu=?, donGia=?, moTa=?, trangThai=?, maLichHen=? WHERE maDichVu=?";
         try (Connection con = ConnectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, d.getTenDichVu()); ps.setBigDecimal(2, d.getDonGia()); ps.setString(3, d.getMoTa());
-            ps.setString(4, d.getTrangThai()); ps.setString(5, d.getMaLichHen().getMaLichHen()); ps.setString(6, d.getMaDichVu());
+            ps.setString(4, d.getTrangThai());
+            ps.setString(5, d.getMaLichHen() == null ? null : d.getMaLichHen().getMaLichHen());
+            ps.setString(6, d.getMaDichVu());
             return ps.executeUpdate() > 0;
         } catch (SQLException e) { throw new IllegalStateException("Không thể cập nhật dịch vụ: " + e.getMessage(), e); }
     }
@@ -70,12 +75,14 @@ public class DichVuDAO {
 
     private void gan(PreparedStatement ps, DichVu d) throws SQLException {
         ps.setString(1, d.getMaDichVu()); ps.setString(2, d.getTenDichVu()); ps.setBigDecimal(3, d.getDonGia());
-        ps.setString(4, d.getMoTa()); ps.setString(5, d.getTrangThai()); ps.setString(6, d.getMaLichHen().getMaLichHen());
+        ps.setString(4, d.getMoTa()); ps.setString(5, d.getTrangThai());
+        ps.setString(6, d.getMaLichHen() == null ? null : d.getMaLichHen().getMaLichHen());
     }
 
     private DichVu doc(ResultSet rs) throws SQLException {
         DichVu d = new DichVu(); d.setMaDichVu(rs.getString("maDichVu")); d.setTenDichVu(rs.getString("tenDichVu"));
         d.setDonGia(rs.getBigDecimal("donGia")); d.setMoTa(rs.getString("moTa")); d.setTrangThai(rs.getString("trangThai"));
-        d.setMaLichHen(new LichHen(rs.getString("maLichHen"))); return d;
+        String maLichHen = rs.getString("maLichHen");
+        d.setMaLichHen(maLichHen == null ? null : new LichHen(maLichHen)); return d;
     }
 }

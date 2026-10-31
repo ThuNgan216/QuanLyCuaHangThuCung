@@ -5,18 +5,22 @@ import database.ConnectDB;
 import java.sql.*;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.time.LocalDateTime;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import entity.KhuyenMai;
+import java.time.LocalDate;
 
 public class ThanhToanDAO {
 
-    /** Dữ liệu cần hiển thị và nạp nhanh vào hóa đơn từ phiếu tiếp nhận. */
+    /** Dữ liệu cần hiển thị và nạp nhanh từ hóa đơn tiếp nhận đang chờ thanh toán. */
     public static class PhieuChoThanhToanDTO {
-        public final String maTiepNhan;
+        public final String maHoaDon;
         public final LocalDateTime thoiGianTiepNhan;
         public final String maKH, tenKH, sdt, diaChi, maThuCung, tenThuCung;
         public final int hangThanhVien, diemTichLuy;
@@ -24,11 +28,11 @@ public class ThanhToanDAO {
         public final long phiDuKien;
         public final List<DichVuHoaDonDTO> danhSachDichVu = new ArrayList<>();
 
-        public PhieuChoThanhToanDTO(String maTiepNhan, LocalDateTime thoiGianTiepNhan,
+        public PhieuChoThanhToanDTO(String maHoaDon, LocalDateTime thoiGianTiepNhan,
                 String maKH, String tenKH, String sdt, String diaChi,
                 int hangThanhVien, int diemTichLuy, String maThuCung, String tenThuCung,
                 String dichVuYeuCau, long phiDuKien) {
-            this.maTiepNhan = maTiepNhan;
+            this.maHoaDon = maHoaDon;
             this.thoiGianTiepNhan = thoiGianTiepNhan;
             this.maKH = maKH;
             this.tenKH = tenKH;
@@ -44,7 +48,8 @@ public class ThanhToanDAO {
 
         public long tongPhiDichVu() {
             long tong = 0;
-            for (DichVuHoaDonDTO dichVu : danhSachDichVu) tong = Math.addExact(tong, dichVu.donGia);
+            for (DichVuHoaDonDTO dichVu : danhSachDichVu)
+                tong = Math.addExact(tong, dichVu.donGia);
             return tong;
         }
     }
@@ -52,6 +57,7 @@ public class ThanhToanDAO {
     public static class DichVuHoaDonDTO {
         public final String maDichVu, tenDichVu;
         public final long donGia;
+
         public DichVuHoaDonDTO(String maDichVu, String tenDichVu, long donGia) {
             this.maDichVu = maDichVu;
             this.tenDichVu = tenDichVu;
@@ -60,31 +66,33 @@ public class ThanhToanDAO {
     }
 
     public List<PhieuChoThanhToanDTO> layPhieuChoThanhToan() throws SQLException {
-        String sql = "SELECT tn.maTiepNhan, tn.thoiGianTiepNhan, tn.maKH, kh.tenKH, kh.sdt, kh.diaChi, "
-                + "kh.hangThanhVien, kh.diemTichLuy, tn.maThuCung, tc.tenThuCung, tn.dichVuYeuCau, tn.phiDuKien, "
-                + "dv.maDichVu, dv.tenDichVu, dv.donGia AS giaDichVu "
-                + "FROM TiepNhanThuCung tn "
-                + "INNER JOIN KhachHang kh ON kh.maKH = tn.maKH "
-                + "INNER JOIN ThuCung tc ON tc.maThuCung = tn.maThuCung "
-                + "LEFT JOIN DichVu dv ON dv.maLichHen = tn.maLichHen "
-                + "WHERE tn.trangThai = N'Chờ thanh toán' "
-                + "ORDER BY tn.thoiGianTiepNhan, tn.maTiepNhan, dv.tenDichVu";
+        String sql = "SELECT h.maHoaDon, h.thoiGianTiepNhan, h.maKH, kh.tenKH, kh.sdt, kh.diaChi, "
+                + "kh.hangThanhVien, kh.diemTichLuy, h.maThuCung, tc.tenThuCung, "
+                + "h.dichVuYeuCau, h.phiDuKien, ct.maDichVu, dv.tenDichVu, ct.donGia AS giaDichVu "
+                + "FROM HoaDon h "
+                + "INNER JOIN KhachHang kh ON kh.maKH = h.maKH "
+                + "INNER JOIN ThuCung tc ON tc.maThuCung = h.maThuCung "
+                + "LEFT JOIN ChiTietHoaDon ct ON ct.maHoaDon = h.maHoaDon AND ct.maDichVu IS NOT NULL "
+                + "LEFT JOIN DichVu dv ON dv.maDichVu = ct.maDichVu "
+                + "WHERE h.laTiepNhan = 1 AND h.maPTTT IS NULL "
+                + "AND h.trangThaiTiepNhan = N'Chờ thanh toán' "
+                + "ORDER BY h.thoiGianTiepNhan, h.maHoaDon, dv.tenDichVu";
         Map<String, PhieuChoThanhToanDTO> theoMa = new LinkedHashMap<>();
         try (Connection con = ConnectDB.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql);
                 ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 Timestamp ts = rs.getTimestamp("thoiGianTiepNhan");
-                String maTiepNhan = rs.getString("maTiepNhan");
-                PhieuChoThanhToanDTO phieu = theoMa.get(maTiepNhan);
+                String maHoaDon = rs.getString("maHoaDon");
+                PhieuChoThanhToanDTO phieu = theoMa.get(maHoaDon);
                 if (phieu == null) {
                     BigDecimal phiDuKien = rs.getBigDecimal("phiDuKien");
-                    phieu = new PhieuChoThanhToanDTO(maTiepNhan, ts == null ? null : ts.toLocalDateTime(),
+                    phieu = new PhieuChoThanhToanDTO(maHoaDon, ts == null ? null : ts.toLocalDateTime(),
                             rs.getString("maKH"), rs.getString("tenKH"), rs.getString("sdt"),
                             rs.getString("diaChi"), rs.getInt("hangThanhVien"), rs.getInt("diemTichLuy"),
                             rs.getString("maThuCung"), rs.getString("tenThuCung"),
                             rs.getString("dichVuYeuCau"), phiDuKien == null ? 0L : phiDuKien.longValue());
-                    theoMa.put(maTiepNhan, phieu);
+                    theoMa.put(maHoaDon, phieu);
                 }
                 String maDichVu = rs.getString("maDichVu");
                 if (maDichVu != null) {
@@ -255,7 +263,8 @@ public class ThanhToanDAO {
 
     // Sinh mã hóa đơn dạng HD001, HD002...
     public String taoMaHoaDon(Connection con) throws SQLException {
-        String sql = "SELECT TOP 1 maHoaDon FROM HoaDon ORDER BY LEN(maHoaDon) DESC, maHoaDon DESC";
+        String sql = "SELECT TOP 1 maHoaDon FROM HoaDon WITH (UPDLOCK, HOLDLOCK) "
+                + "WHERE maHoaDon LIKE 'HD[0-9]%' ORDER BY LEN(maHoaDon) DESC, maHoaDon DESC";
         String last = null;
         try (Statement st = con.createStatement(); ResultSet rs = st.executeQuery(sql)) {
             if (rs.next())
@@ -284,15 +293,44 @@ public class ThanhToanDAO {
     }
 
     public void themHoaDon(Connection con, String maHD, String maNV, String maKH,
-            String maPTTT) throws SQLException {
+            String maKhuyenMai, String maPTTT) throws SQLException {
         String sql = "INSERT INTO HoaDon (maHoaDon, ngayLapHD, maNV, maKH, maKhuyenMai, maPTTT) "
-                + "VALUES (?, ?, ?, ?, NULL, ?)";
+                + "VALUES (?, ?, ?, ?, ?, ?)";
         try (PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, maHD);
-            ps.setDate(2, java.sql.Date.valueOf(java.time.LocalDate.now()));
+            ps.setDate(2, java.sql.Date.valueOf(LocalDate.now()));
             ps.setString(3, maNV);
             ps.setString(4, maKH);
-            ps.setString(5, maPTTT);
+            if (maKhuyenMai == null)
+                ps.setNull(5, Types.VARCHAR);
+            else
+                ps.setString(5, maKhuyenMai);
+            ps.setString(6, maPTTT);
+            ps.executeUpdate();
+        }
+    }
+
+    /** Hoàn tất phần thanh toán trên hóa đơn đã được tạo lúc tiếp nhận. */
+    public void capNhatThanhToanHoaDon(Connection con, String maHD, String maNV, String maPTTT)
+            throws SQLException {
+        String sql = "UPDATE HoaDon SET maNV = ?, maPTTT = ?, ngayLapHD = CAST(GETDATE() AS DATE) "
+                + "WHERE maHoaDon = ? AND laTiepNhan = 1 AND maPTTT IS NULL "
+                + "AND trangThaiTiepNhan = N'Chờ thanh toán'";
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, maNV);
+            ps.setString(2, maPTTT);
+            ps.setString(3, maHD);
+            if (ps.executeUpdate() != 1) {
+                throw new SQLException("Hóa đơn tiếp nhận " + maHD
+                        + " không còn chờ thanh toán hoặc đã được thanh toán.");
+            }
+        }
+    }
+
+    public void xoaChiTietHoaDon(Connection con, String maHD) throws SQLException {
+        try (PreparedStatement ps = con.prepareStatement(
+                "DELETE FROM ChiTietHoaDon WHERE maHoaDon = ?")) {
+            ps.setString(1, maHD);
             ps.executeUpdate();
         }
     }
@@ -316,6 +354,51 @@ public class ThanhToanDAO {
                 ps.setInt(4, ((Number) r[3]).intValue());
                 ps.setBigDecimal(5, BigDecimal.valueOf(((Number) r[4]).longValue()));
                 ps.setBigDecimal(6, BigDecimal.valueOf(tienKhachDua));
+                ps.addBatch();
+            }
+            ps.executeBatch();
+        }
+    }
+
+    /** Lưu phần trăm giảm tự động cho từng dòng sản phẩm vào bảng khuyến mãi sản phẩm hiện có. */
+    public void themKhuyenMaiSanPham(Connection con, String maHD, List<Object[]> dong, KhuyenMai km)
+            throws SQLException {
+        if (km == null || km.getMaKhuyenMai() == null || km.getPhanTramGiam() <= 0) return;
+        Set<String> maSanPhamApDung = new HashSet<>(km.getMaSanPhamApDung());
+        if (maSanPhamApDung.isEmpty()) return;
+        Map<String, Long> soLuongTheoMa = new LinkedHashMap<>();
+        for (Object[] row : dong) {
+            if (!"Sản phẩm".equals(row[0])) continue;
+            String maSP = String.valueOf(row[1]);
+            if (!maSanPhamApDung.contains(maSP)) continue;
+            soLuongTheoMa.put(maSP, Math.addExact(soLuongTheoMa.getOrDefault(maSP, 0L),
+                    ((Number) row[3]).longValue()));
+        }
+        Set<String> maSanPhamDatNguong = new HashSet<>();
+        for (Map.Entry<String, Long> entry : soLuongTheoMa.entrySet()) {
+            if (entry.getValue() >= km.getSoLuongToiThieu()) maSanPhamDatNguong.add(entry.getKey());
+        }
+        if (maSanPhamDatNguong.isEmpty()) return;
+
+        String sql = "INSERT INTO KhuyenMaiSanPham "
+                + "(maKhuyenMaiMaSanPham, mucGiam, maSP, maKhuyenMai, maHoaDon) VALUES (?, ?, ?, ?, ?)";
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            for (Object[] row : dong) {
+                if (!"Sản phẩm".equals(row[0])) continue;
+                if (!maSanPhamDatNguong.contains(String.valueOf(row[1]))) continue;
+                int soLuong = ((Number) row[3]).intValue();
+                long donGia = ((Number) row[4]).longValue();
+                BigDecimal tienGiam = BigDecimal.valueOf(soLuong)
+                        .multiply(BigDecimal.valueOf(donGia))
+                        .multiply(BigDecimal.valueOf(km.getPhanTramGiam()))
+                        .divide(BigDecimal.valueOf(100), 0, java.math.RoundingMode.HALF_UP);
+                if (tienGiam.signum() <= 0) continue;
+                ps.setString(1, "KMSP" + java.util.UUID.randomUUID().toString()
+                        .replace("-", "").toUpperCase(java.util.Locale.ROOT));
+                ps.setBigDecimal(2, tienGiam);
+                ps.setString(3, String.valueOf(row[1]));
+                ps.setString(4, km.getMaKhuyenMai());
+                ps.setString(5, maHD);
                 ps.addBatch();
             }
             ps.executeBatch();
@@ -349,5 +432,33 @@ public class ThanhToanDAO {
             ps.setString(3, maKH);
             ps.executeUpdate();
         }
+    }
+
+    public List<KhuyenMai> layKhuyenMaiHieuLuc() throws SQLException {
+        String sql = "SELECT maKhuyenMai, tenKhuyenMai, phanTramGiam, dieuKienApDung, ngayBatDau, ngayKetThuc "
+                + "FROM KhuyenMai "
+                + "WHERE (ngayBatDau IS NULL OR ngayBatDau <= ?) AND (ngayKetThuc IS NULL OR ngayKetThuc >= ?) "
+                + "ORDER BY tenKhuyenMai";
+        List<KhuyenMai> ds = new ArrayList<>();
+        java.sql.Date homNay = java.sql.Date.valueOf(LocalDate.now());
+        try (Connection con = ConnectDB.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setDate(1, homNay);
+            ps.setDate(2, homNay);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    java.sql.Date bd = rs.getDate("ngayBatDau");
+                    java.sql.Date kt = rs.getDate("ngayKetThuc");
+                    ds.add(new KhuyenMai(
+                            rs.getString("maKhuyenMai"),
+                            rs.getString("tenKhuyenMai"),
+                            rs.getFloat("phanTramGiam"),
+                            rs.getString("dieuKienApDung"),
+                            bd == null ? null : bd.toLocalDate(),
+                            kt == null ? null : kt.toLocalDate()));
+                }
+            }
+        }
+        return ds;
     }
 }

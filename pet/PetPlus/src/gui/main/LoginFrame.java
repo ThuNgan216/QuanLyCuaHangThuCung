@@ -25,7 +25,7 @@ import java.sql.SQLException;
 
 public class LoginFrame extends JFrame {
 
-	private JTextField txtUsername;
+	private JTextField txtMaNV;
 	private JPasswordField txtPassword;
 	private JButton btnLogin;
 
@@ -95,8 +95,8 @@ public class LoginFrame extends JFrame {
 		pnlCenter.add(Box.createRigidArea(new Dimension(0, 50)));
 
 		// 2. Khu vực Form nhập liệu
-		// Ô nhập Username có chữ chìm
-		txtUsername = new JTextField() {
+		// Ô nhập mã nhân viên có chữ chìm
+		txtMaNV = new JTextField() {
 			@Override
 			protected void paintComponent(Graphics g) {
 				super.paintComponent(g);
@@ -104,16 +104,15 @@ public class LoginFrame extends JFrame {
 					Graphics2D g2 = (Graphics2D) g.create();
 					g2.setColor(Color.GRAY);
 					g2.setFont(getFont().deriveFont(Font.ITALIC));
-					// Căn giữa chữ chìm theo chiều dọc
 					int y = (getHeight() - g.getFontMetrics().getHeight()) / 2 + g.getFontMetrics().getAscent();
-					g2.drawString("Mã nhân viên (VD: NV01)", 12, y);
+					g2.drawString("Mã nhân viên (VD: NV001)", 12, y);
 					g2.dispose();
 				}
 			}
 		};
-		txtUsername.setMaximumSize(new Dimension(400, 45));
-		txtUsername.setFont(new Font("Arial", Font.PLAIN, 14));
-		txtUsername.setBorder(new CompoundBorder(new LineBorder(AppColors.PRIMARY, 1), new EmptyBorder(5, 10, 5, 10)));
+		txtMaNV.setMaximumSize(new Dimension(400, 45));
+		txtMaNV.setFont(new Font("Arial", Font.PLAIN, 14));
+		txtMaNV.setBorder(new CompoundBorder(new LineBorder(AppColors.PRIMARY, 1), new EmptyBorder(5, 10, 5, 10)));
 
 		// Ô nhập Password có chữ chìm
 		txtPassword = new JPasswordField() {
@@ -134,7 +133,7 @@ public class LoginFrame extends JFrame {
 		txtPassword.setFont(new Font("Arial", Font.PLAIN, 14));
 		txtPassword.setBorder(new CompoundBorder(new LineBorder(AppColors.PRIMARY, 1), new EmptyBorder(5, 10, 5, 10)));
 
-		pnlCenter.add(txtUsername);
+		pnlCenter.add(txtMaNV);
 		pnlCenter.add(Box.createRigidArea(new Dimension(0, 20)));
 		pnlCenter.add(txtPassword);
 		pnlCenter.add(Box.createRigidArea(new Dimension(0, 40)));
@@ -161,24 +160,24 @@ public class LoginFrame extends JFrame {
 	}
 
 	private void xuLyDangNhap() {
-		String tenDangNhap = txtUsername.getText().trim();
+		String maNV = txtMaNV.getText().trim();
 		String matKhau = new String(txtPassword.getPassword());
 
-		if (tenDangNhap.isEmpty() || matKhau.isEmpty()) {
+		if (maNV.isEmpty() || matKhau.isEmpty()) {
 			JOptionPane.showMessageDialog(
 					this,
-					"Vui lòng nhập tên đăng nhập và mật khẩu!");
+					"Vui lòng nhập mã nhân viên và mật khẩu!");
 			return;
 		}
 
 		try {
 			TaiKhoanDAO dao = new TaiKhoanDAO();
-			NhanVien nv = dao.dangNhap(tenDangNhap, matKhau);
+			NhanVien nv = dao.dangNhap(maNV, matKhau);
 
 			if (nv == null) {
 				JOptionPane.showMessageDialog(
 						this,
-						"Tên đăng nhập hoặc mật khẩu không đúng, " +
+						"Mã nhân viên hoặc mật khẩu không đúng, " +
 								"hoặc tài khoản đã ngừng hoạt động!");
 				return;
 			}

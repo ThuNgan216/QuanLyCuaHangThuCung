@@ -10,22 +10,20 @@ public final class ConnectDB {
             + "encrypt=true;"
             + "trustServerCertificate=true;";
 
-    private static final String USERNAME = "sa";
-    private static final String PASSWORD_ENV = "PETPLUS_DB_PASSWORD";
+    private static final String USERNAME = System.getenv().getOrDefault("PETPLUS_DB_USERNAME", "sa");
+    private static final String PASSWORD = System.getenv("PETPLUS_DB_PASSWORD");
 
     private ConnectDB() {
     }
 
     public static Connection getConnection() throws SQLException {
-        String password = System.getenv(PASSWORD_ENV);
-        if (password == null || password.trim().isEmpty()) {
-            throw new SQLException("Chua cau hinh bien moi truong " + PASSWORD_ENV + ".");
+        if (PASSWORD == null || PASSWORD.isBlank()) {
+            throw new SQLException("Missing PETPLUS_DB_PASSWORD environment variable.");
         }
-
         return DriverManager.getConnection(
                 URL,
                 USERNAME,
-                password);
+                PASSWORD);
     }
 
     public static void main(String[] args) {

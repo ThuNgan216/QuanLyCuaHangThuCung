@@ -8,6 +8,13 @@ import javax.swing.*;
 import service.NhaCungCapService;
 import utils.PetPlusTheme;
 
+<<<<<<< HEAD
+=======
+import javax.swing.*;
+import java.awt.*;
+import java.sql.SQLException;
+
+>>>>>>> 54aa75aa728d4dcece23f899dc6ad6b13a91cfd9
 public class dlgNhaCungCap extends JDialog {
     private final JTextField txtMaNCC = new JTextField(15);
     private final JTextField txtTenNCC = new JTextField(15);
@@ -39,7 +46,7 @@ public class dlgNhaCungCap extends JDialog {
         int y = 0;
         themDong(pnlForm, g, y++, "Mã Nhà Cung Cấp:", txtMaNCC); // Bỏ dấu (*) vì không cần tự nhập nữa
         themDong(pnlForm, g, y++, "Tên Nhà Cung Cấp (*):", txtTenNCC);
-        themDong(pnlForm, g, y++, "Số Điện Thoại:", txtSoDienThoai);
+        themDong(pnlForm, g, y++, "Số Điện Thoại (*):", txtSoDienThoai);
         themDong(pnlForm, g, y++, "Email:", txtEmail);
         themDong(pnlForm, g, y++, "Địa Chỉ:", txtDiaChi);
 
@@ -76,8 +83,14 @@ public class dlgNhaCungCap extends JDialog {
                 String maMoi = nccDAO.phatSinhMaNCCMoi();
                 txtMaNCC.setText(maMoi);
             } catch (SQLException ex) {
+<<<<<<< HEAD
                 txtMaNCC.setText("Lỗi tạo mã");
                 ex.printStackTrace();
+=======
+                txtMaNCC.setText("");
+                txtMaNCC.setToolTipText("Không thể phát sinh mã nhà cung cấp: " + ex.getMessage());
+                btnLuu.setEnabled(false);
+>>>>>>> 54aa75aa728d4dcece23f899dc6ad6b13a91cfd9
             }
         }
 
@@ -103,6 +116,9 @@ public class dlgNhaCungCap extends JDialog {
 
             if (ma.isEmpty() || ten.isEmpty()) {
                 throw new IllegalArgumentException("Mã và tên nhà cung cấp không được để trống.");
+            }
+            if (!sdt.matches("0\\d{9}")) {
+                throw new IllegalArgumentException("Số điện thoại phải bắt đầu bằng 0 và gồm đúng 10 chữ số.");
             }
 
             NhaCungCap ncc = new NhaCungCap(ma, ten, sdt, diaChi, email);

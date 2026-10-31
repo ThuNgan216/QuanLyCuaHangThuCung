@@ -105,6 +105,7 @@ CREATE TABLE KhachHang
     hangThanhVien  INT            NULL,
     diemTichLuy    INT            NOT NULL CONSTRAINT DF_KhachHang_Diem DEFAULT 0,
     CONSTRAINT PK_KhachHang PRIMARY KEY (maKH),
+    CONSTRAINT UQ_KhachHang_SDT UNIQUE (sdt),
     CONSTRAINT CK_KhachHang_Diem CHECK (diemTichLuy >= 0)
 );
 GO
@@ -224,37 +225,6 @@ CREATE TABLE LichHen
 GO
 
 /* ============================================================
-   12A. PHIEU TIEP NHAN THUC TE
-   maLichHen NULL cho khach den truc tiep; co gia tri khi check-in lich da dat.
-   ============================================================ */
-CREATE TABLE TiepNhanThuCung
-(
-    maTiepNhan       VARCHAR(20)    NOT NULL,
-    maLichHen        VARCHAR(20)    NULL,
-    thoiGianTiepNhan DATETIME2      NOT NULL,
-    gioHenTra        DATETIME2      NOT NULL,
-    maNV             VARCHAR(20)    NOT NULL,
-    maKH             VARCHAR(20)    NOT NULL,
-    maThuCung        VARCHAR(20)    NOT NULL,
-    dichVuYeuCau     NVARCHAR(500)  NOT NULL,
-    tinhTrangBanGiao NVARCHAR(1000) NULL,
-    ghiChu           NVARCHAR(1000) NULL,
-    phiDuKien        DECIMAL(18,2)  NULL,
-    trangThai        NVARCHAR(50)   NOT NULL CONSTRAINT DF_TiepNhanThuCung_TrangThai DEFAULT N'Đã tiếp nhận',
-    CONSTRAINT PK_TiepNhanThuCung PRIMARY KEY (maTiepNhan),
-    CONSTRAINT FK_TiepNhanThuCung_LichHen FOREIGN KEY (maLichHen) REFERENCES LichHen(maLichHen),
-    CONSTRAINT FK_TiepNhanThuCung_NhanVien FOREIGN KEY (maNV) REFERENCES NhanVien(maNV),
-    CONSTRAINT FK_TiepNhanThuCung_KhachHang FOREIGN KEY (maKH) REFERENCES KhachHang(maKH),
-    CONSTRAINT FK_TiepNhanThuCung_ThuCung FOREIGN KEY (maThuCung) REFERENCES ThuCung(maThuCung),
-    CONSTRAINT CK_TiepNhanThuCung_Phi CHECK (phiDuKien IS NULL OR phiDuKien >= 0),
-    CONSTRAINT CK_TiepNhanThuCung_ThoiGian CHECK (gioHenTra > thoiGianTiepNhan)
-);
-GO
-CREATE UNIQUE INDEX UX_TiepNhanThuCung_LichHen
-    ON TiepNhanThuCung(maLichHen) WHERE maLichHen IS NOT NULL;
-GO
-
-/* ============================================================
    13. DICH VU
    ============================================================ */
 CREATE TABLE DichVu
@@ -308,14 +278,45 @@ CREATE TABLE HoaDon
     ngayLapHD    DATE        NOT NULL,
     maNV         VARCHAR(20) NOT NULL,
     maKH         VARCHAR(20) NOT NULL,
-    maKhuyenMai  VARCHAR(20) NOT NULL,
-    maPTTT       VARCHAR(20) NOT NULL,
+    maKhuyenMai  VARCHAR(20) NULL,
+    maPTTT       VARCHAR(20) NULL,
+    laTiepNhan   BIT NOT NULL CONSTRAINT DF_HoaDon_LaTiepNhan DEFAULT (0),
+    maLichHen    VARCHAR(20) NULL,
+    maThuCung    VARCHAR(20) NULL,
+    maNVTiepNhan VARCHAR(20) NULL,
+    thoiGianTiepNhan DATETIME2 NULL,
+    gioHenTra    DATETIME2 NULL,
+    dichVuYeuCau NVARCHAR(500) NULL,
+    tinhTrangBanGiao NVARCHAR(1000) NULL,
+    ghiChuTiepNhan NVARCHAR(1000) NULL,
+    phiDuKien    DECIMAL(18,2) NULL,
+    trangThaiTiepNhan NVARCHAR(50) NULL,
     CONSTRAINT PK_HoaDon PRIMARY KEY (maHoaDon),
     CONSTRAINT FK_HoaDon_NhanVien FOREIGN KEY (maNV) REFERENCES NhanVien(maNV),
     CONSTRAINT FK_HoaDon_KhachHang FOREIGN KEY (maKH) REFERENCES KhachHang(maKH),
     CONSTRAINT FK_HoaDon_KhuyenMai FOREIGN KEY (maKhuyenMai) REFERENCES KhuyenMai(maKhuyenMai),
-    CONSTRAINT FK_HoaDon_PhuongThucThanhToan FOREIGN KEY (maPTTT) REFERENCES PhuongThucThanhToan(maPTTT)
+    CONSTRAINT FK_HoaDon_PhuongThucThanhToan FOREIGN KEY (maPTTT) REFERENCES PhuongThucThanhToan(maPTTT),
+    CONSTRAINT FK_HoaDon_LichHen FOREIGN KEY (maLichHen) REFERENCES LichHen(maLichHen),
+    CONSTRAINT FK_HoaDon_ThuCung FOREIGN KEY (maThuCung) REFERENCES ThuCung(maThuCung),
+    CONSTRAINT FK_HoaDon_NVTiepNhan FOREIGN KEY (maNVTiepNhan) REFERENCES NhanVien(maNV),
+    CONSTRAINT CK_HoaDon_PhiDuKien CHECK (phiDuKien IS NULL OR phiDuKien >= 0),
+    CONSTRAINT CK_HoaDon_ThoiGianTiepNhan CHECK (
+        laTiepNhan = 0 OR (thoiGianTiepNhan IS NOT NULL AND gioHenTra IS NOT NULL
+            AND gioHenTra > thoiGianTiepNhan
+            AND maThuCung IS NOT NULL AND maNVTiepNhan IS NOT NULL AND trangThaiTiepNhan IS NOT NULL))
 );
+GO
+
+SET ANSI_NULLS ON;
+SET ANSI_PADDING ON;
+SET ANSI_WARNINGS ON;
+SET ARITHABORT ON;
+SET CONCAT_NULL_YIELDS_NULL ON;
+SET QUOTED_IDENTIFIER ON;
+SET NUMERIC_ROUNDABORT OFF;
+GO
+CREATE UNIQUE INDEX UX_HoaDon_TiepNhan_LichHen
+    ON HoaDon(maLichHen) WHERE laTiepNhan = 1 AND maLichHen IS NOT NULL;
 GO
 
 /* ============================================================
@@ -372,8 +373,6 @@ CREATE TABLE TichDiem
     CONSTRAINT CK_TichDiem_Diem CHECK (diemTichLuy >= 0)
 );
 GO
-ALTER TABLE HoaDon ALTER COLUMN maKhuyenMai VARCHAR(20) NULL;
-
 ALTER TABLE ChiTietHoaDon DROP CONSTRAINT PK_ChiTietHoaDon;
 
 ALTER TABLE ChiTietHoaDon ADD maChiTiet INT IDENTITY(1,1) NOT NULL;
@@ -401,19 +400,25 @@ SET XACT_ABORT ON;
 BEGIN TRY
     BEGIN TRANSACTION;
 
-    INSERT INTO TaiKhoan (maTK, tenDangNhap, matKhau, vaiTro, trangThai) VALUES
-    ('TK001', N'admin', N'123456', N'ADMIN', N'Hoạt động'),
-    ('TK002', N'nguyenvana', N'123456', N'NHANVIEN', N'Hoạt động'),
-    ('TK003', N'tranthib', N'123456', N'NHANVIEN', N'Hoạt động'),
-    ('TK004', N'levanc', N'123456', N'NHANVIEN', N'Hoạt động'),
-    ('TK005', N'phamthid', N'123456', N'NHANVIEN', N'Hoạt động');
+    -- THÊM DỮ LIỆU TÀI KHOẢN
+INSERT INTO TaiKhoan (maTK, tenDangNhap, matKhau, vaiTro, trangThai) VALUES
+    ('TK001', N'NV01', N'123456', N'QUAN_LY', N'Hoạt động'),
+    ('TK002', N'nguyenvana', N'123456', N'BAN_HANG', N'Hoạt động'),
+    ('TK003', N'tranthib', N'123456', N'CHAM_SOC', N'Hoạt động'),
+    ('TK004', N'levanc', N'123456', N'BAN_HANG', N'Hoạt động'),
+    ('TK005', N'phamthid', N'123456', N'CHAM_SOC', N'Hoạt động');
 
-    INSERT INTO NhanVien (maNV, tenNV, sdt, cccd, diaChi, email, chucVu, maTK) VALUES
-    ('NV001', N'Nguyễn Văn An', '0901000001', '079201000001', N'Quận 12, TP.HCM', 'an@petplus.vn', N'Quản lý', 'TK001'),
-    ('NV002', N'Trần Thị Bình', '0901000002', '079201000002', N'Gò Vấp, TP.HCM', 'binh@petplus.vn', N'Thu ngân', 'TK002'),
-    ('NV003', N'Lê Văn Cường', '0901000003', '079201000003', N'Tân Bình, TP.HCM', 'cuong@petplus.vn', N'Chăm sóc thú cưng', 'TK003'),
-    ('NV004', N'Phạm Thị Dung', '0901000004', '079201000004', N'Thủ Đức, TP.HCM', 'dung@petplus.vn', N'Bán hàng', 'TK004'),
-    ('NV005', N'Võ Minh Đức', '0901000005', '079201000005', N'Bình Thạnh, TP.HCM', 'duc@petplus.vn', N'Chăm sóc thú cưng', 'TK005');
+INSERT INTO NhanVien (maNV, tenNV, sdt, cccd, diaChi, email, chucVu, maTK) VALUES
+    ('NV001', N'Nguyễn Văn An', '0901000001', '079201000001',
+     N'Quận 12, TP.HCM', 'an@petplus.vn', N'Quản lý', 'TK001'),
+    ('NV002', N'Trần Thị Bình', '0901000002', '079201000002',
+     N'Gò Vấp, TP.HCM', 'binh@petplus.vn', N'Bán hàng / Thu ngân', 'TK002'),
+    ('NV003', N'Lê Văn Cường', '0901000003', '079201000003',
+     N'Tân Bình, TP.HCM', 'cuong@petplus.vn', N'Chăm sóc thú cưng', 'TK003'),
+    ('NV004', N'Phạm Thị Dung', '0901000004', '079201000004',
+     N'Thủ Đức, TP.HCM', 'dung@petplus.vn', N'Bán hàng / Thu ngân', 'TK004'),
+    ('NV005', N'Võ Minh Đức', '0901000005', '079201000005',
+     N'Bình Thạnh, TP.HCM', 'duc@petplus.vn', N'Chăm sóc thú cưng', 'TK005');
 
     INSERT INTO CaLamViec (maCa, gioBatDau, gioKetThuc, tenCa) VALUES
     ('CA001', '07:00', '12:00', N'Ca sáng'),
@@ -580,3 +585,8 @@ UNION ALL SELECT N'ChiTietHoaDon', COUNT(*) FROM ChiTietHoaDon
 UNION ALL SELECT N'KhuyenMaiSanPham', COUNT(*) FROM KhuyenMaiSanPham
 UNION ALL SELECT N'TichDiem', COUNT(*) FROM TichDiem;
 GO
+
+
+USE PETPLUS;
+GO
+

@@ -29,7 +29,7 @@ public class NhaCungCapDAO {
                 ds.add(ncc);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new IllegalStateException("Không thể tải danh sách nhà cung cấp: " + e.getMessage(), e);
         }
         return ds;
     }
@@ -52,13 +52,14 @@ public class NhaCungCapDAO {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new IllegalStateException("Không thể tìm nhà cung cấp: " + e.getMessage(), e);
         }
         return null;
     }
 
     // --- HÀM MỚI: PHÁT SINH MÃ TỰ ĐỘNG ---
     public String phatSinhMaNCCMoi() throws SQLException {
+<<<<<<< HEAD
         String sql = "SELECT TOP 1 maNCC FROM dbo.NhaCungCap ORDER BY maNCC DESC";
         try (Connection con = ConnectDB.getConnection();
              PreparedStatement ps = con.prepareStatement(sql);
@@ -79,6 +80,18 @@ public class NhaCungCapDAO {
         }
         // Trả về mặc định nếu bảng đang rỗng hoặc lỗi phân tích chuỗi
         return "NCC001";
+=======
+        String sql = "SELECT ISNULL(MAX(TRY_CONVERT(INT, SUBSTRING(maNCC, 4, 17))), 0) + 1 AS soMoi "
+                + "FROM dbo.NhaCungCap WHERE maNCC LIKE 'NCC[0-9]%'";
+        try (Connection con = ConnectDB.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) return String.format(java.util.Locale.ROOT, "NCC%03d", rs.getInt("soMoi"));
+            return "NCC001";
+        } catch (SQLException e) {
+            throw e;
+        }
+>>>>>>> 54aa75aa728d4dcece23f899dc6ad6b13a91cfd9
     }
 
     public boolean them(NhaCungCap ncc) {
@@ -94,8 +107,7 @@ public class NhaCungCapDAO {
 
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
+            throw new IllegalStateException("Không thể thêm nhà cung cấp: " + e.getMessage(), e);
         }
     }
 
@@ -112,8 +124,7 @@ public class NhaCungCapDAO {
 
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
+            throw new IllegalStateException("Không thể cập nhật nhà cung cấp: " + e.getMessage(), e);
         }
     }
 
@@ -125,8 +136,7 @@ public class NhaCungCapDAO {
             ps.setString(1, maNCC);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
+            throw new IllegalStateException("Không thể xóa nhà cung cấp: " + e.getMessage(), e);
         }
     }
 }

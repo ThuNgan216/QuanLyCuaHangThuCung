@@ -544,7 +544,7 @@ public class pnlXuatHoaDon extends JPanel {
         modelHoaDon.setRowCount(0);
         for (HoaDonRow r : ds) {
             modelHoaDon.addRow(new Object[] { r.maHoaDon, r.ngayLap == null ? "" : r.ngayLap.format(DATE_FMT),
-                    r.tenNV, r.tenKH, r.tenPTTT, r.tenKhuyenMai == null ? "—" : r.tenKhuyenMai,
+                    r.tenNV, r.tenKH, r.tenPTTT, tenKhuyenMaiHienThi(r),
                     MONEY.format(r.thanhToan()) + " đ" });
         }
         lblSoHoaDon.setText(ds.size() + " hóa đơn");
@@ -575,7 +575,7 @@ public class pnlXuatHoaDon extends JPanel {
         lblNV.setText(nz(hd.tenNV));
         lblKH.setText(nz(hd.tenKH));
         lblPTTT.setText(nz(hd.tenPTTT));
-        lblKM.setText(hd.tenKhuyenMai == null ? "Không có" : hd.tenKhuyenMai + " (" + hd.phanTramGiam + "%)");
+        lblKM.setText(tenKhuyenMaiHienThi(hd));
 
         modelChiTiet.setRowCount(0);
         int stt = 1;
@@ -588,6 +588,19 @@ public class pnlXuatHoaDon extends JPanel {
         lblThanhToan.setText(MONEY.format(hd.thanhToan()) + " đ");
         lblKhachDua.setText(MONEY.format(hd.tienKhachDua) + " đ");
         lblTienThua.setText(MONEY.format(hd.tienThua().max(java.math.BigDecimal.ZERO)) + " đ");
+    }
+
+    private String tenKhuyenMaiHienThi(HoaDonRow hd) {
+        StringBuilder ten = new StringBuilder();
+        if (hd.tenKhuyenMai != null) {
+            ten.append(hd.tenKhuyenMai).append(" (").append(hd.phanTramGiam).append("%)");
+        }
+        if (hd.tenKhuyenMaiSanPham != null) {
+            if (ten.length() > 0) ten.append(" / ");
+            ten.append(hd.tenKhuyenMaiSanPham).append(" (")
+                    .append(hd.phanTramGiamSanPham).append("% sản phẩm)");
+        }
+        return ten.length() == 0 ? "Không có" : ten.toString();
     }
 
     // ========================================================== Xuất / In
@@ -626,7 +639,7 @@ public class pnlXuatHoaDon extends JPanel {
         }
         sb.append("-".repeat(60)).append('\n');
         sb.append(String.format("%-40s %19s%n", "Tổng tiền:", MONEY.format(hd.tongTien)));
-        sb.append(String.format("%-40s %19s%n", "Giảm giá (" + hd.phanTramGiam + "%):", MONEY.format(hd.tienGiam())));
+        sb.append(String.format("%-40s %19s%n", "Tổng giảm khuyến mãi:", MONEY.format(hd.tienGiam())));
         sb.append(String.format("%-40s %19s%n", "Khách cần trả:", MONEY.format(hd.thanhToan())));
         sb.append(String.format("%-40s %19s%n", "Tiền khách đưa:", MONEY.format(hd.tienKhachDua)));
         sb.append(String.format("%-40s %19s%n", "Tiền thừa:",

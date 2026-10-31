@@ -69,7 +69,7 @@ public class pnlKhachHang extends JPanel {
         // Lọc theo hạng thành viên
         cboHangLoc = new JComboBox<>();
 
-        for (int i = 1; i <= 10; i++) {
+        for (int i = 1; i <= 3; i++) {
             cboHangLoc.addItem(i);
         }
 
@@ -179,6 +179,12 @@ public class pnlKhachHang extends JPanel {
 
         btnTimKiem.addActionListener(e -> timKiem());
         txtTimKiem.addActionListener(e -> timKiem());
+        txtTimKiem.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            private void capNhat() { timKiem(); }
+            public void insertUpdate(javax.swing.event.DocumentEvent e) { capNhat(); }
+            public void removeUpdate(javax.swing.event.DocumentEvent e) { capNhat(); }
+            public void changedUpdate(javax.swing.event.DocumentEvent e) { capNhat(); }
+        });
 
         btnLoc.addActionListener(e -> locVaTimKiem());
     }
@@ -354,85 +360,62 @@ public class pnlKhachHang extends JPanel {
 
     private KhachHang hienThiForm(KhachHang khCu) {
         boolean dangSua = khCu != null;
-
-        JTextField txtMa = new JTextField(
-                dangSua ? khCu.getMaKH() : "");
-        JTextField txtTen = new JTextField(
-                dangSua ? khCu.getTenKH() : "");
-        JTextField txtSDT = new JTextField(
-                dangSua ? giaTri(khCu.getSdt()) : "");
-        JTextField txtDiaChi = new JTextField(
-                dangSua ? giaTri(khCu.getDiaChi()) : "");
-        JTextField txtHang = new JTextField(
-                dangSua ? String.valueOf(khCu.getHangThanhVien()) : "0");
-        JTextField txtDiem = new JTextField(
-                dangSua ? String.valueOf(khCu.getDiemTichLuy()) : "0");
-
-        txtMa.setEditable(!dangSua);
-
-        JPanel pnl = new JPanel(new GridLayout(0, 2, 8, 8));
-        pnl.add(new JLabel("Mã khách hàng:"));
-        pnl.add(txtMa);
-        pnl.add(new JLabel("Tên khách hàng:"));
-        pnl.add(txtTen);
-        pnl.add(new JLabel("Số điện thoại:"));
-        pnl.add(txtSDT);
-        pnl.add(new JLabel("Địa chỉ:"));
-        pnl.add(txtDiaChi);
-        pnl.add(new JLabel("Hạng thành viên:"));
-        pnl.add(txtHang);
-        pnl.add(new JLabel("Điểm tích lũy:"));
-        pnl.add(txtDiem);
-
-        int ketQua = JOptionPane.showConfirmDialog(
-                this,
-                pnl,
-                dangSua ? "Sửa khách hàng" : "Thêm khách hàng",
-                JOptionPane.OK_CANCEL_OPTION,
-                JOptionPane.PLAIN_MESSAGE);
-
-        if (ketQua != JOptionPane.OK_OPTION) {
-            return null;
-        }
-
-        String ma = txtMa.getText().trim();
-        String ten = txtTen.getText().trim();
-        String sdt = txtSDT.getText().trim();
-        String diaChi = txtDiaChi.getText().trim();
-
-        if (ma.isEmpty() || ten.isEmpty()) {
-            JOptionPane.showMessageDialog(
-                    this, "Mã và tên khách hàng không được để trống.");
-            return null;
-        }
-
-        if (!sdt.isEmpty() && !sdt.matches("\\d{9,15}")) {
-            JOptionPane.showMessageDialog(
-                    this, "Số điện thoại phải gồm 9–15 chữ số.");
-            return null;
-        }
-
-        try {
-            int hang = Integer.parseInt(txtHang.getText().trim());
-            int diem = Integer.parseInt(txtDiem.getText().trim());
-
-            if (hang < 0 || diem < 0) {
-                JOptionPane.showMessageDialog(
-                        this, "Hạng thành viên và điểm không được âm.");
-                return null;
+        JTextField txtMa = new JTextField(dangSua ? khCu.getMaKH() : khachHangService.taoMaMoi());
+        JTextField txtTen = new JTextField(dangSua ? khCu.getTenKH() : "");
+        JTextField txtSDT = new JTextField(dangSua ? giaTri(khCu.getSdt()) : "");
+        JTextField txtDiaChi = new JTextField(dangSua ? giaTri(khCu.getDiaChi()) : "") {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                if (getText().isEmpty() && !isFocusOwner()) {
+                    Graphics2D g2 = (Graphics2D) g.create();
+                    g2.setColor(new Color(150, 150, 150));
+                    FontMetrics metrics = g2.getFontMetrics(getFont());
+                    Insets insets = getInsets();
+                    int y = (getHeight() - metrics.getHeight()) / 2 + metrics.getAscent();
+                    g2.drawString("Nhập tỉnh", insets.left + 2, y);
+                    g2.dispose();
+                }
             }
-
-            return new KhachHang(
-                    ma,
-                    ten,
-                    sdt.isEmpty() ? null : sdt,
-                    diaChi.isEmpty() ? null : diaChi,
-                    hang,
-                    diem);
-        } catch (NumberFormatException e) {
-            JOptionPane.showMessageDialog(
-                    this, "Hạng thành viên và điểm phải là số nguyên.");
-            return null;
+        };
+        txtDiaChi.addFocusListener(new java.awt.event.FocusAdapter() {
+            @Override public void focusGained(java.awt.event.FocusEvent e) { txtDiaChi.repaint(); }
+            @Override public void focusLost(java.awt.event.FocusEvent e) { txtDiaChi.repaint(); }
+        });
+        JTextField txtHang = new JTextField(dangSua ? String.valueOf(khCu.getHangThanhVien()) : "1");
+        JTextField txtDiem = new JTextField(dangSua ? String.valueOf(khCu.getDiemTichLuy()) : "0");
+        txtMa.setEditable(false);
+        // Hạng thành viên và điểm tích lũy do hệ thống quản lý, không cho nhập tay.
+        txtHang.setEditable(false);
+        txtDiem.setEditable(false);
+        txtHang.setFocusable(false);
+        txtDiem.setFocusable(false);
+        JPanel pnl = new JPanel(new GridLayout(0, 2, 8, 8));
+        pnl.add(new JLabel("Mã khách hàng:")); pnl.add(txtMa);
+        pnl.add(new JLabel("Tên khách hàng:")); pnl.add(txtTen);
+        pnl.add(new JLabel("Số điện thoại:")); pnl.add(txtSDT);
+        pnl.add(new JLabel("Địa chỉ:")); pnl.add(txtDiaChi);
+        pnl.add(new JLabel("Hạng thành viên:")); pnl.add(txtHang);
+        pnl.add(new JLabel("Điểm tích lũy:")); pnl.add(txtDiem);
+        while (true) {
+            int ketQua = JOptionPane.showConfirmDialog(this, pnl, dangSua ? "Sửa khách hàng" : "Thêm khách hàng", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+            if (ketQua != JOptionPane.OK_OPTION) return null;
+            String ma=txtMa.getText().trim(), ten=txtTen.getText().trim(), sdt=txtSDT.getText().trim(), diaChi=txtDiaChi.getText().trim();
+            try {
+                if (ten.isEmpty()) throw new IllegalArgumentException("Vui lòng nhập tên khách hàng.");
+                if (!ten.matches("[\\p{L}]+(?:\\s+[\\p{L}]+)*"))
+                    throw new IllegalArgumentException("Tên khách hàng chỉ được chứa chữ cái và khoảng trắng, không có số hoặc ký tự đặc biệt.");
+                if (sdt.isEmpty() || !sdt.matches("0\\d{9}"))
+                    throw new IllegalArgumentException("Số điện thoại phải bắt đầu bằng 0 và gồm đúng 10 chữ số.");
+                if (diaChi.isEmpty()) throw new IllegalArgumentException("Vui lòng nhập địa chỉ.");
+                if (!diaChi.matches("[\\p{L}]+(?:\\s+[\\p{L}]+)*"))
+                    throw new IllegalArgumentException("Địa chỉ chỉ được chứa chữ cái và khoảng trắng.");
+                int hang = dangSua ? khCu.getHangThanhVien() : 1;
+                int diem = dangSua ? khCu.getDiemTichLuy() : 0;
+                return new KhachHang(ma, ten, sdt, diaChi, hang, diem);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, ex.getMessage(), "Dữ liệu chưa hợp lệ", JOptionPane.WARNING_MESSAGE);
+            }
         }
     }
 

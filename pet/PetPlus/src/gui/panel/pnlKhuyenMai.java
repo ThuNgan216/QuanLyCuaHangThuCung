@@ -55,7 +55,8 @@ public class pnlKhuyenMai extends JPanel {
         add(pnlTop, BorderLayout.NORTH);
 
         // Bảng hiển thị danh sách khuyến mãi
-        String[] columns = {"Mã KM", "Tên Chương Trình", "Phần Trăm Giảm (%)", "Điều Kiện Áp Dụng", "Ngày Bắt Đầu", "Ngày Kết Thúc"};
+        String[] columns = {"Mã KM", "Tên Chương Trình", "Phần Trăm Giảm (%)", "Loại", "Hạng khách hàng",
+                "Sản phẩm áp dụng", "SL tối thiểu / loại", "Điều Kiện Áp Dụng", "Ngày Bắt Đầu", "Ngày Kết Thúc"};
         model = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) { return false; }
@@ -127,6 +128,15 @@ public class pnlKhuyenMai extends JPanel {
                         km.getMaKhuyenMai(),
                         km.getTenKhuyenMai(),
                         km.getPhanTramGiam() + "%",
+                        km.getPhamViApDung(),
+                        km.getHangKhachHangApDung() == 0 ? "Tất cả khách hàng"
+                                : "Hạng " + km.getHangKhachHangApDung(),
+                        KhuyenMai.PHAM_VI_SAN_PHAM.equals(km.getPhamViApDung())
+                                ? (km.getMaSanPhamApDung().isEmpty() ? "Chưa cấu hình"
+                                        : String.join(", ", km.getMaSanPhamApDung()))
+                                : "—",
+                        KhuyenMai.PHAM_VI_SAN_PHAM.equals(km.getPhamViApDung())
+                                ? String.valueOf(km.getSoLuongToiThieu()) : "—",
                         km.getDieuKienApDung(),
                         km.getNgayBatDau(),
                         km.getNgayKetThuc()

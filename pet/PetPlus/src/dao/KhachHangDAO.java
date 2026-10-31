@@ -112,6 +112,37 @@ public class KhachHangDAO {
         return ds;
     }
 
+
+    /** Phát sinh mã KH theo số thứ tự lớn nhất hiện có, dạng KH01, KH02... */
+    public String taoMaMoi() {
+        String sql = "SELECT MAX(TRY_CONVERT(INT, SUBSTRING(maKH, 3, 18))) FROM KhachHang WHERE maKH LIKE 'KH[0-9]%'";
+        try (Connection con = ConnectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
+            int max = 0; if (rs.next()) max = rs.getInt(1);
+            return String.format(java.util.Locale.ROOT, "KH%02d", max + 1);
+        } catch (SQLException e) { throw new IllegalStateException("Không thể phát sinh mã khách hàng: " + e.getMessage(), e); }
+    }
+
+    /** Kiểm tra số điện thoại đã thuộc khách hàng khác hay chưa. */
+    public boolean tonTaiSDT(String sdt, String maKHBoQua) {
+        String sql = maKHBoQua == null
+                ? "SELECT 1 FROM KhachHang WHERE sdt = ?"
+                : "SELECT 1 FROM KhachHang WHERE sdt = ? AND maKH <> ?";
+
+        try (Connection con = ConnectDB.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, sdt);
+            if (maKHBoQua != null) {
+                ps.setString(2, maKHBoQua);
+            }
+
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Không thể kiểm tra số điện thoại khách hàng: " + e.getMessage(), e);
+        }
+    }
+
     // 4. Thêm khách hàng vào SQL Server
     public boolean them(KhachHang kh) {
         String sql = "INSERT INTO KhachHang "
@@ -137,6 +168,10 @@ public class KhachHangDAO {
             return ps.executeUpdate() > 0;
 
         } catch (SQLException e) {
+            if (laTrungSDT(e)) {
+                throw new IllegalArgumentException(
+                        "Số điện thoại này đã được sử dụng cho khách hàng khác.", e);
+            }
             e.printStackTrace();
             return false;
         }
@@ -168,9 +203,24 @@ public class KhachHangDAO {
             return ps.executeUpdate() > 0;
 
         } catch (SQLException e) {
+            if (laTrungSDT(e)) {
+                throw new IllegalArgumentException(
+                        "Số điện thoại này đã được sử dụng cho khách hàng khác.", e);
+            }
             e.printStackTrace();
             return false;
         }
+    }
+
+    private boolean laTrungSDT(SQLException e) {
+        for (SQLException current = e; current != null; current = current.getNextException()) {
+            String message = current.getMessage();
+            if ((current.getErrorCode() == 2601 || current.getErrorCode() == 2627)
+                    && message != null && message.contains("UQ_KhachHang_SDT")) {
+                return true;
+            }
+        }
+        return false;
     }
 
     // 6. Xóa khách hàng khỏi SQL Server

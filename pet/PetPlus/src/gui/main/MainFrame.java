@@ -21,6 +21,7 @@ import gui.panel.pnlXuatHoaDon;
 import gui.panel.pnlDichVu;
 import gui.panel.pnlBaoBieuNhapHang;
 import gui.panel.pnlBaoBieuDoanhThu;
+import gui.panel.pnlBaoBieuLoiNhuan;
 import gui.panel.pnlKhuyenMai;
 import gui.panel.pnlNhaCungCap;
 import gui.panel.pnlNhapHang;
@@ -35,7 +36,6 @@ import utils.Auth;
 import dao.HoaDonDAO;
 import dao.SanPhamDAO;
 import gui.dialogs.dlgDoiMatKhau;
-import gui.dialogs.dlgQuetMaVach;
 import gui.panel.pnlSanPham;
 import gui.panel.pnlThanhToan;
 import gui.panel.pnlXemLichLamViec;
@@ -53,7 +53,12 @@ public class MainFrame extends JFrame {
     private JPanel cardPanel;
     private JPanel homePage;
     private JLabel pageTitle;
+    private JButton btnLamMoiTrangChu;
+    private JPanel topProductsList;
+    private DefaultTableModel recentOrdersModel;
+    private RevenueChart revenueChart;
     private pnlNhanVien employeePanel;
+    private pnlThanhToan paymentPanel;
     private JLabel lblDate;
     // Các chỉ số thống kê trên Dashboard
     private JLabel lblDonHangHomNay;
@@ -65,17 +70,18 @@ public class MainFrame extends JFrame {
 
     // Thanh menu ngang
     private final String[] MENU_ITEMS = { "1. Hệ thống", "2. Danh mục", "3. Cập nhật", "4. Xử lý", "5. Tìm kiếm",
-            "6. Báo biểu" };
+            "6. Thống kê" };
     private final String[] MENU_ICONS = { "settings.png", "box.png", "employee.png", "cart.png", "search.png",
             "chart.png" };
     // Menu con theo từng nhóm chức năng (thả xuống khi bấm vào nhóm)
     private final String[][] SUB_MENUS = {
             { "Đổi mật khẩu tài khoản", "Phân quyền vai trò", "Đăng xuất tài khoản", "Thoát ứng dụng" },
-            { "Sản phẩm", "Dịch vụ", "Nhà cung cấp", "Khuyến mãi", "Lịch làm việc" },
-            { "Nhân viên", "Khách hàng", "Thú cưng", "Lịch hẹn", "Nhập hàng" },
-            { "Tiếp nhận thú cưng", "Lập hóa đơn", "Quét mã vạch", "Tích điểm", "Xếp lịch làm việc", "Xuất hóa đơn" },
-            { "Sản phẩm", "Khách hàng", "Hóa đơn", "Lịch hẹn", "Nhân viên", "Dịch vụ", "Tìm kiếm phiếu nhập" },
-            { "Doanh thu", "Cảnh báo tồn kho", "Báo biểu nhập hàng" }
+            { "Nhân viên", "Khách hàng", "Nhà cung cấp", "Nhập hàng", "Lịch làm việc" },
+            { "Thú cưng", "Lịch hẹn", "Sản phẩm", "Dịch vụ", "Khuyến mãi" },
+            { "Tiếp nhận thú cưng", "Lập hóa đơn", "Xếp lịch làm việc", "Xuất hóa đơn",
+                    "Cảnh báo tồn kho" },
+            { "Sản phẩm", "Khách hàng", "Tích điểm", "Hóa đơn", "Lịch hẹn", "Nhân viên", "Dịch vụ", "Phiếu nhập" },
+            { "Doanh thu", "Lợi nhuận", "Nhập hàng" }
     };
 
     // Phím tắt hiển thị bên phải mục menu
@@ -104,8 +110,6 @@ public class MainFrame extends JFrame {
         cardPanel = new JPanel(cardLayout);
         cardPanel.setBackground(BG);
         homePage = createHomePage();
-        // Tải dữ liệu thống kê khi mở Dashboard
-        loadDashboardStats();
         registerCard("Trang chủ", homePage);
 
         // 2. THANH MENU NGANG
@@ -125,8 +129,22 @@ public class MainFrame extends JFrame {
             lblDate.setIcon(calendarIcon);
             lblDate.setIconTextGap(10);
         }
+        btnLamMoiTrangChu = new JButton("Làm mới");
+        btnLamMoiTrangChu.setFont(new Font("Times New Roman", Font.BOLD, 13));
+        btnLamMoiTrangChu.setForeground(PRIMARY);
+        btnLamMoiTrangChu.setBackground(WHITE);
+        btnLamMoiTrangChu.setFocusPainted(false);
+        btnLamMoiTrangChu.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btnLamMoiTrangChu.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(PRIMARY), new EmptyBorder(7, 14, 7, 14)));
+        btnLamMoiTrangChu.setToolTipText("Tải lại số liệu và danh sách đơn hàng trên trang chủ");
+        btnLamMoiTrangChu.addActionListener(e -> refreshDashboard());
+        JPanel headerActions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 0));
+        headerActions.setOpaque(false);
+        headerActions.add(btnLamMoiTrangChu);
+        headerActions.add(lblDate);
         headerPanel.add(pageTitle, BorderLayout.WEST);
-        headerPanel.add(lblDate, BorderLayout.EAST);
+        headerPanel.add(headerActions, BorderLayout.EAST);
         rightSide.add(headerPanel, BorderLayout.NORTH);
         rightSide.add(cardPanel, BorderLayout.CENTER);
         add(rightSide, BorderLayout.CENTER);
@@ -137,7 +155,8 @@ public class MainFrame extends JFrame {
 
         // Khởi tạo giao diện tạo đơn hàng
         // Giao diện bán hàng và dịch vụ
-        registerCard("Lập hóa đơn", new pnlThanhToan());
+        paymentPanel = new pnlThanhToan();
+        registerCard("Lập hóa đơn", paymentPanel);
 
         // Đăng ký trang quản lý hóa đơn
         registerCard("Quản lý hóa đơn", new pnlHoaDon());
@@ -164,6 +183,7 @@ public class MainFrame extends JFrame {
 
         // Mở thẳng vào Dashboard
         showAction("Trang chủ", -1);
+        refreshDashboard();
 
         javax.swing.Timer clock = new javax.swing.Timer(60000, e -> updateDate());
         clock.start();
@@ -227,15 +247,95 @@ public class MainFrame extends JFrame {
             if (icon != null)
                 menu.setIcon(icon);
 
+            boolean hasVisibleItems = false;
             for (String item : SUB_MENUS[i]) {
+                if (!coQuyen(item, i))
+                    continue;
                 // Đường kẻ ngăn cách trước nhóm đăng xuất / thoát
                 if ("Đăng xuất tài khoản".equals(item))
                     menu.addSeparator();
                 menu.add(createMenuItem(item, i));
+                hasVisibleItems = true;
             }
-            bar.add(menu);
+            if (hasVisibleItems)
+                bar.add(menu);
         }
         return bar;
+    }
+
+    /** Quyền hiển thị và mở chức năng được đối chiếu theo tác nhân trong SRS. */
+    private boolean coQuyen(String action, int menuIndex) {
+        if ("Trang chủ".equals(action)
+                || "Đổi mật khẩu tài khoản".equals(action)
+                || "Đăng xuất tài khoản".equals(action)
+                || "Thoát ứng dụng".equals(action))
+            return true;
+
+        if (Auth.hasFullAccess())
+            return true;
+
+        String vaiTro = Auth.currentRole();
+        if (vaiTro.isEmpty())
+            return false;
+
+        // Mục “Nhập hàng” trong nhóm Thống kê là báo cáo, dành cho quản lý.
+        if ("Nhập hàng".equals(action) && menuIndex == 5)
+            return false;
+
+        switch (menuIndex) {
+            case 0: // Hệ thống
+                return false; // Phân quyền vai trò chỉ dành cho quản lý.
+            case 1: // Danh mục
+                if ("Khách hàng".equals(action))
+                    return "BAN_HANG".equals(vaiTro);
+                if ("Nhà cung cấp".equals(action))
+                    return vaiTroThuocNhom(vaiTro, "BAN_HANG", "CHAM_SOC", "KHO");
+                if ("Nhập hàng".equals(action))
+                    return "KHO".equals(vaiTro);
+                if ("Lịch làm việc".equals(action))
+                    return vaiTroThuocNhom(vaiTro, "BAN_HANG", "CHAM_SOC", "KHO");
+                return false;
+            case 2: // Cập nhật
+                if ("Thú cưng".equals(action))
+                    return vaiTroThuocNhom(vaiTro, "BAN_HANG", "CHAM_SOC");
+                if ("Dịch vụ".equals(action))
+                    return "CHAM_SOC".equals(vaiTro);
+                if ("Lịch hẹn".equals(action))
+                    return "BAN_HANG".equals(vaiTro);
+                if ("Sản phẩm".equals(action))
+                    return "KHO".equals(vaiTro);
+                return false; // Khuyến mãi chỉ dành cho quản lý.
+            case 3: // Xử lý
+                if ("Tiếp nhận thú cưng".equals(action))
+                    return vaiTroThuocNhom(vaiTro, "BAN_HANG", "CHAM_SOC");
+                if ("Lập hóa đơn".equals(action) || "Xuất hóa đơn".equals(action))
+                    return "BAN_HANG".equals(vaiTro);
+                if ("Cảnh báo tồn kho".equals(action))
+                    return vaiTroThuocNhom(vaiTro, "BAN_HANG", "KHO");
+                return false; // Xếp lịch làm việc chỉ dành cho quản lý.
+            case 4: // Tìm kiếm
+                if ("Sản phẩm".equals(action))
+                    return vaiTroThuocNhom(vaiTro, "BAN_HANG", "KHO");
+                if ("Khách hàng".equals(action) || "Dịch vụ".equals(action))
+                    return vaiTroThuocNhom(vaiTro, "BAN_HANG", "CHAM_SOC");
+                if ("Lịch hẹn".equals(action))
+                    return vaiTroThuocNhom(vaiTro, "BAN_HANG", "CHAM_SOC");
+                if ("Tích điểm".equals(action) || "Hóa đơn".equals(action))
+                    return "BAN_HANG".equals(vaiTro);
+                if ("Phiếu nhập".equals(action))
+                    return "KHO".equals(vaiTro);
+                return false; // Tra cứu nhân viên chỉ dành cho quản lý.
+            default: // Báo cáo và thống kê chỉ dành cho quản lý.
+                return false;
+        }
+    }
+
+    private boolean vaiTroThuocNhom(String vaiTro, String... cacVaiTro) {
+        for (String vaiTroDuocPhep : cacVaiTro) {
+            if (vaiTroDuocPhep.equals(vaiTro))
+                return true;
+        }
+        return false;
     }
 
     // Mục con trong menu thả xuống
@@ -277,12 +377,12 @@ public class MainFrame extends JFrame {
             new dlgDoiMatKhau(this).setVisible(true);
             return;
         }
-        // Mở giao diện quét mã vạch
-        if ("Quét mã vạch".equals(action)) {
-            new dlgQuetMaVach(this).setVisible(true);
+        if (!coQuyen(action, menuIndex)) {
+            JOptionPane.showMessageDialog(this,
+                    "Vai trò của tài khoản hiện tại không có quyền truy cập chức năng này.",
+                    "Không đủ quyền", JOptionPane.WARNING_MESSAGE);
             return;
         }
-
         // Các mục menu có giao diện hiện có được mở trên màn hình tương ứng.
         if ("Thanh toán".equals(action)) {
             cardName = "Lập hóa đơn";
@@ -295,14 +395,22 @@ public class MainFrame extends JFrame {
         } else if ("Đơn hàng".equals(action)) {
             cardName = "Hóa đơn";
         } else if ("Nhập hàng".equals(action)) {
-            cardName = "Nhập hàng";
+            if (menuIndex == 5) {
+                cardName = "Báo biểu nhập hàng";
+                title = "Thống kê nhập hàng";
+            } else {
+                cardName = "Nhập hàng";
+            }
         } else if ("Phiếu nhập".equals(action) || "Tìm kiếm phiếu nhập".equals(action)) {
             cardName = "Tìm kiếm phiếu nhập";
         } else if ("Cảnh báo tồn kho".equals(action) || "Tồn kho".equals(action)) {
             cardName = "Tồn kho";
         } else if ("Doanh thu".equals(action)) {
             cardName = "Báo biểu doanh thu";
-            title = "Báo biểu doanh thu";
+            title = "Thống kê doanh thu";
+        } else if ("Lợi nhuận".equals(action)) {
+            cardName = "Thống kê lợi nhuận";
+            title = "Thống kê lợi nhuận";
         } else if ("Thống kê doanh thu".equals(action) || "Sản phẩm bán chạy".equals(action)) {
             cardName = "Trang chủ";
         } else if ("Phân quyền vai trò".equals(action)) {
@@ -318,6 +426,7 @@ public class MainFrame extends JFrame {
             employeePanel.chonTab("Phân quyền vai trò".equals(action) ? "Phân quyền" : "Nhân viên");
         }
         pageTitle.setText(title);
+        btnLamMoiTrangChu.setVisible("Trang chủ".equals(cardName));
         cardLayout.show(cardPanel, cardName);
         if ("Lịch làm việc".equals(cardName) && xemLichPanel != null) {
             xemLichPanel.taiLich();
@@ -343,6 +452,8 @@ public class MainFrame extends JFrame {
             return new pnlTiepNhanThuCung();
         if ("Báo biểu doanh thu".equals(cardName))
             return new pnlBaoBieuDoanhThu();
+        if ("Thống kê lợi nhuận".equals(cardName))
+            return new pnlBaoBieuLoiNhuan();
         if ("Tồn kho".equals(cardName))
             return new pnlTonKho();
         return placeholder(title);
@@ -413,10 +524,11 @@ public class MainFrame extends JFrame {
         charts.setOpaque(false);
         charts.setMaximumSize(new Dimension(Integer.MAX_VALUE, 280));
         // Biểu đồ doanh thu
+        revenueChart = new RevenueChart();
         charts.add(createSection(
                 "Doanh thu 7 ngày gần nhất",
                 "chart.png",
-                new RevenueChart()));
+                revenueChart));
         // Sản phẩm bán chạy
         charts.add(createSection(
                 "Sản phẩm bán chạy",
@@ -485,39 +597,54 @@ public class MainFrame extends JFrame {
         return card;
     }
 
-    // Tải 4 chỉ số thống kê từ SQL Server
-    private void loadDashboardStats() {
-        SwingWorker<Object[], Void> worker = new SwingWorker<Object[], Void>() {
+    private static class DashboardData {
+        Object[] todayStats;
+        java.util.List<Object[]> revenue;
+        java.util.List<Object[]> topProducts;
+        java.util.List<Object[]> recentOrders;
+    }
+
+    // Tải lại toàn bộ dữ liệu Dashboard trong một worker để giao diện không bị treo.
+    private void refreshDashboard() {
+        if (btnLamMoiTrangChu != null) {
+            btnLamMoiTrangChu.setEnabled(false);
+            btnLamMoiTrangChu.setText("Đang tải...");
+        }
+        SwingWorker<DashboardData, Void> worker = new SwingWorker<DashboardData, Void>() {
             @Override
-            protected Object[] doInBackground()
-                    throws Exception {
-                HoaDonDAO dao = new HoaDonDAO();
-                return dao.layThongKeHomNay();
+            protected DashboardData doInBackground() throws Exception {
+                DashboardData data = new DashboardData();
+                HoaDonDAO hoaDonDAO = new HoaDonDAO();
+                data.todayStats = hoaDonDAO.layThongKeHomNay();
+                data.revenue = hoaDonDAO.layDoanhThu7Ngay();
+                data.topProducts = new SanPhamDAO().layTop5SanPhamBanChay();
+                data.recentOrders = hoaDonDAO.layHoaDonGanDay();
+                return data;
             }
 
             @Override
             protected void done() {
                 try {
-                    Object[] data = get();
-                    lblDonHangHomNay.setText(
-                            String.valueOf(data[0]));
-                    lblDichVuHomNay.setText(
-                            String.valueOf(data[1]));
-                    lblSanPhamHomNay.setText(
-                            String.valueOf(data[2]));
+                    DashboardData data = get();
+                    Object[] stats = data.todayStats;
+                    lblDonHangHomNay.setText(String.valueOf(stats[0]));
+                    lblDichVuHomNay.setText(String.valueOf(stats[1]));
+                    lblSanPhamHomNay.setText(String.valueOf(stats[2]));
                     java.text.NumberFormat format = java.text.NumberFormat.getNumberInstance(
                             new java.util.Locale("vi", "VN"));
-                    lblDoanhThuHomNay.setText(
-                            format.format(data[3]) + " đ");
+                    lblDoanhThuHomNay.setText(format.format(stats[3]) + " đ");
+                    revenueChart.setData(data.revenue);
+                    populateTopProducts(data.topProducts);
+                    populateRecentOrders(data.recentOrders);
                 } catch (Exception e) {
-                    System.err.println(
-                            "Lỗi tải thống kê Dashboard: "
-                                    + e.getMessage());
-                    lblDonHangHomNay.setText("—");
-                    lblDichVuHomNay.setText("—");
-                    lblSanPhamHomNay.setText("—");
-                    lblDoanhThuHomNay.setText("—");
+                    System.err.println("Lỗi tải dữ liệu Dashboard: " + e.getMessage());
+                    JOptionPane.showMessageDialog(MainFrame.this,
+                            "Không tải được dữ liệu trang chủ từ SQL Server. Vui lòng thử làm mới lại.",
+                            "Lỗi dữ liệu", JOptionPane.ERROR_MESSAGE);
                     e.printStackTrace();
+                } finally {
+                    btnLamMoiTrangChu.setEnabled(true);
+                    btnLamMoiTrangChu.setText("Làm mới");
                 }
             }
         };
@@ -556,73 +683,43 @@ public class MainFrame extends JFrame {
     private JPanel createTopProducts() {
         JPanel list = new JPanel(new GridLayout(0, 1, 0, 5));
         list.setOpaque(false);
-        // Tải thống kê từ database trên luồng nền
-        SwingWorker<java.util.List<Object[]>, Void> worker = new SwingWorker<java.util.List<Object[]>, Void>() {
-            @Override
-            protected java.util.List<Object[]> doInBackground()
-                    throws Exception {
-                SanPhamDAO dao = new SanPhamDAO();
-                return dao.layTop5SanPhamBanChay();
-            }
-
-            @Override
-            protected void done() {
-                try {
-                    java.util.List<Object[]> danhSach = get();
-                    list.removeAll();
-                    if (danhSach.isEmpty()) {
-                        list.add(label(
-                                "Chưa có sản phẩm được bán",
-                                13, MUTED, false));
-                    }
-                    for (int i = 0; i < danhSach.size(); i++) {
-                        Object[] item = danhSach.get(i);
-                        JPanel row = new JPanel(
-                                new BorderLayout(9, 0));
-                        row.setOpaque(false);
-                        JLabel num = label(
-                                String.valueOf(i + 1),
-                                13, PRIMARY, true);
-                        num.setPreferredSize(new Dimension(25, 26));
-                        JLabel name = label(
-                                String.valueOf(item[0]),
-                                13, TEXT, false);
-                        JLabel quantity = label(
-                                String.valueOf(item[1]),
-                                13, TEXT, false);
-                        row.add(num, BorderLayout.WEST);
-                        row.add(name, BorderLayout.CENTER);
-                        row.add(quantity, BorderLayout.EAST);
-                        list.add(row);
-                    }
-                    list.revalidate();
-                    list.repaint();
-                } catch (Exception e) {
-                    list.removeAll();
-                    list.add(label(
-                            "Không tải được thống kê sản phẩm",
-                            13, PRIMARY_DARK, false));
-                    list.revalidate();
-                    list.repaint();
-                    e.printStackTrace();
-                }
-            }
-        };
-        worker.execute();
+        topProductsList = list;
         return list;
+    }
+
+    private void populateTopProducts(java.util.List<Object[]> products) {
+        topProductsList.removeAll();
+        if (products.isEmpty()) {
+            topProductsList.add(label("Chưa có sản phẩm được bán", 13, MUTED, false));
+        }
+        for (int i = 0; i < products.size(); i++) {
+            Object[] item = products.get(i);
+            JPanel row = new JPanel(new BorderLayout(9, 0));
+            row.setOpaque(false);
+            JLabel num = label(String.valueOf(i + 1), 13, PRIMARY, true);
+            num.setPreferredSize(new Dimension(25, 26));
+            JLabel name = label(String.valueOf(item[0]), 13, TEXT, false);
+            JLabel quantity = label(String.valueOf(item[1]), 13, TEXT, false);
+            row.add(num, BorderLayout.WEST);
+            row.add(name, BorderLayout.CENTER);
+            row.add(quantity, BorderLayout.EAST);
+            topProductsList.add(row);
+        }
+        topProductsList.revalidate();
+        topProductsList.repaint();
     }
 
     private JScrollPane createRecentOrders() {
         String[] columns = { "Mã đơn", "Khách hàng", "Tổng tiền", "Trạng thái", "Thời gian" };
         // Khởi tạo bảng rỗng, dữ liệu sẽ lấy từ database
         Object[][] rows = {};
-        DefaultTableModel model = new DefaultTableModel(rows, columns) {
+        recentOrdersModel = new DefaultTableModel(rows, columns) {
             @Override
             public boolean isCellEditable(int row, int col) {
                 return false;
             }
         };
-        JTable table = new JTable(model);
+        JTable table = new JTable(recentOrdersModel);
         // Căn lề trái cho dữ liệu trong bảng
         table.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
             @Override
@@ -636,42 +733,6 @@ public class MainFrame extends JFrame {
                 return cell;
             }
         });
-        // Tải hóa đơn gần đây từ database trên luồng nền
-        SwingWorker<java.util.List<Object[]>, Void> worker = new SwingWorker<java.util.List<Object[]>, Void>() {
-            @Override
-            protected java.util.List<Object[]> doInBackground()
-                    throws Exception {
-                HoaDonDAO dao = new HoaDonDAO();
-                return dao.layHoaDonGanDay();
-            }
-
-            @Override
-            protected void done() {
-                try {
-                    java.util.List<Object[]> danhSach = get();
-                    model.setRowCount(0);
-                    for (Object[] row : danhSach) {
-                        model.addRow(new Object[] {
-                                row[0],
-                                row[1],
-                                String.format(new Locale("vi", "VN"), "%,.0f đ", row[2]),
-                                row[3],
-                                row[4]
-                        });
-                    }
-                } catch (Exception e) {
-                    System.err.println(
-                            "Không tải được hóa đơn gần đây: "
-                                    + e.getMessage());
-                    JOptionPane.showMessageDialog(
-                            MainFrame.this,
-                            "Không tải được hóa đơn gần đây từ SQL Server.",
-                            "Lỗi dữ liệu",
-                            JOptionPane.ERROR_MESSAGE);
-                }
-            }
-        };
-        worker.execute();
         table.setRowHeight(36);
         table.setFont(new Font("Times New Roman", Font.PLAIN, 13));
         table.setForeground(TEXT);
@@ -706,14 +767,25 @@ public class MainFrame extends JFrame {
         // Ban đầu hiển thị chiều cao của phần tiêu đề
         pane.setPreferredSize(new Dimension(0, headerHeight + rowHeight));
         // Tự cập nhật chiều cao khi dữ liệu thay đổi
-        model.addTableModelListener(e -> {
-            int rowCount = model.getRowCount();
+        recentOrdersModel.addTableModelListener(e -> {
+            int rowCount = recentOrdersModel.getRowCount();
             int visibleRows = Math.max(1, Math.min(rowCount, 10));
             int height = headerHeight + visibleRows * rowHeight + 2;
             pane.setPreferredSize(new Dimension(0, height));
             pane.revalidate();
         });
         return pane;
+    }
+
+    private void populateRecentOrders(java.util.List<Object[]> orders) {
+        recentOrdersModel.setRowCount(0);
+        for (Object[] row : orders) {
+            recentOrdersModel.addRow(new Object[] {
+                    row[0], row[1],
+                    String.format(new Locale("vi", "VN"), "%,.0f đ", row[2]),
+                    row[3], row[4]
+            });
+        }
     }
 
     // Biểu đồ doanh thu 7 ngày gần nhất
@@ -727,40 +799,20 @@ public class MainFrame extends JFrame {
 
         RevenueChart() {
             setOpaque(false);
-            loadRevenue();
         }
 
-        // Tải dữ liệu doanh thu từ database
-        private void loadRevenue() {
-            SwingWorker<java.util.List<Object[]>, Void> worker = new SwingWorker<java.util.List<Object[]>, Void>() {
-                @Override
-                protected java.util.List<Object[]> doInBackground()
-                        throws Exception {
-                    HoaDonDAO dao = new HoaDonDAO();
-                    return dao.layDoanhThu7Ngay();
-                }
-
-                @Override
-                protected void done() {
-                    try {
-                        java.util.List<Object[]> data = get();
-                        for (int i = 0; i < data.size() && i < 7; i++) {
-                            Object[] row = data.get(i);
-                            java.time.LocalDate date = (java.time.LocalDate) row[0];
-                            days[i] = date.format(
-                                    DateTimeFormatter.ofPattern("dd/MM"));
-                            values[i] = ((Number) row[1]).doubleValue();
-                        }
-                    } catch (Exception e) {
-                        errorMessage = "Không tải được doanh thu";
-                        e.printStackTrace();
-                    } finally {
-                        loading = false;
-                        repaint();
-                    }
-                }
-            };
-            worker.execute();
+        void setData(java.util.List<Object[]> data) {
+            Arrays.fill(values, 0);
+            Arrays.fill(days, null);
+            errorMessage = null;
+            loading = false;
+            for (int i = 0; i < data.size() && i < 7; i++) {
+                Object[] row = data.get(i);
+                java.time.LocalDate date = (java.time.LocalDate) row[0];
+                days[i] = date.format(DateTimeFormatter.ofPattern("dd/MM"));
+                values[i] = ((Number) row[1]).doubleValue();
+            }
+            repaint();
         }
 
         @Override

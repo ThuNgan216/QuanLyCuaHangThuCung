@@ -7,14 +7,14 @@ import entity.TaiKhoan;
 import java.sql.*;
 
 public class TaiKhoanDAO {
-    /** Giữ API đăng nhập cũ để các màn hình hiện hữu vẫn hoạt động. */
-    public NhanVien dangNhap(String tenDangNhap, String matKhau) throws SQLException {
+    /** Xác thực nhân viên bằng mã nhân viên và mật khẩu, không dùng tên đăng nhập. */
+    public NhanVien dangNhap(String maNV, String matKhau) throws SQLException {
         String sql = "SELECT nv.maNV,nv.tenNV,nv.sdt,nv.cccd,nv.diaChi,nv.email,nv.chucVu," +
                      "tk.maTK,tk.tenDangNhap,tk.matKhau,tk.vaiTro,tk.trangThai " +
                      "FROM TaiKhoan tk INNER JOIN NhanVien nv ON nv.maTK=tk.maTK " +
-                     "WHERE tk.tenDangNhap=? AND tk.matKhau=? AND tk.trangThai=N'Hoạt động'";
+                     "WHERE nv.maNV=? AND tk.matKhau=? AND tk.trangThai=N'Hoạt động'";
         try (Connection conn = ConnectDB.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, tenDangNhap);
+            ps.setString(1, maNV);
             ps.setString(2, matKhau);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {

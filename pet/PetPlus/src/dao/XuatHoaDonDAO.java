@@ -26,12 +26,17 @@ public class XuatHoaDonDAO {
         public String tenKH;
         public String tenPTTT;
         public String tenKhuyenMai;
+        public String tenKhuyenMaiSanPham;
         public BigDecimal phanTramGiam = BigDecimal.ZERO; // 0 - 100
+        public BigDecimal phanTramGiamSanPham = BigDecimal.ZERO;
         public BigDecimal tongTien = BigDecimal.ZERO; // trước giảm giá
+        public BigDecimal giamSanPham = BigDecimal.ZERO;
         public BigDecimal tienKhachDua = BigDecimal.ZERO;
 
         public BigDecimal tienGiam() {
-            return tongTien.multiply(phanTramGiam).divide(BigDecimal.valueOf(100), 0, java.math.RoundingMode.HALF_UP);
+            BigDecimal giamHoaDon = tongTien.multiply(phanTramGiam)
+                    .divide(BigDecimal.valueOf(100), 0, java.math.RoundingMode.HALF_UP);
+            return giamHoaDon.add(giamSanPham);
         }
 
         public BigDecimal thanhToan() {
@@ -57,18 +62,24 @@ public class XuatHoaDonDAO {
 
     private static final String SQL_HOADON = "SELECT hd.maHoaDon, hd.ngayLapHD, nv.tenNV, kh.tenKH, pt.tenPTTT, "
             + "       km.tenKhuyenMai, km.phanTramGiam, "
+            + "       kmsp.tenKhuyenMaiSanPham, kmsp.phanTramGiamSanPham, kmsp.giamSanPham, "
             + "       COALESCE(SUM(ct.soLuong * ct.donGia), 0) AS tongTien, "
             + "       COALESCE(MAX(ct.tienKhachDua), 0) AS tienKhachDua "
             + "FROM HoaDon hd "
             + "LEFT JOIN NhanVien nv ON hd.maNV = nv.maNV "
             + "LEFT JOIN KhachHang kh ON hd.maKH = kh.maKH "
             + "LEFT JOIN KhuyenMai km ON hd.maKhuyenMai = km.maKhuyenMai "
+            + "LEFT JOIN (SELECT kp.maHoaDon, SUM(kp.mucGiam) AS giamSanPham, "
+            + "       MAX(kmsp.tenKhuyenMai) AS tenKhuyenMaiSanPham, MAX(kmsp.phanTramGiam) AS phanTramGiamSanPham "
+            + "       FROM KhuyenMaiSanPham kp JOIN KhuyenMai kmsp ON kmsp.maKhuyenMai = kp.maKhuyenMai "
+            + "       GROUP BY kp.maHoaDon) kmsp ON kmsp.maHoaDon = hd.maHoaDon "
             + "LEFT JOIN PhuongThucThanhToan pt ON hd.maPTTT = pt.maPTTT "
             + "LEFT JOIN ChiTietHoaDon ct ON hd.maHoaDon = ct.maHoaDon "
             + "WHERE (hd.maHoaDon LIKE ? OR kh.tenKH LIKE ?) "
-            + "  AND hd.ngayLapHD BETWEEN ? AND ? "
+            + "  AND hd.maPTTT IS NOT NULL AND hd.ngayLapHD BETWEEN ? AND ? "
             + "GROUP BY hd.maHoaDon, hd.ngayLapHD, nv.tenNV, kh.tenKH, pt.tenPTTT, "
-            + "         km.tenKhuyenMai, km.phanTramGiam "
+            + "         km.tenKhuyenMai, km.phanTramGiam, kmsp.tenKhuyenMaiSanPham, "
+            + "         kmsp.phanTramGiamSanPham, kmsp.giamSanPham "
             + "ORDER BY hd.ngayLapHD DESC, hd.maHoaDon DESC";
 
     private static final String SQL_CHITIET = "SELECT CASE WHEN ct.maSP IS NOT NULL THEN N'Sản phẩm' ELSE N'Dịch vụ' END AS loai, "
@@ -106,8 +117,13 @@ public class XuatHoaDonDAO {
                         r.tenKH = rs.getString("tenKH");
                         r.tenPTTT = rs.getString("tenPTTT");
                         r.tenKhuyenMai = rs.getString("tenKhuyenMai");
+                        r.tenKhuyenMaiSanPham = rs.getString("tenKhuyenMaiSanPham");
                         BigDecimal pg = rs.getBigDecimal("phanTramGiam");
                         r.phanTramGiam = pg == null ? BigDecimal.ZERO : pg;
+                        BigDecimal pgsp = rs.getBigDecimal("phanTramGiamSanPham");
+                        r.phanTramGiamSanPham = pgsp == null ? BigDecimal.ZERO : pgsp;
+                        BigDecimal gsp = rs.getBigDecimal("giamSanPham");
+                        r.giamSanPham = gsp == null ? BigDecimal.ZERO : gsp;
                         r.tongTien = rs.getBigDecimal("tongTien");
                         r.tienKhachDua = rs.getBigDecimal("tienKhachDua");
                         ds.add(r);

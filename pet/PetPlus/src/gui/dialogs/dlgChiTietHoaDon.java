@@ -1,26 +1,66 @@
-package gui.panel;
+package gui.dialogs;
 
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Cursor;
+import java.awt.Dialog;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.GridLayout;
+import java.awt.Insets;
+import java.awt.Window;
+import java.awt.event.KeyEvent;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.net.URL;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-import javax.swing.*;
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.ButtonGroup;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JComponent;
+import javax.swing.JDialog;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JRadioButton;
+import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
+import javax.swing.JTable;
+import javax.swing.KeyStroke;
+import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 
 import appColor.AppColors;
+import dao.ChiTietHoaDonDAO;
 
-public class pnlChiTietHoaDon extends JPanel {
+/**
+ * Dialog xem chi tiết hóa đơn (chỉ xem).
+ * Mỗi lần mở tạo một dialog mới: new dlgChiTietHoaDon(owner,
+ * view).setVisible(true);
+ */
+public class dlgChiTietHoaDon extends JDialog {
 
     private static final Color PINK_LIGHT = new Color(0xFD, 0xEC, 0xF1);
     private static final Color FIELD_BG = new Color(0xF3, 0xF4, 0xF6);
     private static final Color RED = new Color(0xD3, 0x2F, 0x2F);
     private static final String[] COLUMNS = { "STT", "Sản phẩm / Dịch vụ", "Số lượng", "Đơn giá", "Thành tiền" };
     private static final DecimalFormat MONEY = new DecimalFormat("#,###", DecimalFormatSymbols.getInstance(Locale.US));
+    private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     // Thông tin đơn hàng / khách hàng
     private final JLabel lblMaDon = valueLabel(), lblNgayTao = valueLabel(), lblNhanVien = valueLabel();
@@ -34,19 +74,37 @@ public class pnlChiTietHoaDon extends JPanel {
     private final JRadioButton rdTienMat = new JRadioButton("Tiền mặt");
     private final JRadioButton rdQR = new JRadioButton("QR Code");
     private final JLabel lblKhachDua = valueLabel(), lblTienThua = new JLabel();
-    private JPanel pnlKhachDua;
 
-    private DefaultTableModel model;
-    private JTable table;
-    private final JButton btnQuayLai = new JButton("Quay lại");
+    private final DefaultTableModel model = new DefaultTableModel(COLUMNS, 0) {
+        @Override
+        public boolean isCellEditable(int r, int c) {
+            return false;
+        }
+    };
+    private final JTable table = new JTable(model);
+    private final JButton btnDong = new JButton("Đóng");
 
-    public pnlChiTietHoaDon() {
-        setLayout(new BorderLayout(0, 15));
-        setBackground(AppColors.BACKGROUND);
-        setBorder(new EmptyBorder(15, 20, 20, 20));
+    public dlgChiTietHoaDon(Window owner, ChiTietHoaDonDAO.ChiTietView view) {
+        super(owner, "Chi tiết hóa đơn", Dialog.ModalityType.APPLICATION_MODAL);
+        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 
-        add(createHeader(), BorderLayout.NORTH);
-        add(createBody(), BorderLayout.CENTER);
+        JPanel root = new JPanel(new BorderLayout(0, 15));
+        root.setBackground(AppColors.BACKGROUND);
+        root.setBorder(new EmptyBorder(15, 20, 20, 20));
+        root.add(createHeader(), BorderLayout.NORTH);
+        root.add(createBody(), BorderLayout.CENTER);
+        setContentPane(root);
+
+        btnDong.addActionListener(e -> dispose());
+        getRootPane().setDefaultButton(btnDong);
+        getRootPane().registerKeyboardAction(e -> dispose(),
+                KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_IN_FOCUSED_WINDOW);
+
+        hienThi(view);
+
+        setSize(1100, 650);
+        setMinimumSize(new Dimension(900, 560));
+        setLocationRelativeTo(owner);
     }
 
     // ================= HEADER =================
@@ -61,7 +119,7 @@ public class pnlChiTietHoaDon extends JPanel {
         title.setForeground(AppColors.PRIMARY_DARK);
 
         // Icon (tuỳ chọn): đặt receipt.png vào /icons, không có thì bỏ qua
-        java.net.URL url = getClass().getResource("/icons/receipt.png");
+        URL url = getClass().getResource("/icons/receipt.png");
         if (url != null) {
             title.setIcon(new ImageIcon(url));
             title.setIconTextGap(12);
@@ -114,13 +172,14 @@ public class pnlChiTietHoaDon extends JPanel {
         p.setBackground(AppColors.WHITE);
         p.setBorder(new EmptyBorder(12, 14, 12, 14));
         GridBagConstraints gc = new GridBagConstraints();
-        gc.insets = new Insets(5, 0, 5, 8);
         gc.anchor = GridBagConstraints.WEST;
         for (int i = 0; i < labels.length; i++) {
             gc.gridy = i;
+
             gc.gridx = 0;
             gc.weightx = 0;
             gc.fill = GridBagConstraints.NONE;
+            gc.insets = new Insets(5, 0, 5, 8);
             JLabel l = new JLabel(labels[i]);
             l.setFont(new Font("Arial", Font.PLAIN, 13));
             l.setForeground(AppColors.TEXT);
@@ -131,19 +190,11 @@ public class pnlChiTietHoaDon extends JPanel {
             gc.fill = GridBagConstraints.HORIZONTAL;
             gc.insets = new Insets(5, 0, 5, 0);
             p.add(values[i], gc);
-            gc.insets = new Insets(5, 0, 5, 8);
         }
         return p;
     }
 
     private JComponent createTable() {
-        model = new DefaultTableModel(COLUMNS, 0) {
-            @Override
-            public boolean isCellEditable(int r, int c) {
-                return false;
-            }
-        };
-        table = new JTable(model);
         table.setRowHeight(36);
         table.setFont(new Font("Arial", Font.PLAIN, 13));
         table.setForeground(AppColors.TEXT);
@@ -155,7 +206,9 @@ public class pnlChiTietHoaDon extends JPanel {
 
         JTableHeader th = table.getTableHeader();
         th.setReorderingAllowed(false);
+        th.setResizingAllowed(false);
         th.setPreferredSize(new Dimension(0, 36));
+
         DefaultTableCellRenderer headerRenderer = new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable t, Object v, boolean s, boolean f, int r, int c) {
@@ -171,51 +224,40 @@ public class pnlChiTietHoaDon extends JPanel {
 
         DefaultTableCellRenderer center = new DefaultTableCellRenderer();
         center.setHorizontalAlignment(SwingConstants.CENTER);
-
-        // Căn trái, cách lề trái 10px (border đặt SAU super để không bị ghi đè)
-        DefaultTableCellRenderer left = new DefaultTableCellRenderer() {
-            @Override
-            public Component getTableCellRendererComponent(JTable t, Object v, boolean s, boolean f, int r, int c) {
-                JLabel lbl = (JLabel) super.getTableCellRendererComponent(t, v, s, f, r, c);
-                lbl.setHorizontalAlignment(SwingConstants.LEFT);
-                lbl.setBorder(new EmptyBorder(0, 10, 0, 0));
-                return lbl;
-            }
-        };
-
-        // Căn phải, cách lề phải 16px (muốn xa hơn thì tăng số 16)
-        DefaultTableCellRenderer right = new DefaultTableCellRenderer() {
-            @Override
-            public Component getTableCellRendererComponent(JTable t, Object v, boolean s, boolean f, int r, int c) {
-                JLabel lbl = (JLabel) super.getTableCellRendererComponent(t, v, s, f, r, c);
-                lbl.setHorizontalAlignment(SwingConstants.RIGHT);
-                lbl.setBorder(new EmptyBorder(0, 0, 0, 16));
-                return lbl;
-            }
-        };
+        DefaultTableCellRenderer left = alignedRenderer(SwingConstants.LEFT, new EmptyBorder(0, 10, 0, 0));
+        DefaultTableCellRenderer right = alignedRenderer(SwingConstants.RIGHT, new EmptyBorder(0, 0, 0, 16));
 
         DefaultTableCellRenderer[] cell = { center, left, center, right, right };
         int[] widths = { 50, 260, 80, 120, 130 };
         for (int i = 0; i < COLUMNS.length; i++) {
-            table.getColumnModel().getColumn(i).setHeaderRenderer(headerRenderer);
-            table.getColumnModel().getColumn(i).setCellRenderer(cell[i]);
-            table.getColumnModel().getColumn(i).setPreferredWidth(widths[i]);
+            var col = table.getColumnModel().getColumn(i);
+            col.setHeaderRenderer(headerRenderer);
+            col.setCellRenderer(cell[i]);
+            col.setPreferredWidth(widths[i]);
+            // Cố định mọi cột trừ cột "Sản phẩm / Dịch vụ"
+            if (i != 1) {
+                col.setMinWidth(widths[i]);
+                col.setMaxWidth(widths[i]);
+            }
         }
-
-        // Cố định kích thước: mọi cột trừ cột "Sản phẩm/Dịch vụ" (index 1)
-        for (int i = 0; i < COLUMNS.length; i++) {
-            if (i == 1)
-                continue;
-            table.getColumnModel().getColumn(i).setMinWidth(widths[i]);
-            table.getColumnModel().getColumn(i).setMaxWidth(widths[i]);
-        }
-        th.setResizingAllowed(false); // không cho kéo đổi độ rộng cột
 
         JScrollPane scroll = new JScrollPane(table);
         scroll.setBorder(new EmptyBorder(12, 12, 12, 12));
         scroll.getViewport().setBackground(AppColors.WHITE);
         scroll.setBackground(AppColors.WHITE);
         return scroll;
+    }
+
+    private static DefaultTableCellRenderer alignedRenderer(int align, EmptyBorder border) {
+        return new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable t, Object v, boolean s, boolean f, int r, int c) {
+                JLabel lbl = (JLabel) super.getTableCellRendererComponent(t, v, s, f, r, c);
+                lbl.setHorizontalAlignment(align);
+                lbl.setBorder(border); // đặt SAU super để không bị ghi đè
+                return lbl;
+            }
+        };
     }
 
     // ---------- CỘT PHẢI ----------
@@ -240,18 +282,13 @@ public class pnlChiTietHoaDon extends JPanel {
         addPayRow(pay, gc, 0, "Tạm tính:", lblTamTinh, false);
         addPayRow(pay, gc, 1, "Giảm giá:", lblGiamGia, false);
         addPayRow(pay, gc, 2, "Mã giảm giá:", lblMaGiamGia, false);
-
-        gc.gridy = 3;
-        gc.gridx = 0;
-        gc.gridwidth = 2;
-        pay.add(new JSeparator(), gc);
-        gc.gridwidth = 1;
+        addSeparatorRow(pay, gc, 3);
         addPayRow(pay, gc, 4, "Tổng thanh toán:", lblTong, true);
 
         right.add(createCard("Thanh toán", pay));
         right.add(Box.createVerticalStrut(15));
 
-        // Phương thức thanh toán
+        // Phương thức thanh toán (chỉ xem)
         JPanel method = new JPanel(new GridLayout(1, 2, 10, 0));
         method.setBackground(AppColors.WHITE);
         method.setBorder(new EmptyBorder(12, 20, 12, 20));
@@ -261,7 +298,7 @@ public class pnlChiTietHoaDon extends JPanel {
             rd.setFont(new Font("Arial", Font.PLAIN, 13));
             rd.setForeground(AppColors.TEXT);
             rd.setFocusPainted(false);
-            rd.setEnabled(false); // chỉ xem
+            rd.setEnabled(false);
             bg.add(rd);
             method.add(rd);
         }
@@ -269,9 +306,9 @@ public class pnlChiTietHoaDon extends JPanel {
         right.add(Box.createVerticalStrut(15));
 
         // Khách hàng đưa tiền
-        pnlKhachDua = new JPanel(new GridBagLayout());
-        pnlKhachDua.setBackground(AppColors.WHITE);
-        pnlKhachDua.setBorder(new EmptyBorder(12, 14, 12, 14));
+        JPanel khachDua = new JPanel(new GridBagLayout());
+        khachDua.setBackground(AppColors.WHITE);
+        khachDua.setBorder(new EmptyBorder(12, 14, 12, 14));
         styleRight(lblTienThua, Font.BOLD, 18, AppColors.PRIMARY_DARK);
         lblKhachDua.setHorizontalAlignment(SwingConstants.RIGHT);
         lblKhachDua.setPreferredSize(new Dimension(130, 30));
@@ -279,30 +316,26 @@ public class pnlChiTietHoaDon extends JPanel {
         GridBagConstraints g2 = new GridBagConstraints();
         g2.fill = GridBagConstraints.HORIZONTAL;
         g2.insets = new Insets(6, 0, 6, 0);
-        addPayRow(pnlKhachDua, g2, 0, "Số tiền khách đưa:", lblKhachDua, false);
-        g2.gridy = 1;
-        g2.gridx = 0;
-        g2.gridwidth = 2;
-        pnlKhachDua.add(new JSeparator(), g2);
-        g2.gridwidth = 1;
-        addPayRow(pnlKhachDua, g2, 2, "Tiền thừa trả khách:", lblTienThua, true);
-        right.add(createCard("Khách hàng đưa tiền", pnlKhachDua));
+        addPayRow(khachDua, g2, 0, "Số tiền khách đưa:", lblKhachDua, false);
+        addSeparatorRow(khachDua, g2, 1);
+        addPayRow(khachDua, g2, 2, "Tiền thừa trả khách:", lblTienThua, true);
+        right.add(createCard("Khách hàng đưa tiền", khachDua));
 
         right.add(Box.createVerticalGlue());
 
-        // Nút Quay lại
-        btnQuayLai.setFont(new Font("Arial", Font.BOLD, 16));
-        btnQuayLai.setBackground(AppColors.PRIMARY);
-        btnQuayLai.setForeground(AppColors.WHITE);
-        btnQuayLai.setFocusPainted(false);
-        btnQuayLai.setBorderPainted(false);
-        btnQuayLai.setOpaque(true);
-        btnQuayLai.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btnQuayLai.setMaximumSize(new Dimension(Integer.MAX_VALUE, 46));
-        btnQuayLai.setPreferredSize(new Dimension(0, 46));
-        btnQuayLai.setAlignmentX(Component.LEFT_ALIGNMENT);
+        // Nút Đóng
+        btnDong.setFont(new Font("Arial", Font.BOLD, 16));
+        btnDong.setBackground(AppColors.PRIMARY);
+        btnDong.setForeground(AppColors.WHITE);
+        btnDong.setFocusPainted(false);
+        btnDong.setBorderPainted(false);
+        btnDong.setOpaque(true);
+        btnDong.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnDong.setMaximumSize(new Dimension(Integer.MAX_VALUE, 46));
+        btnDong.setPreferredSize(new Dimension(0, 46));
+        btnDong.setAlignmentX(Component.LEFT_ALIGNMENT);
         right.add(Box.createVerticalStrut(15));
-        right.add(btnQuayLai);
+        right.add(btnDong);
         return right;
     }
 
@@ -319,13 +352,20 @@ public class pnlChiTietHoaDon extends JPanel {
         p.add(value, gc);
     }
 
+    private void addSeparatorRow(JPanel p, GridBagConstraints gc, int row) {
+        gc.gridy = row;
+        gc.gridx = 0;
+        gc.gridwidth = 2;
+        p.add(new JSeparator(), gc);
+        gc.gridwidth = 1;
+    }
+
     private void styleRight(JLabel l, int style, int size, Color c) {
         l.setFont(new Font("Arial", style, size));
         l.setForeground(c);
         l.setHorizontalAlignment(SwingConstants.RIGHT);
     }
 
-    // UI Vip
     private JPanel createCard(String title, JComponent content) {
         JPanel card = new JPanel(new BorderLayout());
         card.setBackground(AppColors.WHITE);
@@ -359,70 +399,59 @@ public class pnlChiTietHoaDon extends JPanel {
         return MONEY.format(v) + " đ";
     }
 
-    // Function cho quay lại
-    public void setOnBack(Runnable r) {
-        for (var al : btnQuayLai.getActionListeners()) {
-            btnQuayLai.removeActionListener(al);
-        }
-        btnQuayLai.addActionListener(e -> r.run());
-    }
+    // ================= ĐỔ DỮ LIỆU =================
+    private void hienThi(ChiTietHoaDonDAO.ChiTietView v) {
+        lblMaDon.setText(v.maHD);
+        lblNgayTao.setText(v.ngayLap == null ? "" : v.ngayLap.format(DATE_FMT));
+        lblNhanVien.setText(v.tenNV == null ? "" : v.tenNV);
+        lblTenKH.setText(v.tenKH == null ? "Khách lẻ" : v.tenKH);
+        lblSdt.setText(v.sdt == null ? "" : v.sdt);
+        lblDiaChi.setText(v.diaChi == null ? "" : v.diaChi);
 
-    public void setThongTin(String maDon, String ngayTao, String nhanVien, String tenKH, String sdt, String diaChi) {
-        lblMaDon.setText(maDon);
-        lblNgayTao.setText(ngayTao);
-        lblNhanVien.setText(nhanVien);
-        lblTenKH.setText(tenKH);
-        lblSdt.setText(sdt);
-        lblDiaChi.setText(diaChi);
-
-    }
-
-    /** Mỗi dòng: { tenSP (String), soLuong (Number), donGia (Number) } */
-    public void setSanPham(List<Object[]> rows) {
+        // Danh sách sản phẩm + tạm tính
         model.setRowCount(0);
+        BigDecimal tamTinh = BigDecimal.ZERO;
         int stt = 1;
-        for (Object[] r : rows) {
-            long sl = ((Number) r[1]).longValue();
-            long gia = ((Number) r[2]).longValue();
-            model.addRow(new Object[] { stt++, r[0], sl, money(gia), money(sl * gia) });
+        List<Object[]> rows = new ArrayList<>();
+        for (ChiTietHoaDonDAO.Dong d : v.dong) {
+            long sl = d.soLuong;
+            long gia = d.donGia.longValue();
+            model.addRow(new Object[] { stt++, d.tenMuc, sl, money(gia), money(sl * gia) });
+            tamTinh = tamTinh.add(d.donGia.multiply(BigDecimal.valueOf(d.soLuong)));
         }
-    }
 
-    public void setThanhToan(long tamTinh, long giamGia, String maGiamGia, boolean tienMat, long tienKhachDua) {
-        long tong = tamTinh - giamGia;
-        lblTamTinh.setText(money(tamTinh));
+        // Giảm giá
+        BigDecimal phanTram = v.phanTramGiam == null ? BigDecimal.ZERO : v.phanTramGiam;
+        BigDecimal giamSanPham = v.giamSanPham == null ? BigDecimal.ZERO : v.giamSanPham;
+        long giamGiaHoaDon = tamTinh.multiply(phanTram).divide(BigDecimal.valueOf(100))
+                .setScale(0, RoundingMode.HALF_UP).longValue();
+        long giamGia = giamGiaHoaDon + giamSanPham.setScale(0, RoundingMode.HALF_UP).longValue();
+        long tamTinhLong = tamTinh.longValue();
+        long tong = tamTinhLong - giamGia;
+
+        lblTamTinh.setText(money(tamTinhLong));
         lblGiamGia.setText(giamGia > 0 ? "-" + money(giamGia) : money(0));
-        lblMaGiamGia.setText(maGiamGia == null || maGiamGia.isEmpty() ? "—" : maGiamGia);
+        StringBuilder maGiamGia = new StringBuilder();
+        if (v.maKhuyenMai != null && !v.maKhuyenMai.isEmpty()) maGiamGia.append(v.maKhuyenMai);
+        if (v.maKhuyenMaiSanPham != null && !v.maKhuyenMaiSanPham.isEmpty()) {
+            if (maGiamGia.length() > 0) maGiamGia.append(" / ");
+            maGiamGia.append(v.maKhuyenMaiSanPham);
+        }
+        lblMaGiamGia.setText(maGiamGia.length() == 0 ? "—" : maGiamGia.toString());
         lblTong.setText(money(tong));
 
+        // Phương thức + tiền khách đưa
+        boolean tienMat = v.tenPTTT != null && v.tenPTTT.toLowerCase().contains("tiền mặt");
         rdTienMat.setSelected(tienMat);
         rdQR.setSelected(!tienMat);
 
         if (tienMat) {
-            lblKhachDua.setText(MONEY.format(tienKhachDua) + "  đ");
-            lblTienThua.setText(money(Math.max(0, tienKhachDua - tong)));
+            long khachDua = v.tienKhachDua == null ? tong : v.tienKhachDua.longValue();
+            lblKhachDua.setText(MONEY.format(khachDua) + "  đ");
+            lblTienThua.setText(money(Math.max(0, khachDua - tong)));
         } else { // QR: không có tiền thừa
             lblKhachDua.setText(MONEY.format(tong) + "  đ");
             lblTienThua.setText(money(0));
         }
-    }
-
-    public void hienThi(dao.ChiTietHoaDonDAO.ChiTietView v) {
-        java.time.format.DateTimeFormatter f = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy");
-        setThongTin(v.maHD, v.ngayLap == null ? "" : v.ngayLap.format(f), v.tenNV,
-                v.tenKH == null ? "Khách lẻ" : v.tenKH, v.sdt == null ? "" : v.sdt, v.diaChi == null ? "" : v.diaChi);
-
-        java.math.BigDecimal tamTinh = java.math.BigDecimal.ZERO;
-        List<Object[]> rows = new java.util.ArrayList<>();
-        for (dao.ChiTietHoaDonDAO.Dong d : v.dong) {
-            rows.add(new Object[] { d.tenMuc, d.soLuong, d.donGia.longValue() });
-            tamTinh = tamTinh.add(d.donGia.multiply(java.math.BigDecimal.valueOf(d.soLuong)));
-        }
-        setSanPham(rows);
-
-        long giamGia = tamTinh.multiply(v.phanTramGiam).divide(java.math.BigDecimal.valueOf(100))
-                .setScale(0, java.math.RoundingMode.HALF_UP).longValue();
-        boolean tienMat = v.tenPTTT != null && v.tenPTTT.toLowerCase().contains("tiền mặt");
-        setThanhToan(tamTinh.longValue(), giamGia, v.maKhuyenMai, tienMat, v.tienKhachDua.longValue());
     }
 }

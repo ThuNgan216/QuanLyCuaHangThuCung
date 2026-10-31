@@ -20,9 +20,10 @@ public class ChiTietHoaDonDAO {
     }
 
     public static class ChiTietView {
-        public String maHD, tenNV, tenKH, sdt, diaChi, maKhuyenMai, tenPTTT;
+        public String maHD, tenNV, tenKH, sdt, diaChi, maKhuyenMai, maKhuyenMaiSanPham, tenPTTT;
         public LocalDate ngayLap;
         public BigDecimal phanTramGiam = BigDecimal.ZERO;
+        public BigDecimal giamSanPham = BigDecimal.ZERO;
         public BigDecimal tienKhachDua = BigDecimal.ZERO;
         public List<Dong> dong = new ArrayList<>();
     }
@@ -30,13 +31,15 @@ public class ChiTietHoaDonDAO {
     // ===== SQL: chỉ cần sửa tên bảng/cột ở đây nếu khác =====
     private static final String SQL_HOADON = "SELECT hd.maHoaDon, hd.ngayLapHD, "
             + "       nv.tenNV, kh.tenKH, kh.sdt, kh.diaChi, "
-            + "       km.maKhuyenMai, km.phanTramGiam, pt.tenPTTT "
+            + "       km.maKhuyenMai, km.phanTramGiam, pt.tenPTTT, "
+            + "       (SELECT SUM(kmsp.mucGiam) FROM KhuyenMaiSanPham kmsp WHERE kmsp.maHoaDon = hd.maHoaDon) AS giamSanPham, "
+            + "       (SELECT MAX(kmsp.maKhuyenMai) FROM KhuyenMaiSanPham kmsp WHERE kmsp.maHoaDon = hd.maHoaDon) AS maKhuyenMaiSanPham "
             + "FROM HoaDon hd "
             + "JOIN NhanVien nv ON hd.maNV = nv.maNV "
             + "LEFT JOIN KhachHang kh ON hd.maKH = kh.maKH "
             + "LEFT JOIN KhuyenMai km ON hd.maKhuyenMai = km.maKhuyenMai "
             + "LEFT JOIN PhuongThucThanhToan pt ON hd.maPTTT = pt.maPTTT "
-            + "WHERE hd.maHoaDon = ?";
+            + "WHERE hd.maHoaDon = ? AND hd.maPTTT IS NOT NULL";
 
     private static final String SQL_CHITIET = "SELECT COALESCE(dv.tenDichVu, sp.tenSP) AS tenMuc, "
             + "       ct.soLuong, ct.donGia, ct.tienKhachDua "
@@ -64,10 +67,14 @@ public class ChiTietHoaDonDAO {
                 v.sdt = rs.getString("sdt");
                 v.diaChi = rs.getString("diaChi");
                 v.maKhuyenMai = rs.getString("maKhuyenMai");
+                v.maKhuyenMaiSanPham = rs.getString("maKhuyenMaiSanPham");
                 v.tenPTTT = rs.getString("tenPTTT");
                 BigDecimal pt = rs.getBigDecimal("phanTramGiam");
                 if (pt != null)
                     v.phanTramGiam = pt;
+                BigDecimal gpsp = rs.getBigDecimal("giamSanPham");
+                if (gpsp != null)
+                    v.giamSanPham = gpsp;
             }
         }
         try (PreparedStatement ps = con.prepareStatement(SQL_CHITIET)) {

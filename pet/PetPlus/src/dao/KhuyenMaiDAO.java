@@ -65,7 +65,7 @@ public class KhuyenMaiDAO {
             ps.setString(1, km.getMaKhuyenMai());
             ps.setString(2, km.getTenKhuyenMai());
             ps.setDouble(3, km.getPhanTramGiam());
-            ps.setString(4, km.getDieuKienApDung());
+            ps.setString(4, km.getDieuKienApDungLuu());
             ps.setDate(5, Date.valueOf(km.getNgayBatDau()));
             ps.setDate(6, Date.valueOf(km.getNgayKetThuc()));
 
@@ -83,7 +83,7 @@ public class KhuyenMaiDAO {
 
             ps.setString(1, km.getTenKhuyenMai());
             ps.setDouble(2, km.getPhanTramGiam());
-            ps.setString(3, km.getDieuKienApDung());
+            ps.setString(3, km.getDieuKienApDungLuu());
             ps.setDate(4, Date.valueOf(km.getNgayBatDau()));
             ps.setDate(5, Date.valueOf(km.getNgayKetThuc()));
             ps.setString(6, km.getMaKhuyenMai());

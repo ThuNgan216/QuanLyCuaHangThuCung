@@ -69,7 +69,7 @@ public class pnlBaoBieuDoanhThu extends JPanel {
         JPanel pnlTren = new JPanel(new BorderLayout(0, 12));
         pnlTren.setOpaque(false);
 
-        JLabel lblTieuDe = new JLabel("BÁO BIỂU DOANH THU");
+        JLabel lblTieuDe = new JLabel("THỐNG KÊ DOANH THU");
         lblTieuDe.setFont(new Font("Arial", Font.BOLD, 22));
         lblTieuDe.setForeground(new Color(224, 25, 91));
         pnlTren.add(lblTieuDe, BorderLayout.NORTH);
@@ -81,7 +81,7 @@ public class pnlBaoBieuDoanhThu extends JPanel {
         pnlBoLoc.add(new JLabel("Đến ngày:"));
         pnlBoLoc.add(spnDenNgay);
 
-        JButton btnXem = new JButton("Xuất báo cáo");
+        JButton btnXem = new JButton("Xuất báo biểu");
         btnXem.setBackground(PRIMARY);
         btnXem.setForeground(Color.WHITE);
         btnXem.addActionListener(e -> {
@@ -217,7 +217,7 @@ public class pnlBaoBieuDoanhThu extends JPanel {
                         model.getValueAt(row, 2));
             }
             JOptionPane.showMessageDialog(this, "Đã xuất báo biểu đến:\n" + tep.getAbsolutePath(),
-                    "Xuất báo cáo thành công", JOptionPane.INFORMATION_MESSAGE);
+                    "Xuất báo biểu thành công", JOptionPane.INFORMATION_MESSAGE);
         } catch (IOException ex) {
             JOptionPane.showMessageDialog(this, "Không thể lưu tệp báo cáo: " + ex.getMessage(),
                     "Lỗi xuất báo cáo", JOptionPane.ERROR_MESSAGE);

@@ -1,43 +1,89 @@
+
 {
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
         {
             "type": "java",
-            "name": "LoginFrame",
+            "name": "ConnectDB",
             "request": "launch",
-            "mainClass": "gui.main.LoginFrame",
-            "projectName": "PetPlus_6d290777"
+            "mainClass": "database.ConnectDB",
+            "projectName": "QuanLyCuaHangThuCung_6ae16dc2",
+            "env": {"PETPLUS_DB_PASSWORD": "${env:PETPLUS_DB_PASSWORD}"}
+                 
         },
         {
             "type": "java",
             "name": "MainFrame",
             "request": "launch",
             "mainClass": "gui.main.MainFrame",
-            "projectName": "PetPlus_6d290777"
+            "projectName": "QuanLyCuaHangThuCung_6ae16dc2"
         },
         {
             "type": "java",
             "name": "pnlThanhToan",
             "request": "launch",
             "mainClass": "gui.panel.pnlThanhToan",
-            "projectName": "PetPlus"
+            "projectName": "QuanLyCuaHangThuCung_6ae16dc2"
+        },
+        {
+            "type": "java",
+            "name": "LoginFrame - QuanLyCuaHangThuCung",
+            "request": "launch",
+            "mainClass": "gui.main.LoginFrame",
+            "projectName": "QuanLyCuaHangThuCung_6ae16dc2",
+            "env": {
+                "PETPLUS_DB_PASSWORD": "${env:PETPLUS_DB_PASSWORD}"
+            }
+        },
+        {
+            "type": "java",
+            "name": "LoginFrame - PetPlus (6d290777)",
+            "request": "launch",
+            "mainClass": "gui.main.LoginFrame",
+            "projectName": "PetPlus_6d290777",
+            "env": {
+                "PETPLUS_DB_PASSWORD": "${env:PETPLUS_DB_PASSWORD}"
+            }
+        },
+        {
+            "type": "java",
+            "name": "MainFrame - PetPlus (6d290777)",
+            "request": "launch",
+            "mainClass": "gui.main.MainFrame",
+            "projectName": "PetPlus_6d290777",
+            "env": {
+                "PETPLUS_DB_PASSWORD": "${env:PETPLUS_DB_PASSWORD}"
+            }
+        },
+        {
+            "type": "java",
+            "name": "pnlThanhToan",
+            "request": "launch",
+            "mainClass": "gui.panel.pnlThanhToan",
+            "projectName": "PetPlus",
+            "env": {
+                "PETPLUS_DB_PASSWORD": "${env:PETPLUS_DB_PASSWORD}"
+            }
         },
         {
             "type": "java",
             "name": "LoginFrame",
             "request": "launch",
             "mainClass": "gui.main.LoginFrame",
-            "projectName": "PetPlus"
+            "projectName": "PetPlus",
+            "env": {
+                "PETPLUS_DB_PASSWORD": "${env:PETPLUS_DB_PASSWORD}"
+            }
         },
         {
             "type": "java",
             "name": "MainFrame",
             "request": "launch",
             "mainClass": "gui.main.MainFrame",
-            "projectName": "PetPlus"
+            "projectName": "PetPlus",
+            "env": {
+                "PETPLUS_DB_PASSWORD": "${env:PETPLUS_DB_PASSWORD}"
+            }
         },
         {
             "type": "java",
@@ -47,7 +93,10 @@
             "classPaths": [
                 "$Auto",
                 "${workspaceFolder}/pet/PetPlus/lib/sqljdbc42.jar"
-            ]
+            ],
+            "env": {
+                "PETPLUS_DB_PASSWORD": "${env:PETPLUS_DB_PASSWORD}"
+            }
         },
         {
             "type": "java",
@@ -58,7 +107,10 @@
             "classPaths": [
                 "$Auto",
                 "${workspaceFolder}/pet/PetPlus/lib/sqljdbc42.jar"
-            ]
+            ],
+            "env": {
+                "PETPLUS_DB_PASSWORD": "${env:PETPLUS_DB_PASSWORD}"
+            }
         },
         {
             "type": "java",
@@ -69,7 +121,10 @@
             "classPaths": [
                 "$Auto",
                 "${workspaceFolder}/pet/PetPlus/lib/sqljdbc42.jar"
-            ]
+            ],
+            "env": {
+                "PETPLUS_DB_PASSWORD": "${env:PETPLUS_DB_PASSWORD}"
+            }
         },
         {
             "type": "java",
@@ -80,29 +135,38 @@
             "classPaths": [
                 "$Auto",
                 "${workspaceFolder}/pet/PetPlus/lib/sqljdbc42.jar"
-            ]
+            ],
+            "env": {
+                "PETPLUS_DB_PASSWORD": "${env:PETPLUS_DB_PASSWORD}"
+            }
         },
         {
             "type": "java",
-            "name": "LoginFrame",
+            "name": "LoginFrame - PetPlus (with JDBC)",
             "request": "launch",
             "mainClass": "gui.main.LoginFrame",
             "projectName": "PetPlus",
             "classPaths": [
                 "$Auto",
                 "${workspaceFolder}/pet/PetPlus/lib/sqljdbc42.jar"
-            ]
+            ],
+            "env": {
+                "PETPLUS_DB_PASSWORD": "${env:PETPLUS_DB_PASSWORD}"
+            }
         },
         {
             "type": "java",
-            "name": "MainFrame",
+            "name": "MainFrame - PetPlus (with JDBC)",
             "request": "launch",
             "mainClass": "gui.main.MainFrame",
             "projectName": "PetPlus",
             "classPaths": [
                 "$Auto",
                 "${workspaceFolder}/pet/PetPlus/lib/sqljdbc42.jar"
-            ]
+            ],
+            "env": {
+                "PETPLUS_DB_PASSWORD": "${env:PETPLUS_DB_PASSWORD}"
+            }
         },
         {
             "type": "java",
@@ -113,18 +177,24 @@
             "classPaths": [
                 "$Auto",
                 "${workspaceFolder}/pet/PetPlus/lib/sqljdbc42.jar"
-            ]
+            ],
+            "env": {
+                "PETPLUS_DB_PASSWORD": "${env:PETPLUS_DB_PASSWORD}"
+            }
         },
         {
             "type": "java",
-            "name": "pnlThanhToan",
+            "name": "pnlThanhToan - with JDBC",
             "request": "launch",
             "mainClass": "gui.panel.pnlThanhToan",
             "projectName": "PetPlus",
             "classPaths": [
                 "$Auto",
                 "${workspaceFolder}/pet/PetPlus/lib/sqljdbc42.jar"
-            ]
+            ],
+            "env": {
+                "PETPLUS_DB_PASSWORD": "${env:PETPLUS_DB_PASSWORD}"
+            }
         },
         {
             "type": "java",
@@ -135,7 +205,10 @@
             "classPaths": [
                 "$Auto",
                 "${workspaceFolder}/pet/PetPlus/lib/sqljdbc42.jar"
-            ]
+            ],
+            "env": {
+                "PETPLUS_DB_PASSWORD": "${env:PETPLUS_DB_PASSWORD}"
+            }
         }
     ]
 }

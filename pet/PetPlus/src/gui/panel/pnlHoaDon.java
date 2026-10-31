@@ -78,7 +78,11 @@ public class pnlHoaDon extends JPanel {
         body.add(createActionPanel(), BorderLayout.EAST);
         add(body, BorderLayout.CENTER);
 
-        applyFilter();
+        addHierarchyListener(e -> {
+            if ((e.getChangeFlags() & java.awt.event.HierarchyEvent.SHOWING_CHANGED) != 0 && isShowing()) {
+                lamMoi();
+            }
+        });
     }
 
     // ================= HEADER =================
@@ -284,7 +288,16 @@ public class pnlHoaDon extends JPanel {
 
         cboNgay = new JComboBox<>(buildRange("Ngày", 1, 31));
         cboThang = new JComboBox<>(buildRange("Tháng", 1, 12));
-        cboNam = new JComboBox<>(buildRange("Năm", 2024, 2026));
+        cboNam = new JComboBox<>();
+        cboNam.addItem("Năm");
+        try {
+            for (Integer nam : hoaDonDAO.layDanhSachNamHoaDon()) {
+                cboNam.addItem(String.valueOf(nam));
+            }
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, "Không thể tải danh sách năm từ database: " + ex.getMessage(),
+                    "Lỗi lọc hóa đơn", JOptionPane.ERROR_MESSAGE);
+        }
         for (JComboBox<String> c : java.util.List.of(cboNgay, cboThang, cboNam)) {
             c.addActionListener(e -> {
                 if (!dangReset)
@@ -324,15 +337,15 @@ public class pnlHoaDon extends JPanel {
         sortRow.add(btnTang);
         sortRow.add(btnGiam);
         content.add(sortRow);
-        content.add(Box.createVerticalStrut(25));
-
-        // --- Nút Refresh lớn (thay cho nút Tìm kiếm lớn cũ) ---
-        JButton btnRefresh = createPinkButton("Refresh", true);
-        btnRefresh.setAlignmentX(Component.CENTER_ALIGNMENT);
-        btnRefresh.addActionListener(e -> lamMoi());
-        content.add(btnRefresh);
-
         panel.add(content, BorderLayout.CENTER);
+        JButton btnRefresh = createPinkButton("Refresh", true);
+        btnRefresh.addActionListener(e -> lamMoi());
+        JPanel bottom = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+        bottom.setBackground(AppColors.WHITE);
+        bottom.setBorder(new EmptyBorder(0, 12, 12, 12));
+        bottom.add(btnRefresh);
+        panel.add(bottom, BorderLayout.SOUTH);
+
         return panel;
     }
 

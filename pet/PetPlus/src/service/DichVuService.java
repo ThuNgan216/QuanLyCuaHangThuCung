@@ -9,7 +9,7 @@ public class DichVuService {
     private final DichVuDAO dao = new DichVuDAO();
     public List<DichVu> layDanhSach() { return dao.layDanhSach(); }
     public List<DichVu> timKiem(String tuKhoa) { return dao.timKiem(tuKhoa); }
-    public List<String> layDanhSachMaLichHen() { return dao.layDanhSachMaLichHen(); }
+    public String taoMaMoi() { return dao.taoMaMoi(); }
     public boolean them(DichVu d) { kiemTra(d, true); if (tonTaiMa(d.getMaDichVu())) throw new IllegalArgumentException("Mã dịch vụ đã tồn tại."); return dao.them(d); }
     public boolean capNhat(DichVu d) { kiemTra(d, false); if (!tonTaiMa(d.getMaDichVu())) throw new IllegalArgumentException("Không tìm thấy dịch vụ cần sửa."); return dao.capNhat(d); }
     public boolean xoa(String ma) { if (ma == null || ma.trim().isEmpty()) throw new IllegalArgumentException("Vui lòng chọn dịch vụ cần xóa."); return dao.xoa(ma.trim()); }
@@ -24,7 +24,6 @@ public class DichVuService {
         if (gia == null || gia.compareTo(BigDecimal.ZERO) < 0) throw new IllegalArgumentException("Đơn giá phải lớn hơn hoặc bằng 0.");
         if (d.getMoTa() != null && d.getMoTa().length() > 500) throw new IllegalArgumentException("Mô tả tối đa 500 ký tự.");
         if (d.getTrangThai() == null || d.getTrangThai().trim().isEmpty()) throw new IllegalArgumentException("Vui lòng chọn trạng thái.");
-        if (d.getMaLichHen() == null || d.getMaLichHen().getMaLichHen() == null || d.getMaLichHen().getMaLichHen().trim().isEmpty()) throw new IllegalArgumentException("Vui lòng chọn mã lịch hẹn.");
         d.setMaDichVu(d.getMaDichVu().trim()); d.setTenDichVu(d.getTenDichVu().trim());
         if (d.getMoTa() != null) d.setMoTa(d.getMoTa().trim()); d.setTrangThai(d.getTrangThai().trim());
     }
