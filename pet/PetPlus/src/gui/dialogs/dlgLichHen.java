@@ -16,7 +16,7 @@ public class dlgLichHen extends JDialog {
     private final JTextField txtMa = new JTextField(18), txtThoiGian = new JTextField(18);
     private final JTextField txtTimKH = new JTextField(18);
     private final JButton btnChonThoiGian = new JButton("Chọn ngày, giờ...");
-    private final JComboBox<TrangThaiLichHen> cboTrangThai = new JComboBox<>(TrangThaiLichHen.values());
+    private final JComboBox<TrangThaiLichHen> cboTrangThai = new JComboBox<>(TrangThaiLichHen.chonDuoc());
     private final JComboBox<String> cboNV = new JComboBox<>(), cboKH = new JComboBox<>(),
             cboThuCung = new JComboBox<>();
     private final Map<String, NhanVien> nhanVienMap = new LinkedHashMap<>();
@@ -89,7 +89,15 @@ public class dlgLichHen extends JDialog {
         if (duLieu != null) {
             if (duLieu.getThoiGianHen() != null)
                 txtThoiGian.setText(duLieu.getThoiGianHen().format(F));
-            cboTrangThai.setSelectedItem(TrangThaiLichHen.tuTen(duLieu.getTrangThai()));
+            TrangThaiLichHen ttCu = TrangThaiLichHen.tuTen(duLieu.getTrangThai());
+            if (ttCu != null && ttCu.doTiepNhanQuanLy()) {
+                // Do module tiếp nhận quản lý: hiển thị đúng giá trị, không cho đổi tay
+                cboTrangThai.addItem(ttCu);
+                cboTrangThai.setSelectedItem(ttCu);
+                cboTrangThai.setEnabled(false);
+            } else {
+                cboTrangThai.setSelectedItem(ttCu);
+            }
             if (duLieu.getMaNV() != null) {
                 for (String k : nhanVienMap.keySet())
                     if (nhanVienMap.get(k).getMaNV().equals(duLieu.getMaNV().getMaNV()))
@@ -310,7 +318,9 @@ public class dlgLichHen extends JDialog {
 
             LocalDateTime time = LocalDateTime.parse(txtThoiGian.getText().trim(), F);
 
-            if (!time.isAfter(LocalDateTime.now()))
+            boolean doiGio = duLieu == null || duLieu.getThoiGianHen() == null
+                    || !duLieu.getThoiGianHen().equals(time);
+            if (doiGio && !time.isAfter(LocalDateTime.now()))
                 throw new IllegalArgumentException(
                         "Thời gian hẹn phải ở tương lai.");
 
@@ -321,6 +331,9 @@ public class dlgLichHen extends JDialog {
             if (nv == null || kh == null || tc == null)
                 throw new IllegalArgumentException(
                         "Vui lòng chọn lại nhân viên, khách hàng và thú cưng.");
+
+            if (cboTrangThai.getSelectedItem() == null)
+                throw new IllegalArgumentException("Vui lòng chọn trạng thái lịch hẹn.");
 
             LichHen l = new LichHen();
             l.setMaLichHen(txtMa.getText().trim());

@@ -32,6 +32,9 @@ public class pnlLichHen extends JPanel {
 
     private LocalDate ngayChon = LocalDate.now();
 
+    // Dòng thông báo khi tìm theo tên mà không có kết quả
+    private final JLabel lblThongBao = new JLabel(" ");
+
     private final DefaultTableModel model = new DefaultTableModel(
             new Object[] {
                     "Mã lịch hẹn",
@@ -121,7 +124,12 @@ public class pnlLichHen extends JPanel {
 
         top.add(btnLoc);
 
-        add(top, BorderLayout.NORTH);
+        JPanel north = new JPanel(new BorderLayout());
+        north.setBackground(Color.WHITE);
+        north.add(top, BorderLayout.CENTER);
+        lblThongBao.setBorder(BorderFactory.createEmptyBorder(0, 12, 4, 0));
+        north.add(lblThongBao, BorderLayout.SOUTH);
+        add(north, BorderLayout.NORTH);
 
         // Định dạng bảng
         table.setFont(new Font("Arial", Font.PLAIN, 13));
@@ -246,6 +254,10 @@ public class pnlLichHen extends JPanel {
         tai();
 
         utils.PetPlusTheme.apply(this);
+
+        // Đặt sau theme để không bị ghi đè màu chữ
+        lblThongBao.setForeground(new Color(200, 30, 60));
+        lblThongBao.setFont(new Font("Arial", Font.ITALIC, 13));
     }
 
     /**
@@ -288,6 +300,8 @@ public class pnlLichHen extends JPanel {
 
             final LocalDateTime start = tu;
             final LocalDateTime end = den;
+            // Khi đang tìm theo tên khách hàng thì tìm trên mọi ngày, không giới hạn ngày/khung giờ đang chọn.
+            final boolean timTheoTen = !txtTim.getText().trim().isEmpty();
 
             ds.removeIf(l -> {
 
@@ -304,18 +318,23 @@ public class pnlLichHen extends JPanel {
                 LocalDateTime thoiGian = l.getThoiGianHen();
 
                 // Chỉ lấy lịch thuộc ngày đã chọn
-                if (!thoiGian.toLocalDate().equals(date)) {
+                if (!timTheoTen && !thoiGian.toLocalDate().equals(date)) {
                     return true;
                 }
 
                 // Nếu chọn một khung giờ cụ thể
                 // thì lấy thời gian từ đầu khung đến trước cuối khung
-                return start != null
+                return !timTheoTen && start != null
                         && (thoiGian.isBefore(start)
                                 || !thoiGian.isBefore(end));
             });
 
             hienThi(ds);
+
+            String tuKhoa = txtTim.getText().trim();
+            lblThongBao.setText(ds.isEmpty() && !tuKhoa.isEmpty()
+                    ? "Không tìm thấy lịch hẹn của khách hàng \"" + tuKhoa + "\"."
+                    : " ");
 
         } catch (RuntimeException e) {
             baoLoi(e);
@@ -494,6 +513,7 @@ public class pnlLichHen extends JPanel {
             List<LichHen> ds = service.layDanhSach();
             ds.removeIf(l -> !entity.TrangThaiLichHen.laTrangThaiQuanLyHopLe(l.getTrangThai()));
             hienThi(ds);
+            lblThongBao.setText(" ");
 
         } catch (RuntimeException e) {
             baoLoi(e);
