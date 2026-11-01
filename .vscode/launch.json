@@ -2,22 +2,15 @@
 {
     "version": "0.2.0",
     "configurations": [
-        {
-            "type": "java",
-            "name": "ConnectDB",
-            "request": "launch",
-            "mainClass": "database.ConnectDB",
-            "projectName": "PetPlus_6d290777"
-        },
+        
         {
             "type": "java",
             "name": "ConnectDB",
             "request": "launch",
             "mainClass": "database.ConnectDB",
             "projectName": "QuanLyCuaHangThuCung_6ae16dc2",
-            "env": {
-                "PETPLUS_DB_PASSWORD": "${env:PETPLUS_DB_PASSWORD}"
-            }
+            "env": {"PETPLUS_DB_PASSWORD": "${env:PETPLUS_DB_PASSWORD}"}
+                 
         },
         {
             "type": "java",
