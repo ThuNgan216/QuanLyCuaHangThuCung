@@ -60,7 +60,7 @@ public class pnlDichVu extends JPanel {
         String ma = String.valueOf(model.getValueAt(table.convertRowIndexToModel(row), 0));
         if (JOptionPane.showConfirmDialog(this, "Bạn có chắc muốn xóa dịch vụ " + ma + "?", "Xác nhận", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
             try { if (service.xoa(ma)) { JOptionPane.showMessageDialog(this, "Đã xóa dịch vụ."); tai(); } else JOptionPane.showMessageDialog(this, "Không tìm thấy dịch vụ."); }
-            catch (Exception ex) { loi("Không thể xóa dịch vụ. Có thể dữ liệu đang được tham chiếu.", ex); }
+            catch (Exception ex) { loi("Không thể xử lý yêu cầu xóa dịch vụ", ex); }
         }
     }
     private void loi(String msg, Exception ex) { JOptionPane.showMessageDialog(this, msg + ":\n" + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE); }

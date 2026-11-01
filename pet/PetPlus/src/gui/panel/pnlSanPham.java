@@ -240,21 +240,18 @@ JPanel fields = new JPanel(new GridBagLayout());
         actions.setOpaque(false);
         
         JButton btnView = button("Xem mã vạch", false);
-        JButton btnPrint = button("In tem mã vạch", false);
-        JButton btnDelete = button("Xóa sản phẩm", false);
+        JButton btnDelete = button("Xóa SP", false);
         btnDelete.setForeground(Color.RED);
         btnDelete.addActionListener(e -> xoaSanPhamDangChon());
 
         btnCreateBarcode.addActionListener(e -> taoMaVachChoSanPham());
         btnCreateBarcode.setToolTipText("Dựng lại hình từ số mã vạch đang lưu trong cơ sở dữ liệu; không đổi số mã.");
         btnView.addActionListener(e -> xemMaVach());
-        btnPrint.addActionListener(e -> notice("In tem mã vạch"));
         btnCreateBarcode.setEnabled(false);
         
         actions.add(btnCreateBarcode);
         actions.add(btnView);
-        actions.add(btnPrint);
-        actions.add(btnDelete); // Thêm nút xóa vào panel actions
+        actions.add(btnDelete);
         
         bottom.add(actions, BorderLayout.SOUTH);
         panel.add(bottom, BorderLayout.SOUTH);
@@ -278,7 +275,7 @@ JPanel fields = new JPanel(new GridBagLayout());
                     loadSanPhamFromDB();
                 }
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, "Không thể xóa sản phẩm do đã phát sinh dữ liệu liên quan: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Không thể xử lý yêu cầu xóa sản phẩm: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
             }
         }
     }

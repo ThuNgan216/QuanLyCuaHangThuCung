@@ -353,7 +353,7 @@ public class pnlKhachHang extends JPanel {
             }
         } catch (Exception e) {
             hienThiLoi(
-                    "Xóa thất bại. Khách hàng có thể đang được tham chiếu bởi hóa đơn, thú cưng hoặc lịch hẹn.",
+                    "Không thể xử lý yêu cầu xóa khách hàng.",
                     e);
         }
     }
