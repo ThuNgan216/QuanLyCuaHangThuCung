@@ -16,8 +16,8 @@ public class NhaCungCapDAO {
         String sql = "SELECT maNCC, tenNCC, soDienThoai, diaChi, email FROM dbo.NhaCungCap WHERE trangThai <> N'Đã xóa'";
 
         try (Connection con = ConnectDB.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+                PreparedStatement ps = con.prepareStatement(sql);
+                ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
                 NhaCungCap ncc = new NhaCungCap();
@@ -37,7 +37,7 @@ public class NhaCungCapDAO {
     public NhaCungCap timTheoMa(String maNCC) {
         String sql = "SELECT * FROM dbo.NhaCungCap WHERE maNCC = ? AND trangThai <> N'Đã xóa'";
         try (Connection con = ConnectDB.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+                PreparedStatement ps = con.prepareStatement(sql)) {
 
             ps.setString(1, maNCC);
             try (ResultSet rs = ps.executeQuery()) {
@@ -59,45 +59,23 @@ public class NhaCungCapDAO {
 
     // --- HÀM MỚI: PHÁT SINH MÃ TỰ ĐỘNG ---
     public String phatSinhMaNCCMoi() throws SQLException {
-<<<<<<< HEAD
-        String sql = "SELECT TOP 1 maNCC FROM dbo.NhaCungCap ORDER BY maNCC DESC";
-        try (Connection con = ConnectDB.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-            
-            if (rs.next()) {
-                String maMax = rs.getString("maNCC"); // VD: NCC005
-                try {
-                    // Lấy phần số sau chữ NCC (từ vị trí thứ 3), ví dụ "005" -> 5
-                    int soHienTai = Integer.parseInt(maMax.substring(3));
-                    int soMoi = soHienTai + 1;
-                    // Định dạng lại thành NCC + 3 chữ số (NCC006)
-                    return String.format("NCC%03d", soMoi);
-                } catch (NumberFormatException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-        // Trả về mặc định nếu bảng đang rỗng hoặc lỗi phân tích chuỗi
-        return "NCC001";
-=======
         String sql = "SELECT ISNULL(MAX(TRY_CONVERT(INT, SUBSTRING(maNCC, 4, 17))), 0) + 1 AS soMoi "
                 + "FROM dbo.NhaCungCap WHERE maNCC LIKE 'NCC[0-9]%'";
         try (Connection con = ConnectDB.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-            if (rs.next()) return String.format(java.util.Locale.ROOT, "NCC%03d", rs.getInt("soMoi"));
+                PreparedStatement ps = con.prepareStatement(sql);
+                ResultSet rs = ps.executeQuery()) {
+            if (rs.next())
+                return String.format(java.util.Locale.ROOT, "NCC%03d", rs.getInt("soMoi"));
             return "NCC001";
         } catch (SQLException e) {
             throw e;
         }
->>>>>>> 54aa75aa728d4dcece23f899dc6ad6b13a91cfd9
     }
 
     public boolean them(NhaCungCap ncc) {
         String sql = "INSERT INTO dbo.NhaCungCap (maNCC, tenNCC, soDienThoai, diaChi, email) VALUES (?, ?, ?, ?, ?)";
         try (Connection con = ConnectDB.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+                PreparedStatement ps = con.prepareStatement(sql)) {
 
             ps.setString(1, ncc.getMaNCC());
             ps.setString(2, ncc.getTenNCC());
@@ -114,7 +92,7 @@ public class NhaCungCapDAO {
     public boolean capNhat(NhaCungCap ncc) {
         String sql = "UPDATE dbo.NhaCungCap SET tenNCC = ?, soDienThoai = ?, diaChi = ?, email = ? WHERE maNCC = ? AND trangThai <> N'Đã xóa'";
         try (Connection con = ConnectDB.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+                PreparedStatement ps = con.prepareStatement(sql)) {
 
             ps.setString(1, ncc.getTenNCC());
             ps.setString(2, ncc.getSoDienThoai());

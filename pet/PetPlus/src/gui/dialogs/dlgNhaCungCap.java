@@ -8,13 +8,10 @@ import javax.swing.*;
 import service.NhaCungCapService;
 import utils.PetPlusTheme;
 
-<<<<<<< HEAD
-=======
 import javax.swing.*;
 import java.awt.*;
 import java.sql.SQLException;
 
->>>>>>> 54aa75aa728d4dcece23f899dc6ad6b13a91cfd9
 public class dlgNhaCungCap extends JDialog {
     private final JTextField txtMaNCC = new JTextField(15);
     private final JTextField txtTenNCC = new JTextField(15);
@@ -28,7 +25,8 @@ public class dlgNhaCungCap extends JDialog {
     private boolean daLuu = false;
 
     public dlgNhaCungCap(Window owner, NhaCungCap ncc) {
-        super(owner, ncc == null ? "Thêm Nhà Cung Cấp Mới" : "Cập Nhật Thông Tin Nhà Cung Cấp", ModalityType.APPLICATION_MODAL);
+        super(owner, ncc == null ? "Thêm Nhà Cung Cấp Mới" : "Cập Nhật Thông Tin Nhà Cung Cấp",
+                ModalityType.APPLICATION_MODAL);
         this.nccHienTai = ncc;
         khoiTaoGiaoDien();
     }
@@ -83,14 +81,9 @@ public class dlgNhaCungCap extends JDialog {
                 String maMoi = nccDAO.phatSinhMaNCCMoi();
                 txtMaNCC.setText(maMoi);
             } catch (SQLException ex) {
-<<<<<<< HEAD
-                txtMaNCC.setText("Lỗi tạo mã");
-                ex.printStackTrace();
-=======
                 txtMaNCC.setText("");
                 txtMaNCC.setToolTipText("Không thể phát sinh mã nhà cung cấp: " + ex.getMessage());
                 btnLuu.setEnabled(false);
->>>>>>> 54aa75aa728d4dcece23f899dc6ad6b13a91cfd9
             }
         }
 
@@ -100,9 +93,12 @@ public class dlgNhaCungCap extends JDialog {
     }
 
     private void themDong(JPanel p, GridBagConstraints g, int y, String label, JComponent c) {
-        g.gridx = 0; g.gridy = y; g.weightx = 0;
+        g.gridx = 0;
+        g.gridy = y;
+        g.weightx = 0;
         p.add(new JLabel(label), g);
-        g.gridx = 1; g.weightx = 1;
+        g.gridx = 1;
+        g.weightx = 1;
         p.add(c, g);
     }
 
