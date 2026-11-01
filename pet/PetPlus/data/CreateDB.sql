@@ -111,6 +111,7 @@ CREATE TABLE KhachHang (
     diemTichLuy   INT            CONSTRAINT DF_KhachHang_Diem DEFAULT 0 NOT NULL,
     trangThai     NVARCHAR (50)  CONSTRAINT DF_KhachHang_TrangThai DEFAULT N'Hoạt động' NOT NULL,
     CONSTRAINT PK_KhachHang PRIMARY KEY (maKH),
+    CONSTRAINT UQ_KhachHang_SDT UNIQUE (sdt),
     CONSTRAINT CK_KhachHang_Diem CHECK (diemTichLuy >= 0)
 );
 
