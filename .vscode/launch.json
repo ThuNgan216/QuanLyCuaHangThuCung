@@ -7,9 +7,22 @@
             "name": "PETPLUS - TEST DATABASE",
             "request": "launch",
             "mainClass": "database.ConnectDB",
+<<<<<<< HEAD
             "env": {
                 "PETPLUS_DB_USERNAME": "sa",
                 "PETPLUS_DB_PASSWORD": "123456"
+=======
+            "projectName": "PetPlus_6d290777"
+        },
+        {
+            "type": "java",
+            "name": "ConnectDB",
+            "request": "launch",
+            "mainClass": "database.ConnectDB",
+            "projectName": "QuanLyCuaHangThuCung_6ae16dc2",
+            "env": {
+                "PETPLUS_DB_PASSWORD": "${env:PETPLUS_DB_PASSWORD}"
+>>>>>>> main
             }
         },
         {

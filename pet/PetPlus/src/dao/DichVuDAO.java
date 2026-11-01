@@ -14,7 +14,7 @@ import java.util.List;
 /** Truy vấn dữ liệu dịch vụ trong SQL Server. */
 public class DichVuDAO {
     private static final String SELECT = "SELECT d.maDichVu, d.tenDichVu, d.donGia, d.moTa, d.trangThai, d.maLichHen "
-            + "FROM DichVu d ";
+            + "FROM DichVu d WHERE d.trangThai <> N'Đã xóa' ";
 
     public List<DichVu> layDanhSach() {
         List<DichVu> ds = new ArrayList<>();
@@ -28,7 +28,7 @@ public class DichVuDAO {
     public List<DichVu> timKiem(String tuKhoa) {
         if (tuKhoa == null || tuKhoa.trim().isEmpty()) return layDanhSach();
         List<DichVu> ds = new ArrayList<>();
-        String sql = SELECT + "WHERE d.maDichVu LIKE ? OR d.tenDichVu LIKE ? OR d.moTa LIKE ? OR d.trangThai LIKE ? ORDER BY d.tenDichVu";
+        String sql = SELECT + "AND (d.maDichVu LIKE ? OR d.tenDichVu LIKE ? OR d.moTa LIKE ? OR d.trangThai LIKE ?) ORDER BY d.tenDichVu";
         String key = "%" + tuKhoa.trim() + "%";
         try (Connection con = ConnectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
             for (int i = 1; i <= 4; i++) ps.setString(i, key);
@@ -57,7 +57,7 @@ public class DichVuDAO {
     }
 
     public boolean capNhat(DichVu d) {
-        String sql = "UPDATE DichVu SET tenDichVu=?, donGia=?, moTa=?, trangThai=?, maLichHen=? WHERE maDichVu=?";
+        String sql = "UPDATE DichVu SET tenDichVu=?, donGia=?, moTa=?, trangThai=?, maLichHen=? WHERE maDichVu=? AND trangThai <> N'Đã xóa'";
         try (Connection con = ConnectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, d.getTenDichVu()); ps.setBigDecimal(2, d.getDonGia()); ps.setString(3, d.getMoTa());
             ps.setString(4, d.getTrangThai());
@@ -68,9 +68,14 @@ public class DichVuDAO {
     }
 
     public boolean xoa(String maDichVu) {
-        try (Connection con = ConnectDB.getConnection(); PreparedStatement ps = con.prepareStatement("DELETE FROM DichVu WHERE maDichVu=?")) {
-            ps.setString(1, maDichVu); return ps.executeUpdate() > 0;
-        } catch (SQLException e) { throw new IllegalStateException("Không thể xóa dịch vụ: " + e.getMessage(), e); }
+        try (Connection con = ConnectDB.getConnection()) {
+            return DeletePolicy.xoaHoacAn(con,
+                    "SELECT 1 FROM DichVu WITH (XLOCK, HOLDLOCK) WHERE maDichVu = ? AND trangThai <> N'Đã xóa'",
+                    new String[] { "SELECT 1 FROM ChiTietHoaDon WHERE maDichVu = ?" },
+                    "UPDATE DichVu SET trangThai = N'Đã xóa' WHERE maDichVu = ? AND trangThai <> N'Đã xóa'",
+                    "DELETE FROM DichVu WHERE maDichVu = ? AND trangThai <> N'Đã xóa'",
+                    maDichVu);
+        } catch (SQLException e) { throw new IllegalStateException("Không thể xóa hoặc ẩn dịch vụ: " + e.getMessage(), e); }
     }
 
     private void gan(PreparedStatement ps, DichVu d) throws SQLException {

@@ -111,13 +111,13 @@ public class ThanhToanDAO {
     public List<Object[]> laySanPham() throws SQLException {
         return layDanhMuc(
                 "SELECT maSP AS ma, tenSP AS ten, giaBan AS gia " +
-                        "FROM SanPham ORDER BY tenSP");
+                        "FROM SanPham WHERE trangThai <> N'Đã xóa' ORDER BY tenSP");
     }
 
     public List<Object[]> layDichVu() throws SQLException {
         return layDanhMuc(
                 "SELECT maDichVu AS ma, tenDichVu AS ten, donGia AS gia " +
-                        "FROM DichVu ORDER BY tenDichVu");
+                        "FROM DichVu WHERE trangThai NOT IN (N'Ngừng hoạt động', N'Đã xóa') ORDER BY tenDichVu");
     }
 
     private List<Object[]> layDanhMuc(String sql) throws SQLException {
@@ -174,7 +174,7 @@ public class ThanhToanDAO {
 
         String sql = "SELECT maKH, tenKH, sdt, diaChi, " +
                 "hangThanhVien, diemTichLuy " +
-                "FROM KhachHang WHERE sdt LIKE ? ORDER BY sdt";
+                "FROM KhachHang WHERE trangThai <> N'Đã xóa' AND sdt LIKE ? ORDER BY sdt";
 
         try (Connection con = ConnectDB.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql)) {
@@ -199,7 +199,7 @@ public class ThanhToanDAO {
 
     public boolean tonTaiSDT(Connection con, String sdt)
             throws SQLException {
-        String sql = "SELECT 1 FROM KhachHang WHERE sdt = ?";
+        String sql = "SELECT 1 FROM KhachHang WHERE sdt = ? AND trangThai <> N'Đã xóa'";
 
         try (PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, sdt);
@@ -437,7 +437,7 @@ public class ThanhToanDAO {
     public List<KhuyenMai> layKhuyenMaiHieuLuc() throws SQLException {
         String sql = "SELECT maKhuyenMai, tenKhuyenMai, phanTramGiam, dieuKienApDung, ngayBatDau, ngayKetThuc "
                 + "FROM KhuyenMai "
-                + "WHERE (ngayBatDau IS NULL OR ngayBatDau <= ?) AND (ngayKetThuc IS NULL OR ngayKetThuc >= ?) "
+                + "WHERE trangThai <> N'Đã xóa' AND (ngayBatDau IS NULL OR ngayBatDau <= ?) AND (ngayKetThuc IS NULL OR ngayKetThuc >= ?) "
                 + "ORDER BY tenKhuyenMai";
         List<KhuyenMai> ds = new ArrayList<>();
         java.sql.Date homNay = java.sql.Date.valueOf(LocalDate.now());

@@ -100,30 +100,91 @@ public class TaiKhoanDAO {
         }
     }
 
-    /**
-     * Xóa tài khoản KÈM hồ sơ nhân viên (do nv.maTK là khóa ngoại).
-     * CHỈ gọi sau khi người dùng xác nhận 2 lần. Nếu DB có FK NO ACTION tới
-     * NhanVien, SQL Server báo lỗi và transaction sẽ rollback an toàn.
-     * Cần kiểm tra quy tắc ON DELETE CASCADE của các bảng nghiệp vụ trước khi bật ở production.
-     */
-    
-public boolean xoa(String maNV) throws SQLException {
+    /** Xóa cứng tài khoản và hồ sơ nếu chưa có lịch sử; nếu đã được tham chiếu thì khóa tài khoản. */
+    public boolean xoa(String maTK) throws SQLException {
+        try (Connection conn = ConnectDB.getConnection()) {
+            boolean autoCommitCu = conn.getAutoCommit();
+            conn.setAutoCommit(false);
+            try {
+                if (!tonTai(conn,
+                        "SELECT 1 FROM TaiKhoan WITH (XLOCK, HOLDLOCK) WHERE maTK = ? AND tenDangNhap <> N'admin'",
+                        maTK)) {
+                    conn.commit();
+                    return false;
+                }
 
-    String sql = "UPDATE TaiKhoan "
-        + "SET trangThai = N'Ngừng hoạt động' "
-        + "WHERE maTK = ("
-        + "SELECT maTK FROM NhanVien WHERE maNV = ?"
-        + ") "
-        + "AND tenDangNhap <> N'admin' "
-        + "AND trangThai <> N'Ngừng hoạt động'";
+                String maNV = null;
+                try (PreparedStatement ps = conn.prepareStatement(
+                        "SELECT maNV FROM NhanVien WITH (XLOCK, HOLDLOCK) WHERE maTK = ?")) {
+                    ps.setString(1, maTK);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (rs.next()) maNV = rs.getString("maNV");
+                    }
+                }
 
-    try (Connection conn = ConnectDB.getConnection();
-         PreparedStatement ps = conn.prepareStatement(sql)) {
+                boolean coLichSu = maNV != null && (
+                        tonTai(conn, "SELECT 1 FROM LichLamViec WHERE maNV = ?", maNV)
+                        || tonTai(conn, "SELECT 1 FROM PhieuNhap WHERE maNV = ?", maNV)
+                        || tonTai(conn, "SELECT 1 FROM LichHen WHERE maNV = ?", maNV)
+                        || tonTai(conn, "SELECT 1 FROM HoaDon WHERE maNV = ?", maNV)
+                        || tonTai(conn, "SELECT 1 FROM HoaDon WHERE maNVTiepNhan = ?", maNV));
 
-        ps.setString(1, maNV);
+                if (coLichSu) {
+                    try (PreparedStatement ps = conn.prepareStatement(
+                            "UPDATE TaiKhoan SET trangThai = N'Ngừng hoạt động' WHERE maTK = ? AND tenDangNhap <> N'admin'")) {
+                        ps.setString(1, maTK);
+                        ps.executeUpdate();
+                    }
+                } else {
+                    if (maNV != null) {
+                        try (PreparedStatement ps = conn.prepareStatement(
+                                "DELETE FROM NhanVien WHERE maTK = ?")) {
+                            ps.setString(1, maTK);
+                            ps.executeUpdate();
+                        }
+                    }
+                    try (PreparedStatement ps = conn.prepareStatement(
+                            "DELETE FROM TaiKhoan WHERE maTK = ? AND tenDangNhap <> N'admin'")) {
+                        ps.setString(1, maTK);
+                        ps.executeUpdate();
+                    }
+                }
 
-        return ps.executeUpdate() > 0;
+                conn.commit();
+                return true;
+            } catch (SQLException | RuntimeException ex) {
+                try {
+                    conn.rollback();
+                } catch (SQLException rollbackError) {
+                    ex.addSuppressed(rollbackError);
+                }
+                throw ex;
+            } finally {
+                conn.setAutoCommit(autoCommitCu);
+            }
+        }
     }
-}
+
+    /** Used by employee CRUD, whose key is maNV rather than maTK. */
+    public boolean xoaNhanVien(String maNV) throws SQLException {
+        String sql = "SELECT maTK FROM NhanVien WHERE maNV = ?";
+        String maTK = null;
+        try (Connection conn = ConnectDB.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, maNV);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) maTK = rs.getString("maTK");
+            }
+        }
+        return maTK != null && xoa(maTK);
+    }
+
+    private boolean tonTai(Connection conn, String sql, String ma) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, ma);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        }
+    }
 
 }
