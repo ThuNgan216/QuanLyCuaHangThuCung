@@ -15,7 +15,7 @@ public class KhachHangDAO {
         List<KhachHang> ds = new ArrayList<>();
 
         String sql = "SELECT maKH, tenKH, sdt, diaChi, hangThanhVien, diemTichLuy "
-                   + "FROM KhachHang";
+                   + "FROM KhachHang WHERE trangThai <> N'Đã xóa'";
 
         try (Connection con = ConnectDB.getConnection();
              PreparedStatement ps = con.prepareStatement(sql);
@@ -44,7 +44,7 @@ public class KhachHangDAO {
     // 2. Tìm khách hàng theo mã
     public KhachHang timTheoMa(String maKH) {
         String sql = "SELECT maKH, tenKH, sdt, diaChi, hangThanhVien, diemTichLuy "
-                   + "FROM KhachHang WHERE maKH = ?";
+                   + "FROM KhachHang WHERE maKH = ? AND trangThai <> N'Đã xóa'";
 
         try (Connection con = ConnectDB.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
@@ -79,7 +79,8 @@ public class KhachHangDAO {
 
         String sql = "SELECT maKH, tenKH, sdt, diaChi, hangThanhVien, diemTichLuy "
                    + "FROM KhachHang "
-                   + "WHERE maKH LIKE ? OR tenKH LIKE ? OR sdt LIKE ?";
+                   + "WHERE trangThai <> N'Đã xóa' "
+                   + "AND (maKH LIKE ? OR tenKH LIKE ? OR sdt LIKE ?)";
 
         try (Connection con = ConnectDB.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
@@ -157,7 +158,7 @@ public class KhachHangDAO {
         String sql = "UPDATE KhachHang "
                    + "SET tenKH = ?, sdt = ?, diaChi = ?, "
                    + "hangThanhVien = ?, diemTichLuy = ? "
-                   + "WHERE maKH = ?";
+                   + "WHERE maKH = ? AND trangThai <> N'Đã xóa'";
 
         try (Connection con = ConnectDB.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
@@ -183,20 +184,23 @@ public class KhachHangDAO {
         }
     }
 
-    // 6. Xóa khách hàng khỏi SQL Server
+    // 6. Xóa khách hàng nếu chưa được dùng; nếu có lịch sử thì ẩn để giữ khóa ngoại.
     public boolean xoa(String maKH) {
-        String sql = "DELETE FROM KhachHang WHERE maKH = ?";
-
-        try (Connection con = ConnectDB.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
-
-            ps.setString(1, maKH);
-
-            return ps.executeUpdate() > 0;
+        try (Connection con = ConnectDB.getConnection()) {
+            return DeletePolicy.xoaHoacAn(con,
+                    "SELECT 1 FROM KhachHang WITH (XLOCK, HOLDLOCK) WHERE maKH = ? AND trangThai <> N'Đã xóa'",
+                    new String[] {
+                            "SELECT 1 FROM ThuCung WHERE maKH = ?",
+                            "SELECT 1 FROM LichHen WHERE maKH = ?",
+                            "SELECT 1 FROM HoaDon WHERE maKH = ?",
+                            "SELECT 1 FROM TichDiem WHERE maKH = ?"
+                    },
+                    "UPDATE KhachHang SET trangThai = N'Đã xóa' WHERE maKH = ? AND trangThai <> N'Đã xóa'",
+                    "DELETE FROM KhachHang WHERE maKH = ? AND trangThai <> N'Đã xóa'",
+                    maKH);
 
         } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
+            throw new IllegalStateException("Không thể xóa hoặc ẩn khách hàng: " + e.getMessage(), e);
         }
     }
 }

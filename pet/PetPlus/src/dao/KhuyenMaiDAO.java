@@ -11,7 +11,7 @@ public class KhuyenMaiDAO {
 
     public List<KhuyenMai> layDanhSach() {
         List<KhuyenMai> ds = new ArrayList<>();
-        String sql = "SELECT maKhuyenMai, tenKhuyenMai, phanTramGiam, dieuKienApDung, ngayBatDau, ngayKetThuc FROM KhuyenMai";
+        String sql = "SELECT maKhuyenMai, tenKhuyenMai, phanTramGiam, dieuKienApDung, ngayBatDau, ngayKetThuc FROM KhuyenMai WHERE trangThai <> N'Đã xóa'";
 
         try (Connection con = ConnectDB.getConnection();
              PreparedStatement ps = con.prepareStatement(sql);
@@ -34,7 +34,7 @@ public class KhuyenMaiDAO {
     }
 
     public KhuyenMai timTheoMa(String maKM) {
-        String sql = "SELECT * FROM KhuyenMai WHERE maKhuyenMai = ?";
+        String sql = "SELECT * FROM KhuyenMai WHERE maKhuyenMai = ? AND trangThai <> N'Đã xóa'";
         try (Connection con = ConnectDB.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
 
@@ -77,7 +77,7 @@ public class KhuyenMaiDAO {
     }
 
     public boolean capNhat(KhuyenMai km) {
-        String sql = "UPDATE KhuyenMai SET tenKhuyenMai = ?, phanTramGiam = ?, dieuKienApDung = ?, ngayBatDau = ?, ngayKetThuc = ? WHERE maKhuyenMai = ?";
+        String sql = "UPDATE KhuyenMai SET tenKhuyenMai = ?, phanTramGiam = ?, dieuKienApDung = ?, ngayBatDau = ?, ngayKetThuc = ? WHERE maKhuyenMai = ? AND trangThai <> N'Đã xóa'";
         try (Connection con = ConnectDB.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
 
@@ -96,15 +96,18 @@ public class KhuyenMaiDAO {
     }
 
     public boolean xoa(String maKM) {
-        String sql = "DELETE FROM KhuyenMai WHERE maKhuyenMai = ?";
-        try (Connection con = ConnectDB.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
-
-            ps.setString(1, maKM);
-            return ps.executeUpdate() > 0;
+        try (Connection con = ConnectDB.getConnection()) {
+            return DeletePolicy.xoaHoacAn(con,
+                    "SELECT 1 FROM KhuyenMai WITH (XLOCK, HOLDLOCK) WHERE maKhuyenMai = ? AND trangThai <> N'Đã xóa'",
+                    new String[] {
+                            "SELECT 1 FROM HoaDon WHERE maKhuyenMai = ?",
+                            "SELECT 1 FROM KhuyenMaiSanPham WHERE maKhuyenMai = ?"
+                    },
+                    "UPDATE KhuyenMai SET trangThai = N'Đã xóa' WHERE maKhuyenMai = ? AND trangThai <> N'Đã xóa'",
+                    "DELETE FROM KhuyenMai WHERE maKhuyenMai = ? AND trangThai <> N'Đã xóa'",
+                    maKM);
         } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
+            throw new IllegalStateException("Không thể xóa hoặc ẩn khuyến mãi: " + e.getMessage(), e);
         }
     }
 }

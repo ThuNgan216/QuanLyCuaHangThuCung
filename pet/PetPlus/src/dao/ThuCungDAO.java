@@ -14,7 +14,7 @@ public class ThuCungDAO {
 
     public List<ThuCung> layDanhSach() {
         List<ThuCung> ds = new ArrayList<>();
-        String sql = "SELECT " + COLUMNS + " FROM ThuCung ORDER BY tenThuCung";
+        String sql = "SELECT " + COLUMNS + " FROM ThuCung WHERE trangThai <> N'Đã xóa' ORDER BY tenThuCung";
         try (Connection con = ConnectDB.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql);
                 ResultSet rs = ps.executeQuery()) {
@@ -27,7 +27,7 @@ public class ThuCungDAO {
     }
 
     public ThuCung timTheoMa(String ma) {
-        String sql = "SELECT " + COLUMNS + " FROM ThuCung WHERE maThuCung = ?";
+        String sql = "SELECT " + COLUMNS + " FROM ThuCung WHERE maThuCung = ? AND trangThai <> N'Đã xóa'";
         try (Connection con = ConnectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, ma);
             try (ResultSet rs = ps.executeQuery()) {
@@ -42,7 +42,7 @@ public class ThuCungDAO {
 
     public List<ThuCung> timKiem(String tuKhoa) {
         List<ThuCung> ds = new ArrayList<>();
-        String sql = "SELECT t." + COLUMNS.replace(", ", ", t.") + " FROM ThuCung t LEFT JOIN KhachHang k ON t.maKH=k.maKH WHERE k.sdt LIKE ? ORDER BY t.tenThuCung";
+        String sql = "SELECT t." + COLUMNS.replace(", ", ", t.") + " FROM ThuCung t LEFT JOIN KhachHang k ON t.maKH=k.maKH WHERE t.trangThai <> N'Đã xóa' AND k.trangThai <> N'Đã xóa' AND k.sdt LIKE ? ORDER BY t.tenThuCung";
         try (Connection con=ConnectDB.getConnection(); PreparedStatement ps=con.prepareStatement(sql)) {
             ps.setString(1, "%" + (tuKhoa==null ? "" : tuKhoa.trim()) + "%");
             try(ResultSet rs=ps.executeQuery()){while(rs.next()) ds.add(docThuCung(rs));}
@@ -112,7 +112,7 @@ public class ThuCungDAO {
     }
 
     public boolean capNhat(ThuCung t) {
-        String sql = "UPDATE ThuCung SET tenThuCung=?, loai=?, giong=?, gioiTinh=?, canNang=?, ngaySinh=?, tinhTrangSK=?, tiemChung=?, maKH=? WHERE maThuCung=?";
+        String sql = "UPDATE ThuCung SET tenThuCung=?, loai=?, giong=?, gioiTinh=?, canNang=?, ngaySinh=?, tinhTrangSK=?, tiemChung=?, maKH=? WHERE maThuCung=? AND trangThai <> N'Đã xóa'";
         try (Connection con = ConnectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, t.getTenThuCung());
             ps.setString(2, t.getLoai());
@@ -132,13 +132,18 @@ public class ThuCungDAO {
     }
 
     public boolean xoa(String ma) {
-        String sql = "DELETE FROM ThuCung WHERE maThuCung = ?";
-        try (Connection con = ConnectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setString(1, ma);
-            return ps.executeUpdate() > 0;
+        try (Connection con = ConnectDB.getConnection()) {
+            return DeletePolicy.xoaHoacAn(con,
+                    "SELECT 1 FROM ThuCung WITH (XLOCK, HOLDLOCK) WHERE maThuCung = ? AND trangThai <> N'Đã xóa'",
+                    new String[] {
+                            "SELECT 1 FROM LichHen WHERE maThuCung = ?",
+                            "SELECT 1 FROM HoaDon WHERE maThuCung = ?"
+                    },
+                    "UPDATE ThuCung SET trangThai = N'Đã xóa' WHERE maThuCung = ? AND trangThai <> N'Đã xóa'",
+                    "DELETE FROM ThuCung WHERE maThuCung = ? AND trangThai <> N'Đã xóa'",
+                    ma);
         } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
+            throw new IllegalStateException("Không thể xóa hoặc ẩn thú cưng: " + e.getMessage(), e);
         }
     }
 
