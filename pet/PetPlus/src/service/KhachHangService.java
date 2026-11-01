@@ -1,4 +1,3 @@
-
 package service;
 
 import java.util.List;
@@ -102,6 +101,29 @@ public class KhachHangService {
     private static final java.util.regex.Pattern DIA_CHI_HOP_LE = java.util.regex.Pattern
             .compile("[\\p{L}\\p{N}\\s,./\\-]+");
 
+    /** Luật kiểm tra tên, dùng chung cho dialog và service. */
+    public static void kiemTraTen(String tenKH) {
+        String ten = tenKH == null ? "" : tenKH.trim();
+        if (ten.isEmpty()) {
+            throw new IllegalArgumentException("Tên khách hàng không được để trống.");
+        }
+        if (ten.length() > 100) {
+            throw new IllegalArgumentException("Tên khách hàng tối đa 100 ký tự.");
+        }
+        if (!ten.matches("[\\p{L}]+(?:\\s+[\\p{L}]+)*")) {
+            throw new IllegalArgumentException(
+                    "Tên khách hàng chỉ được chứa chữ cái và khoảng trắng, không có số hoặc ký tự đặc biệt.");
+        }
+    }
+
+    /** Luật kiểm tra số điện thoại, dùng chung cho dialog và service. */
+    public static void kiemTraSdt(String soDienThoai) {
+        String sdt = soDienThoai == null ? "" : soDienThoai.trim();
+        if (!sdt.matches("0\\d{9}")) {
+            throw new IllegalArgumentException("Số điện thoại phải bắt đầu bằng 0 và gồm đúng 10 chữ số.");
+        }
+    }
+
     public static void kiemTraDiaChi(String diaChi) {
         String dc = diaChi == null ? "" : diaChi.trim();
         if (dc.isEmpty()) {
@@ -144,25 +166,8 @@ public class KhachHangService {
                     "Mã khách hàng tối đa 20 ký tự.");
         }
 
-        if (ten.isEmpty()) {
-            throw new IllegalArgumentException(
-                    "Tên khách hàng không được để trống.");
-        }
-
-        if (ten.length() > 100) {
-            throw new IllegalArgumentException(
-                    "Tên khách hàng tối đa 100 ký tự.");
-        }
-
-        if (!ten.matches("[\\p{L}]+(?:\\s+[\\p{L}]+)*")) {
-            throw new IllegalArgumentException(
-                    "Tên khách hàng chỉ được chứa chữ cái và khoảng trắng, không có số hoặc ký tự đặc biệt.");
-        }
-
-        if (!sdt.matches("0\\d{9}")) {
-            throw new IllegalArgumentException(
-                    "Số điện thoại phải bắt đầu bằng 0 và gồm đúng 10 chữ số.");
-        }
+        kiemTraTen(ten);
+        kiemTraSdt(sdt);
 
         String diaChi = kh.getDiaChi() == null ? "" : kh.getDiaChi().trim();
         kiemTraDiaChi(diaChi);
