@@ -482,10 +482,6 @@ public class dlgPhieuNhap extends JDialog {
             JOptionPane.showMessageDialog(this, "Lỗi tải sản phẩm theo NCC: " + ex.getMessage());
         }
     }
-<<<<<<< HEAD
-=======
-
->>>>>>> a977d5411b9becb1625f650a733494c448a8b72e
     // Hàm nhận danh sách hàng từ thuật toán Gợi ý và điền tự động vào bảng
     public void importHangTuGoiY(String maNCC, java.util.List<Object[]> danhSachHang) {
         String tenNCC = "";
@@ -532,8 +528,4 @@ public class dlgPhieuNhap extends JDialog {
             });
         }
     }
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> a977d5411b9becb1625f650a733494c448a8b72e

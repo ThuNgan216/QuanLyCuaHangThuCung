@@ -14,7 +14,8 @@ public class ThuCungDAO {
 
     public List<ThuCung> layDanhSach() {
         List<ThuCung> ds = new ArrayList<>();
-        String sql = "SELECT " + COLUMNS + " FROM ThuCung WHERE trangThai <> N'Đã xóa' ORDER BY tenThuCung";
+        String sql = "SELECT " + COLUMNS + " FROM ThuCung WHERE trangThai <> N'Đã xóa' "
+                + "AND maKH IN (SELECT maKH FROM KhachHang WHERE trangThai <> N'Đã xóa') ORDER BY tenThuCung";
         try (Connection con = ConnectDB.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql);
                 ResultSet rs = ps.executeQuery()) {
@@ -42,47 +43,43 @@ public class ThuCungDAO {
 
     public List<ThuCung> timKiem(String tuKhoa) {
         List<ThuCung> ds = new ArrayList<>();
-        String sql = "SELECT t." + COLUMNS.replace(", ", ", t.") + " FROM ThuCung t LEFT JOIN KhachHang k ON t.maKH=k.maKH WHERE t.trangThai <> N'Đã xóa' AND k.trangThai <> N'Đã xóa' AND k.sdt LIKE ? ORDER BY t.tenThuCung";
-        try (Connection con=ConnectDB.getConnection(); PreparedStatement ps=con.prepareStatement(sql)) {
-            ps.setString(1, "%" + (tuKhoa==null ? "" : tuKhoa.trim()) + "%");
-            try(ResultSet rs=ps.executeQuery()){while(rs.next()) ds.add(docThuCung(rs));}
-        } catch(SQLException e){throw new RuntimeException("Không thể tìm thú cưng theo số điện thoại khách hàng.",e);}
+        String sql = "SELECT t." + COLUMNS.replace(", ", ", t.")
+                + " FROM ThuCung t LEFT JOIN KhachHang k ON t.maKH=k.maKH WHERE t.trangThai <> N'Đã xóa' AND k.trangThai <> N'Đã xóa' AND k.sdt LIKE ? ORDER BY t.tenThuCung";
+        try (Connection con = ConnectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, "%" + (tuKhoa == null ? "" : tuKhoa.trim()) + "%");
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next())
+                    ds.add(docThuCung(rs));
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Không thể tìm thú cưng theo số điện thoại khách hàng.", e);
+        }
         return ds;
     }
 
+    /** Số lần thử lại tối đa khi hai người thêm cùng lúc và sinh trùng mã. */
+    private static final int SO_LAN_THU_TOI_DA = 3;
+
+    /**
+     * Phát sinh mã thú cưng theo số lớn nhất hiện có (TC01, TC02...), cùng cách với
+     * KhachHangDAO.
+     */
     public String taoMaTuDong() {
-        String sql = "SELECT maThuCung FROM ThuCung";
-
-        try (Connection con = ConnectDB.getConnection();
-                PreparedStatement ps = con.prepareStatement(sql);
-                ResultSet rs = ps.executeQuery()) {
-
-            java.util.Set<Long> cacSoDaDung = new java.util.HashSet<>();
-
-            while (rs.next()) {
-                String ma = rs.getString("maThuCung");
-
-                if (ma != null && ma.matches("^TC[0-9]+$")) {
-                    try {
-                        long so = Long.parseLong(ma.substring(2));
-                        cacSoDaDung.add(so);
-                    } catch (NumberFormatException ignored) {
-                        // Bỏ qua mã cũ có phần số vượt giới hạn long.
-                    }
-                }
-            }
-
-            long soTiepTheo = 1;
-
-            while (cacSoDaDung.contains(soTiepTheo)) {
-                soTiepTheo++;
-            }
-
-            return String.format(
-                    java.util.Locale.ROOT, "TC%02d", soTiepTheo);
-
+        try (Connection con = ConnectDB.getConnection()) {
+            return taoMaTuDong(con);
         } catch (SQLException e) {
             throw new RuntimeException("Không thể tạo mã thú cưng.", e);
+        }
+    }
+
+    // Tính số lớn nhất ngay trong SQL (kể cả thú cưng đã ẩn, để không dùng lại mã
+    // cũ).
+    private String taoMaTuDong(Connection con) throws SQLException {
+        String sql = "SELECT MAX(TRY_CONVERT(INT, SUBSTRING(maThuCung, 3, 18))) "
+                + "FROM ThuCung WHERE maThuCung LIKE 'TC[0-9]%'";
+        try (PreparedStatement ps = con.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
+            int max = rs.next() ? rs.getInt(1) : 0;
+            return String.format(java.util.Locale.ROOT, "TC%02d", max + 1);
         }
     }
 
@@ -95,20 +92,35 @@ public class ThuCungDAO {
                 """;
 
         try (Connection con = ConnectDB.getConnection()) {
-            // Tạo mã và thêm dữ liệu trên cùng một kết nối.
-            // Khóa chính trong database vẫn ngăn mã bị trùng.
-            String maMoi = taoMaTuDong();
-            t.setMaThuCung(maMoi);
-
-            try (PreparedStatement ps = con.prepareStatement(sql)) {
-                ganThamSo(ps, t, false);
-                return ps.executeUpdate() > 0;
+            // Sinh mã rồi INSERT là hai bước, nên hai người thêm cùng lúc có thể ra cùng
+            // mã.
+            // Khóa chính trong database sẽ chặn bản ghi trùng; khi đó sinh mã mới và thử
+            // lại.
+            for (int lanThu = 1; lanThu <= SO_LAN_THU_TOI_DA; lanThu++) {
+                t.setMaThuCung(taoMaTuDong(con));
+                try (PreparedStatement ps = con.prepareStatement(sql)) {
+                    ganThamSo(ps, t, false);
+                    return ps.executeUpdate() > 0;
+                } catch (SQLException e) {
+                    if (!laTrungKhoaChinh(e) || lanThu == SO_LAN_THU_TOI_DA) {
+                        throw e;
+                    }
+                }
             }
+            return false;
 
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
         }
+    }
+
+    /**
+     * 2627: vi phạm PRIMARY KEY/UNIQUE constraint, 2601: trùng giá trị trong unique
+     * index.
+     */
+    private boolean laTrungKhoaChinh(SQLException e) {
+        return e.getErrorCode() == 2627 || e.getErrorCode() == 2601;
     }
 
     public boolean capNhat(ThuCung t) {

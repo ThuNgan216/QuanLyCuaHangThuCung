@@ -180,10 +180,21 @@ public class pnlKhachHang extends JPanel {
         btnTimKiem.addActionListener(e -> timKiem());
         txtTimKiem.addActionListener(e -> timKiem());
         txtTimKiem.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
-            private void capNhat() { timKiem(); }
-            public void insertUpdate(javax.swing.event.DocumentEvent e) { capNhat(); }
-            public void removeUpdate(javax.swing.event.DocumentEvent e) { capNhat(); }
-            public void changedUpdate(javax.swing.event.DocumentEvent e) { capNhat(); }
+            private void capNhat() {
+                timKiem();
+            }
+
+            public void insertUpdate(javax.swing.event.DocumentEvent e) {
+                capNhat();
+            }
+
+            public void removeUpdate(javax.swing.event.DocumentEvent e) {
+                capNhat();
+            }
+
+            public void changedUpdate(javax.swing.event.DocumentEvent e) {
+                capNhat();
+            }
         });
 
         btnLoc.addActionListener(e -> locVaTimKiem());
@@ -351,6 +362,10 @@ public class pnlKhachHang extends JPanel {
                 JOptionPane.showMessageDialog(
                         this, "Không thể xóa khách hàng.");
             }
+        } catch (IllegalArgumentException e) {
+            JOptionPane.showMessageDialog(
+                    this, e.getMessage(), "Không thể xóa khách hàng",
+                    JOptionPane.WARNING_MESSAGE);
         } catch (Exception e) {
             hienThiLoi(
                     "Không thể xử lý yêu cầu xóa khách hàng.",
@@ -373,14 +388,21 @@ public class pnlKhachHang extends JPanel {
                     FontMetrics metrics = g2.getFontMetrics(getFont());
                     Insets insets = getInsets();
                     int y = (getHeight() - metrics.getHeight()) / 2 + metrics.getAscent();
-                    g2.drawString("Nhập tỉnh", insets.left + 2, y);
+                    g2.drawString("Nhập địa chỉ", insets.left + 2, y);
                     g2.dispose();
                 }
             }
         };
         txtDiaChi.addFocusListener(new java.awt.event.FocusAdapter() {
-            @Override public void focusGained(java.awt.event.FocusEvent e) { txtDiaChi.repaint(); }
-            @Override public void focusLost(java.awt.event.FocusEvent e) { txtDiaChi.repaint(); }
+            @Override
+            public void focusGained(java.awt.event.FocusEvent e) {
+                txtDiaChi.repaint();
+            }
+
+            @Override
+            public void focusLost(java.awt.event.FocusEvent e) {
+                txtDiaChi.repaint();
+            }
         });
         JTextField txtHang = new JTextField(dangSua ? String.valueOf(khCu.getHangThanhVien()) : "1");
         JTextField txtDiem = new JTextField(dangSua ? String.valueOf(khCu.getDiemTichLuy()) : "0");
@@ -391,30 +413,40 @@ public class pnlKhachHang extends JPanel {
         txtHang.setFocusable(false);
         txtDiem.setFocusable(false);
         JPanel pnl = new JPanel(new GridLayout(0, 2, 8, 8));
-        pnl.add(new JLabel("Mã khách hàng:")); pnl.add(txtMa);
-        pnl.add(new JLabel("Tên khách hàng:")); pnl.add(txtTen);
-        pnl.add(new JLabel("Số điện thoại:")); pnl.add(txtSDT);
-        pnl.add(new JLabel("Địa chỉ:")); pnl.add(txtDiaChi);
-        pnl.add(new JLabel("Hạng thành viên:")); pnl.add(txtHang);
-        pnl.add(new JLabel("Điểm tích lũy:")); pnl.add(txtDiem);
+        pnl.add(new JLabel("Mã khách hàng:"));
+        pnl.add(txtMa);
+        pnl.add(new JLabel("Tên khách hàng:"));
+        pnl.add(txtTen);
+        pnl.add(new JLabel("Số điện thoại:"));
+        pnl.add(txtSDT);
+        pnl.add(new JLabel("Địa chỉ:"));
+        pnl.add(txtDiaChi);
+        pnl.add(new JLabel("Hạng thành viên:"));
+        pnl.add(txtHang);
+        pnl.add(new JLabel("Điểm tích lũy:"));
+        pnl.add(txtDiem);
         while (true) {
-            int ketQua = JOptionPane.showConfirmDialog(this, pnl, dangSua ? "Sửa khách hàng" : "Thêm khách hàng", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
-            if (ketQua != JOptionPane.OK_OPTION) return null;
-            String ma=txtMa.getText().trim(), ten=txtTen.getText().trim(), sdt=txtSDT.getText().trim(), diaChi=txtDiaChi.getText().trim();
+            int ketQua = JOptionPane.showConfirmDialog(this, pnl, dangSua ? "Sửa khách hàng" : "Thêm khách hàng",
+                    JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+            if (ketQua != JOptionPane.OK_OPTION)
+                return null;
+            String ma = txtMa.getText().trim(), ten = txtTen.getText().trim(), sdt = txtSDT.getText().trim(),
+                    diaChi = txtDiaChi.getText().trim();
             try {
-                if (ten.isEmpty()) throw new IllegalArgumentException("Vui lòng nhập tên khách hàng.");
+                if (ten.isEmpty())
+                    throw new IllegalArgumentException("Vui lòng nhập tên khách hàng.");
                 if (!ten.matches("[\\p{L}]+(?:\\s+[\\p{L}]+)*"))
-                    throw new IllegalArgumentException("Tên khách hàng chỉ được chứa chữ cái và khoảng trắng, không có số hoặc ký tự đặc biệt.");
+                    throw new IllegalArgumentException(
+                            "Tên khách hàng chỉ được chứa chữ cái và khoảng trắng, không có số hoặc ký tự đặc biệt.");
                 if (sdt.isEmpty() || !sdt.matches("0\\d{9}"))
                     throw new IllegalArgumentException("Số điện thoại phải bắt đầu bằng 0 và gồm đúng 10 chữ số.");
-                if (diaChi.isEmpty()) throw new IllegalArgumentException("Vui lòng nhập địa chỉ.");
-                if (!diaChi.matches("[\\p{L}]+(?:\\s+[\\p{L}]+)*"))
-                    throw new IllegalArgumentException("Địa chỉ chỉ được chứa chữ cái và khoảng trắng.");
+                KhachHangService.kiemTraDiaChi(diaChi);
                 int hang = dangSua ? khCu.getHangThanhVien() : 1;
                 int diem = dangSua ? khCu.getDiemTichLuy() : 0;
                 return new KhachHang(ma, ten, sdt, diaChi, hang, diem);
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, ex.getMessage(), "Dữ liệu chưa hợp lệ", JOptionPane.WARNING_MESSAGE);
+                JOptionPane.showMessageDialog(this, ex.getMessage(), "Dữ liệu chưa hợp lệ",
+                        JOptionPane.WARNING_MESSAGE);
             }
         }
     }

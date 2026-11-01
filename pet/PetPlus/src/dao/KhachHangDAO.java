@@ -15,11 +15,11 @@ public class KhachHangDAO {
         List<KhachHang> ds = new ArrayList<>();
 
         String sql = "SELECT maKH, tenKH, sdt, diaChi, hangThanhVien, diemTichLuy "
-                   + "FROM KhachHang WHERE trangThai <> N'Đã xóa'";
+                + "FROM KhachHang WHERE trangThai <> N'Đã xóa'";
 
         try (Connection con = ConnectDB.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+                PreparedStatement ps = con.prepareStatement(sql);
+                ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
                 KhachHang kh = new KhachHang();
@@ -44,10 +44,10 @@ public class KhachHangDAO {
     // 2. Tìm khách hàng theo mã
     public KhachHang timTheoMa(String maKH) {
         String sql = "SELECT maKH, tenKH, sdt, diaChi, hangThanhVien, diemTichLuy "
-                   + "FROM KhachHang WHERE maKH = ? AND trangThai <> N'Đã xóa'";
+                + "FROM KhachHang WHERE maKH = ? AND trangThai <> N'Đã xóa'";
 
         try (Connection con = ConnectDB.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+                PreparedStatement ps = con.prepareStatement(sql)) {
 
             ps.setString(1, maKH);
 
@@ -78,12 +78,12 @@ public class KhachHangDAO {
         List<KhachHang> ds = new ArrayList<>();
 
         String sql = "SELECT maKH, tenKH, sdt, diaChi, hangThanhVien, diemTichLuy "
-                   + "FROM KhachHang "
-                   + "WHERE trangThai <> N'Đã xóa' "
-                   + "AND (maKH LIKE ? OR tenKH LIKE ? OR sdt LIKE ?)";
+                + "FROM KhachHang "
+                + "WHERE trangThai <> N'Đã xóa' "
+                + "AND (maKH LIKE ? OR tenKH LIKE ? OR sdt LIKE ?)";
 
         try (Connection con = ConnectDB.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+                PreparedStatement ps = con.prepareStatement(sql)) {
 
             String key = "%" + tuKhoa + "%";
 
@@ -113,14 +113,19 @@ public class KhachHangDAO {
         return ds;
     }
 
-
     /** Phát sinh mã KH theo số thứ tự lớn nhất hiện có, dạng KH01, KH02... */
     public String taoMaMoi() {
         String sql = "SELECT MAX(TRY_CONVERT(INT, SUBSTRING(maKH, 3, 18))) FROM KhachHang WHERE maKH LIKE 'KH[0-9]%'";
-        try (Connection con = ConnectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
-            int max = 0; if (rs.next()) max = rs.getInt(1);
+        try (Connection con = ConnectDB.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql);
+                ResultSet rs = ps.executeQuery()) {
+            int max = 0;
+            if (rs.next())
+                max = rs.getInt(1);
             return String.format(java.util.Locale.ROOT, "KH%02d", max + 1);
-        } catch (SQLException e) { throw new IllegalStateException("Không thể phát sinh mã khách hàng: " + e.getMessage(), e); }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Không thể phát sinh mã khách hàng: " + e.getMessage(), e);
+        }
     }
 
     /** Kiểm tra số điện thoại đã thuộc khách hàng khác hay chưa. */
@@ -130,7 +135,7 @@ public class KhachHangDAO {
                 : "SELECT 1 FROM KhachHang WHERE sdt = ? AND maKH <> ?";
 
         try (Connection con = ConnectDB.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+                PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, sdt);
             if (maKHBoQua != null) {
                 ps.setString(2, maKHBoQua);
@@ -147,11 +152,11 @@ public class KhachHangDAO {
     // 4. Thêm khách hàng vào SQL Server
     public boolean them(KhachHang kh) {
         String sql = "INSERT INTO KhachHang "
-                   + "(maKH, tenKH, sdt, diaChi, hangThanhVien, diemTichLuy) "
-                   + "VALUES (?, ?, ?, ?, ?, ?)";
+                + "(maKH, tenKH, sdt, diaChi, hangThanhVien, diemTichLuy) "
+                + "VALUES (?, ?, ?, ?, ?, ?)";
 
         try (Connection con = ConnectDB.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+                PreparedStatement ps = con.prepareStatement(sql)) {
 
             ps.setString(1, kh.getMaKH());
             ps.setString(2, kh.getTenKH());
@@ -181,12 +186,12 @@ public class KhachHangDAO {
     // 5. Cập nhật khách hàng trong SQL Server
     public boolean capNhat(KhachHang kh) {
         String sql = "UPDATE KhachHang "
-                   + "SET tenKH = ?, sdt = ?, diaChi = ?, "
-                   + "hangThanhVien = ?, diemTichLuy = ? "
-                   + "WHERE maKH = ? AND trangThai <> N'Đã xóa'";
+                + "SET tenKH = ?, sdt = ?, diaChi = ?, "
+                + "hangThanhVien = ?, diemTichLuy = ? "
+                + "WHERE maKH = ? AND trangThai <> N'Đã xóa'";
 
         try (Connection con = ConnectDB.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+                PreparedStatement ps = con.prepareStatement(sql)) {
 
             ps.setString(1, kh.getTenKH());
             ps.setString(2, kh.getSdt());
@@ -224,7 +229,22 @@ public class KhachHangDAO {
         return false;
     }
 
-    // 6. Xóa khách hàng nếu chưa được dùng; nếu có lịch sử thì ẩn để giữ khóa ngoại.
+    /** Khách hàng còn thú cưng đang quản lý (chưa bị xóa/ẩn) hay không. */
+    public boolean coThuCungDangQuanLy(String maKH) {
+        String sql = "SELECT 1 FROM ThuCung WHERE maKH = ? AND trangThai <> N'Đã xóa'";
+        try (Connection con = ConnectDB.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, maKH);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Không thể kiểm tra thú cưng của khách hàng: " + e.getMessage(), e);
+        }
+    }
+
+    // 6. Xóa khách hàng nếu chưa được dùng; nếu có lịch sử thì ẩn để giữ khóa
+    // ngoại.
     public boolean xoa(String maKH) {
         try (Connection con = ConnectDB.getConnection()) {
             return DeletePolicy.xoaHoacAn(con,

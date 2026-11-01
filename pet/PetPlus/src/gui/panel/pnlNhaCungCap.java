@@ -69,18 +69,10 @@ public class pnlNhaCungCap extends JPanel {
         btnThem = new JButton("Thêm mới");
         btnSua = new JButton("Cập nhật");
         btnXoa = new JButton("Xóa");
-<<<<<<< HEAD
-=======
-        btnXemSP = new JButton("Xem SP");
->>>>>>> 54aa75aa728d4dcece23f899dc6ad6b13a91cfd9
 
         pnlNut.add(btnThem);
         pnlNut.add(btnSua);
         pnlNut.add(btnXoa);
-<<<<<<< HEAD
-=======
-        pnlNut.add(btnXemSP);
->>>>>>> 54aa75aa728d4dcece23f899dc6ad6b13a91cfd9
         
         pnlTop.add(pnlNut, BorderLayout.EAST);
 
@@ -146,12 +138,6 @@ public class pnlNhaCungCap extends JPanel {
             }
         });
 
-<<<<<<< HEAD
-=======
-        // Sự kiện click nút Xem SP
-        btnXemSP.addActionListener(e -> xemSanPhamCungCap());
-
->>>>>>> 54aa75aa728d4dcece23f899dc6ad6b13a91cfd9
         // Nút Xóa
         btnXoa.addActionListener(e -> xoaNCC());
     }
