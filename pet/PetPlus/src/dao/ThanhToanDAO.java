@@ -18,7 +18,9 @@ import java.time.LocalDate;
 
 public class ThanhToanDAO {
 
-    /** Dữ liệu cần hiển thị và nạp nhanh từ hóa đơn tiếp nhận đang chờ thanh toán. */
+    /**
+     * Dữ liệu cần hiển thị và nạp nhanh từ hóa đơn tiếp nhận đang chờ thanh toán.
+     */
     public static class PhieuChoThanhToanDTO {
         public final String maHoaDon;
         public final LocalDateTime thoiGianTiepNhan;
@@ -360,39 +362,51 @@ public class ThanhToanDAO {
         }
     }
 
-    /** Lưu phần trăm giảm tự động cho từng dòng sản phẩm vào bảng khuyến mãi sản phẩm hiện có. */
+    /**
+     * Lưu phần trăm giảm tự động cho từng dòng sản phẩm vào bảng khuyến mãi sản
+     * phẩm hiện có.
+     */
     public void themKhuyenMaiSanPham(Connection con, String maHD, List<Object[]> dong, KhuyenMai km)
             throws SQLException {
-        if (km == null || km.getMaKhuyenMai() == null || km.getPhanTramGiam() <= 0) return;
+        if (km == null || km.getMaKhuyenMai() == null || km.getPhanTramGiam() <= 0)
+            return;
         Set<String> maSanPhamApDung = new HashSet<>(km.getMaSanPhamApDung());
-        if (maSanPhamApDung.isEmpty()) return;
+        if (maSanPhamApDung.isEmpty())
+            return;
         Map<String, Long> soLuongTheoMa = new LinkedHashMap<>();
         for (Object[] row : dong) {
-            if (!"Sản phẩm".equals(row[0])) continue;
+            if (!"Sản phẩm".equals(row[0]))
+                continue;
             String maSP = String.valueOf(row[1]);
-            if (!maSanPhamApDung.contains(maSP)) continue;
+            if (!maSanPhamApDung.contains(maSP))
+                continue;
             soLuongTheoMa.put(maSP, Math.addExact(soLuongTheoMa.getOrDefault(maSP, 0L),
                     ((Number) row[3]).longValue()));
         }
         Set<String> maSanPhamDatNguong = new HashSet<>();
         for (Map.Entry<String, Long> entry : soLuongTheoMa.entrySet()) {
-            if (entry.getValue() >= km.getSoLuongToiThieu()) maSanPhamDatNguong.add(entry.getKey());
+            if (entry.getValue() >= km.getSoLuongToiThieu())
+                maSanPhamDatNguong.add(entry.getKey());
         }
-        if (maSanPhamDatNguong.isEmpty()) return;
+        if (maSanPhamDatNguong.isEmpty())
+            return;
 
         String sql = "INSERT INTO KhuyenMaiSanPham "
                 + "(maKhuyenMaiMaSanPham, mucGiam, maSP, maKhuyenMai, maHoaDon) VALUES (?, ?, ?, ?, ?)";
         try (PreparedStatement ps = con.prepareStatement(sql)) {
             for (Object[] row : dong) {
-                if (!"Sản phẩm".equals(row[0])) continue;
-                if (!maSanPhamDatNguong.contains(String.valueOf(row[1]))) continue;
+                if (!"Sản phẩm".equals(row[0]))
+                    continue;
+                if (!maSanPhamDatNguong.contains(String.valueOf(row[1])))
+                    continue;
                 int soLuong = ((Number) row[3]).intValue();
                 long donGia = ((Number) row[4]).longValue();
                 BigDecimal tienGiam = BigDecimal.valueOf(soLuong)
                         .multiply(BigDecimal.valueOf(donGia))
                         .multiply(BigDecimal.valueOf(km.getPhanTramGiam()))
                         .divide(BigDecimal.valueOf(100), 0, java.math.RoundingMode.HALF_UP);
-                if (tienGiam.signum() <= 0) continue;
+                if (tienGiam.signum() <= 0)
+                    continue;
                 ps.setString(1, "KMSP" + java.util.UUID.randomUUID().toString()
                         .replace("-", "").toUpperCase(java.util.Locale.ROOT));
                 ps.setBigDecimal(2, tienGiam);

@@ -114,7 +114,7 @@ public class pnlThanhToan extends JPanel {
     private long tienGiamKhuyenMaiSanPham;
     private boolean dangNapKhuyenMai = false;
     private final JRadioButton rbCash = new JRadioButton("Tiền mặt", true);
-    private final JRadioButton rbQR = new JRadioButton("QR Code");
+    private final JRadioButton rbQR = new JRadioButton("Chuyển khoản");
     private JButton[] nutTienNhanh = new JButton[0];
     private JButton btnConfirm;
     private long total = 0;
@@ -452,9 +452,10 @@ public class pnlThanhToan extends JPanel {
         KhuyenMai totNhat = null;
         for (KhuyenMai km : khuyenMaiSanPhamHieuLuc) {
             int hangApDung = km.getHangKhachHangApDung();
-            // Hạng cao hơn được hưởng ưu đãi của hạng thấp hơn; khách mới chỉ dùng được loại "Tất cả".
-            if (hangApDung != 0 && hangKhach < hangApDung) continue;
-            if (layMaSanPhamDatNguong(km).isEmpty()) continue;
+            if (hangApDung != 0 && hangKhach < hangApDung)
+                continue;
+            if (layMaSanPhamDatNguong(km).isEmpty())
+                continue;
             if (totNhat == null || km.getPhanTramGiam() > totNhat.getPhanTramGiam()) {
                 totNhat = km;
             }
@@ -467,15 +468,18 @@ public class pnlThanhToan extends JPanel {
         java.util.Set<String> maSanPhamApDung = new java.util.HashSet<>(km.getMaSanPhamApDung());
         java.util.Map<String, Long> soLuongTheoMa = new java.util.HashMap<>();
         for (int row = 0; row < modelDon.getRowCount(); row++) {
-            if (!LOAI_SP.equals(modelDon.getValueAt(row, C_LOAI))) continue;
+            if (!LOAI_SP.equals(modelDon.getValueAt(row, C_LOAI)))
+                continue;
             String maSP = String.valueOf(modelDon.getValueAt(row, C_MA));
-            if (!maSanPhamApDung.contains(maSP)) continue;
+            if (!maSanPhamApDung.contains(maSP))
+                continue;
             long soLuong = ((Number) modelDon.getValueAt(row, C_SL)).longValue();
             soLuongTheoMa.put(maSP, Math.addExact(soLuongTheoMa.getOrDefault(maSP, 0L), soLuong));
         }
         java.util.Set<String> maDatNguong = new java.util.HashSet<>();
         for (java.util.Map.Entry<String, Long> entry : soLuongTheoMa.entrySet()) {
-            if (entry.getValue() >= km.getSoLuongToiThieu()) maDatNguong.add(entry.getKey());
+            if (entry.getValue() >= km.getSoLuongToiThieu())
+                maDatNguong.add(entry.getKey());
         }
         return maDatNguong;
     }
@@ -653,7 +657,8 @@ public class pnlThanhToan extends JPanel {
         btnQuetMaVach.setToolTipText("Quét sản phẩm bằng webcam và thêm vào đơn hàng đang lập.");
         btnQuetMaVach.addActionListener(e -> moQuetMaVach(
                 SwingUtilities.getWindowAncestor(this) instanceof Frame
-                        ? (Frame) SwingUtilities.getWindowAncestor(this) : null));
+                        ? (Frame) SwingUtilities.getWindowAncestor(this)
+                        : null));
         JButton btnPhieuChoThanhToan = outlineButton("Chọn phiếu chờ thanh toán");
         btnPhieuChoThanhToan
                 .setToolTipText("Nạp thông tin khách hàng và dịch vụ từ phiếu tiếp nhận đang chờ thanh toán.");
@@ -666,6 +671,7 @@ public class pnlThanhToan extends JPanel {
         return p;
     }
 
+    // Quét mã vạch
     public void moQuetMaVach(Frame parent) {
         new dlgQuetMaVach(parent, this::themSanPhamTheoMaVach).setVisible(true);
     }
@@ -1394,9 +1400,11 @@ public class pnlThanhToan extends JPanel {
             java.util.Set<String> maSanPhamDatNguong = layMaSanPhamDatNguong(khuyenMaiSanPhamDangApDung);
             try {
                 for (int i = 0; i < modelDon.getRowCount(); i++) {
-                    if (!LOAI_SP.equals(modelDon.getValueAt(i, C_LOAI))) continue;
+                    if (!LOAI_SP.equals(modelDon.getValueAt(i, C_LOAI)))
+                        continue;
                     String maSP = String.valueOf(modelDon.getValueAt(i, C_MA));
-                    if (!maSanPhamDatNguong.contains(maSP)) continue;
+                    if (!maSanPhamDatNguong.contains(maSP))
+                        continue;
                     long line = ((Number) modelDon.getValueAt(i, C_TIEN)).longValue();
                     long giamDong = Math.round(line * rate / 100.0);
                     modelDon.setValueAt(giamDong, i, C_GIAM);
@@ -1426,9 +1434,11 @@ public class pnlThanhToan extends JPanel {
         lblSubtotal.setText(MONEY.format(subtotal) + " đ");
         lblDiscount.setText("-" + MONEY.format(discountInvoice) + " đ");
         lblTenKhuyenMaiSanPham.setText(khuyenMaiSanPhamDangApDung == null
-                ? "Không áp dụng" : khuyenMaiSanPhamDangApDung.getTenKhuyenMai());
+                ? "Không áp dụng"
+                : khuyenMaiSanPhamDangApDung.getTenKhuyenMai());
         lblTenKhuyenMaiSanPham.setToolTipText(khuyenMaiSanPhamDangApDung == null
-                ? null : "Sản phẩm: " + String.join(", ", khuyenMaiSanPhamDangApDung.getMaSanPhamApDung())
+                ? null
+                : "Sản phẩm: " + String.join(", ", khuyenMaiSanPhamDangApDung.getMaSanPhamApDung())
                         + " | Số lượng tối thiểu mỗi loại: " + khuyenMaiSanPhamDangApDung.getSoLuongToiThieu()
                         + (khuyenMaiSanPhamDangApDung.getDieuKienApDung().isEmpty() ? ""
                                 : " | Điều kiện: " + khuyenMaiSanPhamDangApDung.getDieuKienApDung()));
@@ -1520,7 +1530,7 @@ public class pnlThanhToan extends JPanel {
         final String maNV = Auth.user.getMaNV();
         final List<Object[]> dong = chupDongHang();
         final long tongTien = total;
-        final String phuongThuc = rbCash.isSelected() ? "Tiền mặt" : "QR Code";
+        final String phuongThuc = rbCash.isSelected() ? "Tiền mặt" : "Chuyển khoản";
         final KhuyenMai khuyenMai = layKhuyenMaiDangChon();
         final String maKhuyenMai = khuyenMai == null ? null : khuyenMai.getMaKhuyenMai();
         final KhuyenMai khuyenMaiSanPham = khuyenMaiSanPhamDangApDung;
@@ -1783,7 +1793,7 @@ public class pnlThanhToan extends JPanel {
     private void hienThiQR() {
         if (dlgQR == null) {
             Window owner = SwingUtilities.getWindowAncestor(this);
-            dlgQR = new JDialog(owner, "Thanh toán QR Code", Dialog.ModalityType.MODELESS);
+            dlgQR = new JDialog(owner, "Thanh toán Chuyển khoản", Dialog.ModalityType.MODELESS);
 
             JPanel content = new JPanel(new BorderLayout(14, 0));
             content.setBackground(Color.WHITE);
@@ -1898,7 +1908,8 @@ public class pnlThanhToan extends JPanel {
             String nhat = "-".repeat(RONG_HD);
             StringBuilder sb = new StringBuilder();
             sb.append(gach).append("\r\n");
-            sb.append(canGiua("PETPLUS")).append("\r\n");
+            sb.append(canGiua("CỦA HÀNG THÚ CƯNG PETPLUS")).append("\r\n");
+            sb.append(canGiua("Địa chỉ: 480 Nguyễn Thái Sơn, Quận Gò Vấp, TP. HCM")).append('\n');
             sb.append(canGiua("HÓA ĐƠN BÁN HÀNG")).append("\r\n");
             sb.append(gach).append("\r\n");
             sb.append("Mã hóa đơn : ").append(maHD).append("\r\n");
