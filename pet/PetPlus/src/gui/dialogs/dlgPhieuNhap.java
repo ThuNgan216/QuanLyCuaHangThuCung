@@ -287,10 +287,11 @@ public class dlgPhieuNhap extends JDialog {
                 cboNhaCungCap.addItem(ncc);
             }
 
-            List<NhanVien> dsNV = nhanVienDAO.layDanhSach();
-            for (NhanVien nv : dsNV) {
-                cboNhanVien.addItem(nv);
+            cboNhanVien.removeAllItems();
+            if (utils.Auth.user != null) {
+                cboNhanVien.addItem(utils.Auth.user);
             }
+            cboNhanVien.setEnabled(false);
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Lỗi tải dữ liệu danh mục: " + ex.getMessage(), "Lỗi",
                     JOptionPane.ERROR_MESSAGE);

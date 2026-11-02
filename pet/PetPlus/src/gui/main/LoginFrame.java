@@ -3,7 +3,6 @@ package gui.main;
 import appColor.AppColors;
 import dao.TaiKhoanDAO;
 import entity.NhanVien;
-// import entity.TaiKhoan;
 import utils.Auth;
 
 import javax.swing.*;
@@ -31,9 +30,9 @@ public class LoginFrame extends JFrame {
 
 	public LoginFrame() {
 		setTitle("PetPlus - Đăng nhập");
-		setSize(800, 500); // Kích thước form đăng nhập
+		setSize(800, 500);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setLocationRelativeTo(null); // Căn giữa màn hình
+		setLocationRelativeTo(null);
 		setResizable(false);
 		setLayout(new BorderLayout());
 		getContentPane().setBackground(AppColors.BACKGROUND);

@@ -1,31 +1,9 @@
-﻿/* ============================================================
-   PETPLUS DATABASE
-   HE THONG QUAN LY CUA HANG THU CUNG
-
-   19 THUC THE + DU LIEU MAU
-   SQL Server
-
-   LUU Y: Script nay XOA database PETPLUS cu va tao lai tu dau.
-   Hay sao luu du lieu cu truoc khi chay neu can giu lai.
-   ============================================================ */
+﻿
 USE master;
-
-
 GO
-/* 1. XOA DATABASE CU NEU TON TAI */
-IF DB_ID(N'PETPLUS') IS NOT NULL
-    BEGIN
-        ALTER DATABASE PETPLUS
-            SET SINGLE_USER
-            WITH ROLLBACK IMMEDIATE;
-        DROP DATABASE PETPLUS;
-    END
 
-
-GO
 /* 2. TAO DATABASE MOI */
 CREATE DATABASE PETPLUS;
-
 
 GO
 USE PETPLUS;
