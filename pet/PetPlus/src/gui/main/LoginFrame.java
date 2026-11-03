@@ -45,21 +45,18 @@ public class LoginFrame extends JFrame {
 		JPanel pnlCenter = new JPanel();
 		pnlCenter.setLayout(new BoxLayout(pnlCenter, BoxLayout.Y_AXIS));
 		pnlCenter.setBackground(AppColors.BACKGROUND);
-		pnlCenter.setBorder(new EmptyBorder(50, 200, 50, 200)); // Ép form vào giữa
+		pnlCenter.setBorder(new EmptyBorder(50, 200, 50, 200));
 
-		// 1. Khu vực Logo & Tên app
 		JPanel pnlHeader = new JPanel();
-		pnlHeader.setLayout(new BoxLayout(pnlHeader, BoxLayout.X_AXIS)); // Xếp ngang logo và text
+		pnlHeader.setLayout(new BoxLayout(pnlHeader, BoxLayout.X_AXIS));
 		pnlHeader.setBackground(AppColors.BACKGROUND);
 		pnlHeader.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-		// Cột trái: Icon Logo
 		JLabel lblIcon = new JLabel();
 		try {
 			URL pawIconUrl = getClass().getResource("/icons/paw.png");
 			if (pawIconUrl != null) {
 				ImageIcon originalIcon = new ImageIcon(pawIconUrl);
-				// Resize icon to lên chút cho cân xứng với form Login
 				Image scaledImage = originalIcon.getImage().getScaledInstance(70, 70, Image.SCALE_SMOOTH);
 				lblIcon.setIcon(new ImageIcon(scaledImage));
 			}
@@ -67,7 +64,6 @@ public class LoginFrame extends JFrame {
 			e.printStackTrace();
 		}
 
-		// Cột phải: Chứa 2 dòng text xếp dọc
 		JPanel pnlText = new JPanel();
 		pnlText.setLayout(new BoxLayout(pnlText, BoxLayout.Y_AXIS));
 		pnlText.setBackground(AppColors.BACKGROUND);
@@ -75,26 +71,23 @@ public class LoginFrame extends JFrame {
 		JLabel logoTitle = new JLabel("PetPlus");
 		logoTitle.setFont(new Font("Arial", Font.BOLD, 42));
 		logoTitle.setForeground(AppColors.PRIMARY_DARK);
-		logoTitle.setAlignmentX(Component.LEFT_ALIGNMENT); // Ép sát lề trái cột text
+		logoTitle.setAlignmentX(Component.LEFT_ALIGNMENT);
 
 		JLabel logoSub = new JLabel("Quản lý cửa hàng thú cưng");
 		logoSub.setFont(new Font("Arial", Font.PLAIN, 16));
 		logoSub.setForeground(AppColors.TEXT);
-		logoSub.setAlignmentX(Component.LEFT_ALIGNMENT); // Ép sát lề trái cột text
+		logoSub.setAlignmentX(Component.LEFT_ALIGNMENT);
 
 		pnlText.add(logoTitle);
 		pnlText.add(logoSub);
 
-		// Ráp Logo và Cột Text vào Header
 		pnlHeader.add(lblIcon);
-		pnlHeader.add(Box.createRigidArea(new Dimension(15, 0))); // Khoảng trống giữa logo và chữ
+		pnlHeader.add(Box.createRigidArea(new Dimension(15, 0)));
 		pnlHeader.add(pnlText);
 
 		pnlCenter.add(pnlHeader);
 		pnlCenter.add(Box.createRigidArea(new Dimension(0, 50)));
 
-		// 2. Khu vực Form nhập liệu
-		// Ô nhập mã nhân viên có chữ chìm
 		txtMaNV = new JTextField() {
 			@Override
 			protected void paintComponent(Graphics g) {
@@ -113,7 +106,6 @@ public class LoginFrame extends JFrame {
 		txtMaNV.setFont(new Font("Arial", Font.PLAIN, 14));
 		txtMaNV.setBorder(new CompoundBorder(new LineBorder(AppColors.PRIMARY, 1), new EmptyBorder(5, 10, 5, 10)));
 
-		// Ô nhập Password có chữ chìm
 		txtPassword = new JPasswordField() {
 			@Override
 			protected void paintComponent(Graphics g) {
