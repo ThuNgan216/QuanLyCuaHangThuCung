@@ -8,6 +8,7 @@
             "request": "launch",
             "mainClass": "database.ConnectDB",
 <<<<<<< HEAD
+<<<<<<< HEAD
             "env": {
                 "PETPLUS_DB_USERNAME": "sa",
                 "PETPLUS_DB_PASSWORD": "123456"
@@ -22,6 +23,11 @@
             "projectName": "QuanLyCuaHangThuCung_6ae16dc2",
             "env": {
                 "PETPLUS_DB_PASSWORD": "${env:PETPLUS_DB_PASSWORD}"
+>>>>>>> main
+=======
+            "env": {
+                "PETPLUS_DB_USERNAME": "sa",
+                "PETPLUS_DB_PASSWORD": "123456"
 >>>>>>> main
             }
         },
