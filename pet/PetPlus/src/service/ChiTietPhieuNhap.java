@@ -1,7 +1,12 @@
-package entity;
+package service;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+
+import entity.PhieuNhap;
+
+import entity.PhieuNhap;
+import entity.SanPham;
 
 public class ChiTietPhieuNhap {
     private int soLuongNhap;

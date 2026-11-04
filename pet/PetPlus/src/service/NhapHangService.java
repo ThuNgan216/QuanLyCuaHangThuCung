@@ -4,7 +4,6 @@ import dao.ChiTietPhieuNhapDAO;
 import dao.PhieuNhapDAO;
 import dao.SanPhamDAO;
 import database.ConnectDB;
-import entity.ChiTietPhieuNhap;
 import entity.PhieuNhap;
 import entity.SanPham;
 
@@ -22,7 +21,7 @@ public class NhapHangService {
     public List<PhieuNhap> layDanhSachPhieuNhap() {
         return phieuNhapDAO.layDanhSach();
     }
-    
+
     // Lấy chi tiết phiếu nhập
     public List<ChiTietPhieuNhap> layChiTiet(String maPN) throws SQLException {
         if (maPN == null || maPN.trim().isEmpty()) {
@@ -74,8 +73,8 @@ public class NhapHangService {
 
                 int tonKhoMoi = spCu.getSoLuongTon() + ct.getSoLuongNhap();
                 spCu.setSoLuongTon(tonKhoMoi);
-                
-                // Do SanPhamDAO.capNhat() không có hàm truyền Connection, 
+
+                // Do SanPhamDAO.capNhat() không có hàm truyền Connection,
                 // ta sẽ update tồn kho trực tiếp trong Transaction này để an toàn
                 String sqlUpdateTonKho = "UPDATE SanPham SET soLuongTon = ? WHERE maSP = ?";
                 try (java.sql.PreparedStatement psTonKho = con.prepareStatement(sqlUpdateTonKho)) {

@@ -3,7 +3,6 @@ package gui.dialogs;
 import dao.NhaCungCapDAO;
 import dao.NhanVienDAO;
 import dao.SanPhamDAO;
-import entity.ChiTietPhieuNhap;
 import entity.NhaCungCap;
 import entity.NhanVien;
 import entity.PhieuNhap;
@@ -17,6 +16,8 @@ import java.util.Date;
 import java.util.List;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+
+import service.ChiTietPhieuNhap;
 import service.NhapHangService;
 import utils.PetPlusTheme;
 

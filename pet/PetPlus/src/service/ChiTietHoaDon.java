@@ -1,6 +1,10 @@
-package entity;
+package service;
 
 import java.math.BigDecimal;
+
+import entity.DichVu;
+import entity.HoaDon;
+import entity.SanPham;
 
 public class ChiTietHoaDon {
     private HoaDon maHoaDon;
