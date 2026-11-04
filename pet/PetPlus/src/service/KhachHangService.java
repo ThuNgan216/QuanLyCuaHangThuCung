@@ -1,4 +1,3 @@
-
 package service;
 
 import java.util.List;
@@ -19,8 +18,7 @@ public class KhachHangService {
     public KhachHang timTheoMa(String maKH) {
         if (maKH == null || maKH.trim().isEmpty()) {
             throw new IllegalArgumentException(
-                "Mã khách hàng không được để trống."
-            );
+                    "Mã khách hàng không được để trống.");
         }
 
         return khachHangDAO.timTheoMa(maKH.trim());
@@ -36,10 +34,13 @@ public class KhachHangService {
     }
 
     // 4. Thêm khách hàng
-    public String taoMaMoi() { return khachHangDAO.taoMaMoi(); }
+    public String taoMaMoi() {
+        return khachHangDAO.taoMaMoi();
+    }
 
     public boolean them(KhachHang kh) {
-        if (kh == null) throw new IllegalArgumentException("Thông tin khách hàng không hợp lệ.");
+        if (kh == null)
+            throw new IllegalArgumentException("Thông tin khách hàng không hợp lệ.");
         // Mã do hệ thống phát sinh, không lấy mã người dùng nhập.
         kh.setMaKH(khachHangDAO.taoMaMoi());
         kh.setHangThanhVien(1);
@@ -73,35 +74,88 @@ public class KhachHangService {
     public boolean xoa(String maKH) {
         if (maKH == null || maKH.trim().isEmpty()) {
             throw new IllegalArgumentException(
-                "Mã khách hàng không được để trống."
-            );
+                    "Mã khách hàng không được để trống.");
         }
 
         if (khachHangDAO.timTheoMa(maKH.trim()) == null) {
             throw new IllegalArgumentException(
-                "Khách hàng không tồn tại."
-            );
+                    "Khách hàng không tồn tại.");
+        }
+
+        // Chặn xóa khi còn thú cưng, nếu không khách hàng bị ẩn nhưng thú cưng vẫn hiện
+        // với chủ nuôi đã ẩn.
+        if (khachHangDAO.coThuCungDangQuanLy(maKH.trim())) {
+            throw new IllegalArgumentException(
+                    "Khách hàng này còn thú cưng đang quản lý. "
+                            + "Vui lòng xóa các thú cưng của khách hàng trước khi xóa khách hàng.");
         }
 
         return khachHangDAO.xoa(maKH.trim());
+    }
+
+    /**
+     * Địa chỉ thật thường có số nhà và dấu phẩy (vd: "650 Lê Văn Thọ, Gò Vấp"),
+     * nên cho phép chữ, chữ số, khoảng trắng và các ký tự , . / -
+     * Để public static để form nhập liệu dùng chung, tránh viết luật hai lần.
+     */
+    private static final java.util.regex.Pattern DIA_CHI_HOP_LE = java.util.regex.Pattern
+            .compile("[\\p{L}\\p{N}\\s,./\\-]+");
+
+    /** Luật kiểm tra tên, dùng chung cho dialog và service. */
+    public static void kiemTraTen(String tenKH) {
+        String ten = tenKH == null ? "" : tenKH.trim();
+        if (ten.isEmpty()) {
+            throw new IllegalArgumentException("Tên khách hàng không được để trống.");
+        }
+        if (ten.length() > 100) {
+            throw new IllegalArgumentException("Tên khách hàng tối đa 100 ký tự.");
+        }
+        if (!ten.matches("[\\p{L}]+(?:\\s+[\\p{L}]+)*")) {
+            throw new IllegalArgumentException(
+                    "Tên khách hàng chỉ được chứa chữ cái và khoảng trắng, không có số hoặc ký tự đặc biệt.");
+        }
+    }
+
+    /** Luật kiểm tra số điện thoại, dùng chung cho dialog và service. */
+    public static void kiemTraSdt(String soDienThoai) {
+        String sdt = soDienThoai == null ? "" : soDienThoai.trim();
+        if (!sdt.matches("0\\d{9}")) {
+            throw new IllegalArgumentException("Số điện thoại phải bắt đầu bằng 0 và gồm đúng 10 chữ số.");
+        }
+    }
+
+    public static void kiemTraDiaChi(String diaChi) {
+        String dc = diaChi == null ? "" : diaChi.trim();
+        if (dc.isEmpty()) {
+            throw new IllegalArgumentException("Địa chỉ không được để trống.");
+        }
+        if (dc.length() > 255) {
+            throw new IllegalArgumentException("Địa chỉ tối đa 255 ký tự.");
+        }
+        if (!DIA_CHI_HOP_LE.matcher(dc).matches()) {
+            throw new IllegalArgumentException(
+                    "Địa chỉ chỉ được chứa chữ cái, chữ số, khoảng trắng và các ký tự , . / -");
+        }
     }
 
     // 7. Kiểm tra dữ liệu đầu vào
     private void kiemTraDuLieu(KhachHang kh) {
         if (kh == null) {
             throw new IllegalArgumentException(
-                "Thông tin khách hàng không hợp lệ."
-            );
+                    "Thông tin khách hàng không hợp lệ.");
         }
 
         String ma = kh.getMaKH() == null
-            ? "" : kh.getMaKH().trim();
+                ? ""
+                : kh.getMaKH().trim();
 
         String ten = kh.getTenKH() == null
-            ? "" : kh.getTenKH().trim();
+                ? ""
+                : kh.getTenKH().trim();
 
         String sdt = kh.getSdt() == null
-            ? "" : kh.getSdt().trim();
+                ? ""
+                : kh.getSdt().trim();
 
         if (ma.isEmpty() && kh.getMaKH() != null) {
             throw new IllegalArgumentException("Mã khách hàng không hợp lệ.");
@@ -109,60 +163,23 @@ public class KhachHangService {
 
         if (ma.length() > 20) {
             throw new IllegalArgumentException(
-                "Mã khách hàng tối đa 20 ký tự."
-            );
+                    "Mã khách hàng tối đa 20 ký tự.");
         }
 
-        if (ten.isEmpty()) {
-            throw new IllegalArgumentException(
-                "Tên khách hàng không được để trống."
-            );
-        }
-
-        if (ten.length() > 100) {
-            throw new IllegalArgumentException(
-                "Tên khách hàng tối đa 100 ký tự."
-            );
-        }
-
-        if (!ten.matches("[\\p{L}]+(?:\\s+[\\p{L}]+)*")) {
-            throw new IllegalArgumentException(
-                "Tên khách hàng chỉ được chứa chữ cái và khoảng trắng, không có số hoặc ký tự đặc biệt."
-            );
-        }
-
-        if (!sdt.matches("0\\d{9}")) {
-            throw new IllegalArgumentException(
-                "Số điện thoại phải bắt đầu bằng 0 và gồm đúng 10 chữ số."
-            );
-        }
+        kiemTraTen(ten);
+        kiemTraSdt(sdt);
 
         String diaChi = kh.getDiaChi() == null ? "" : kh.getDiaChi().trim();
-        if (diaChi.isEmpty()) {
-            throw new IllegalArgumentException("Địa chỉ không được để trống.");
-        }
-        if (!diaChi.matches("[\\p{L}]+(?:\\s+[\\p{L}]+)*")) {
-            throw new IllegalArgumentException(
-                "Địa chỉ chỉ được chứa chữ cái và khoảng trắng."
-            );
-        }
-
-        if (diaChi.length() > 255) {
-            throw new IllegalArgumentException(
-                "Địa chỉ tối đa 255 ký tự."
-            );
-        }
+        kiemTraDiaChi(diaChi);
 
         if (kh.getHangThanhVien() < 0) {
             throw new IllegalArgumentException(
-                "Hạng thành viên không được âm."
-            );
+                    "Hạng thành viên không được âm.");
         }
 
         if (kh.getDiemTichLuy() < 0) {
             throw new IllegalArgumentException(
-                "Điểm tích lũy không được âm."
-            );
+                    "Điểm tích lũy không được âm.");
         }
 
         // Chuẩn hóa dữ liệu trước khi chuyển cho DAO
