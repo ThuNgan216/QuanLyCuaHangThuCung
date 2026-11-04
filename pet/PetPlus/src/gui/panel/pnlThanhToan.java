@@ -75,7 +75,7 @@ public class pnlThanhToan extends JPanel {
     private final DanhMuc dsSanPham = new DanhMuc(LOAI_SP, "Tìm sản phẩm theo tên hoặc mã...");
     private final DanhMuc dsDichVu = new DanhMuc(LOAI_DV, "Tìm dịch vụ theo tên hoặc mã...");
 
-    // Thông tin đơn hàng
+    // Thông tin hóa đơn
     private final JTextField txtOrderCode = field("", false);
     private final JTextField txtOrderDate = field("", false);
     private final JTextField txtEmployee = field("", false);
@@ -654,7 +654,7 @@ public class pnlThanhToan extends JPanel {
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         actions.setOpaque(false);
         JButton btnQuetMaVach = outlineButton("Quét mã vạch");
-        btnQuetMaVach.setToolTipText("Quét sản phẩm bằng webcam và thêm vào đơn hàng đang lập.");
+        btnQuetMaVach.setToolTipText("Quét sản phẩm bằng webcam và thêm vào hóa đơn đang lập.");
         btnQuetMaVach.addActionListener(e -> moQuetMaVach(
                 SwingUtilities.getWindowAncestor(this) instanceof Frame
                         ? (Frame) SwingUtilities.getWindowAncestor(this)
@@ -804,7 +804,7 @@ public class pnlThanhToan extends JPanel {
             return;
         }
         themVaoDon(LOAI_SP, sanPham.getMaSP(), sanPham.getTenSP(), Math.round(sanPham.getGiaBan()));
-        lblGoiY.setText("Đã thêm " + sanPham.getTenSP() + " vào đơn hàng • Mã vạch: " + maVach);
+        lblGoiY.setText("Đã thêm " + sanPham.getTenSP() + " vào hóa đơn • Mã vạch: " + maVach);
     }
 
     private void moChonPhieuChoThanhToan() {
@@ -1038,9 +1038,9 @@ public class pnlThanhToan extends JPanel {
     private JPanel createOrderCard() {
         JPanel content = new JPanel(new BorderLayout());
         content.setOpaque(false);
-        content.add(rows(new String[] { "Mã đơn hàng:", "Ngày tạo:", "Nhân viên:" },
+        content.add(rows(new String[] { "Mã hóa đơn:", "Ngày tạo:", "Nhân viên:" },
                 new JComponent[] { txtOrderCode, txtOrderDate, txtEmployee }), BorderLayout.NORTH);
-        return card("Thông tin đơn hàng", content);
+        return card("Thông tin hóa đơn", content);
     }
 
     private JPanel createCustomerCard() {
@@ -1100,7 +1100,7 @@ public class pnlThanhToan extends JPanel {
         actions.add(remove);
         actions.setPreferredSize(new Dimension(0, 28));
         content.add(actions, BorderLayout.SOUTH);
-        return card("Đơn hàng đã chọn", content);
+        return card("Hóa đơn đã chọn", content);
     }
 
     private JPanel createPaymentCard() {
@@ -1133,7 +1133,7 @@ public class pnlThanhToan extends JPanel {
         chkSuDungDiem.setForeground(TEXT);
         chkSuDungDiem.setFocusPainted(false);
         chkSuDungDiem
-                .setToolTipText("Quy đổi 1 điểm tích lũy thành 100 đ; mức giảm không vượt quá số tiền đơn hàng.");
+                .setToolTipText("Quy đổi 1 điểm tích lũy thành 100 đ; mức giảm không vượt quá số tiền hóa đơn.");
         sumGrid.add(chkSuDungDiem);
         sumGrid.add(lblGiamDiem);
 
@@ -1300,7 +1300,7 @@ public class pnlThanhToan extends JPanel {
         };
     }
 
-    // ================== SỬA ĐƠN HÀNG ==================
+    // ================== SỬA HÓA ĐƠN ==================
     private void suaSoLuong() {
         int r = tblDon.getSelectedRow();
         if (r < 0) {
@@ -1387,7 +1387,7 @@ public class pnlThanhToan extends JPanel {
                 subtotal = Math.addExact(subtotal, line);
             }
         } catch (ArithmeticException ex) {
-            JOptionPane.showMessageDialog(this, "Giá trị đơn hàng vượt giới hạn tính toán.");
+            JOptionPane.showMessageDialog(this, "Giá trị hóa đơn vượt giới hạn tính toán.");
             return;
         }
 
@@ -1461,11 +1461,11 @@ public class pnlThanhToan extends JPanel {
     // ================== XÁC NHẬN / LƯU ĐƠN ==================
     private void confirmPayment() {
         if (Auth.user == null) {
-            JOptionPane.showMessageDialog(this, "Hãy đăng nhập để lập đơn hàng.");
+            JOptionPane.showMessageDialog(this, "Hãy đăng nhập để lập hóa đơn.");
             return;
         }
         if (modelDon.getRowCount() == 0) {
-            JOptionPane.showMessageDialog(this, "Chưa chọn sản phẩm hoặc dịch vụ cho đơn hàng.");
+            JOptionPane.showMessageDialog(this, "Chưa chọn sản phẩm hoặc dịch vụ cho hóa đơn.");
             return;
         }
         if (khachMoi) {
@@ -1619,7 +1619,7 @@ public class pnlThanhToan extends JPanel {
                 } catch (Exception ex) {
                     Throwable loi = nguyenNhan(ex);
                     JOptionPane.showMessageDialog(pnlThanhToan.this,
-                            "Không thể lưu đơn hàng: " + loi.getMessage(),
+                            "Không thể lưu hóa đơn: " + loi.getMessage(),
                             "Lỗi cơ sở dữ liệu", JOptionPane.ERROR_MESSAGE);
                 }
             }

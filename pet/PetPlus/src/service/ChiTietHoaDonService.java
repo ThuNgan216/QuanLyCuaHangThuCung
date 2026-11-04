@@ -6,7 +6,7 @@ import entity.DichVu;
 import entity.HoaDon;
 import entity.SanPham;
 
-public class ChiTietHoaDon {
+public class ChiTietHoaDonService {
     private HoaDon maHoaDon;
     private DichVu maDichVu;
     private SanPham maSP;
@@ -14,14 +14,14 @@ public class ChiTietHoaDon {
     private BigDecimal donGia;
     private BigDecimal tienKhachDua;
 
-    public ChiTietHoaDon() {
+    public ChiTietHoaDonService() {
     }
 
-    public ChiTietHoaDon(HoaDon maHoaDon) {
+    public ChiTietHoaDonService(HoaDon maHoaDon) {
         this.maHoaDon = maHoaDon;
     }
 
-    public ChiTietHoaDon(HoaDon maHoaDon, DichVu maDichVu, SanPham maSP, int soLuong, BigDecimal donGia,
+    public ChiTietHoaDonService(HoaDon maHoaDon, DichVu maDichVu, SanPham maSP, int soLuong, BigDecimal donGia,
             BigDecimal tienKhachDua) {
         this.maHoaDon = maHoaDon;
         this.maDichVu = maDichVu;

@@ -23,7 +23,7 @@ public class NhapHangService {
     }
 
     // Lấy chi tiết phiếu nhập
-    public List<ChiTietPhieuNhap> layChiTiet(String maPN) throws SQLException {
+    public List<ChiTietPhieuNhapService> layChiTiet(String maPN) throws SQLException {
         if (maPN == null || maPN.trim().isEmpty()) {
             throw new IllegalArgumentException("Mã phiếu nhập không hợp lệ.");
         }
@@ -34,7 +34,7 @@ public class NhapHangService {
      * Thực hiện Transaction Nhập hàng
      * Gồm 3 bước: Thêm Phiếu Nhập -> Thêm Chi Tiết -> Cập nhật Số lượng tồn
      */
-    public boolean thucHienNhapHang(PhieuNhap phieuNhap, List<ChiTietPhieuNhap> danhSachChiTiet) {
+    public boolean thucHienNhapHang(PhieuNhap phieuNhap, List<ChiTietPhieuNhapService> danhSachChiTiet) {
         if (phieuNhap == null || danhSachChiTiet == null || danhSachChiTiet.isEmpty()) {
             throw new IllegalArgumentException("Dữ liệu phiếu nhập hoặc chi tiết không hợp lệ.");
         }
@@ -59,7 +59,7 @@ public class NhapHangService {
             }
 
             // 2. Lưu từng chi tiết phiếu nhập & 3. Cập nhật tồn kho
-            for (ChiTietPhieuNhap ct : danhSachChiTiet) {
+            for (ChiTietPhieuNhapService ct : danhSachChiTiet) {
                 // Lưu chi tiết
                 if (!chiTietPhieuNhapDAO.them(ct, con)) {
                     throw new SQLException("Không thể lưu Chi tiết cho sản phẩm: " + ct.getMaSP().getMaSP());

@@ -2,7 +2,7 @@ package gui.panel;
 
 import dao.ChiTietPhieuNhapDAO;
 import entity.PhieuNhap;
-import service.ChiTietPhieuNhap;
+import service.ChiTietPhieuNhapService;
 import service.NhapHangService;
 import utils.PetPlusTheme;
 
@@ -148,7 +148,7 @@ public class pnlTimKiemPhieuNhap extends JPanel {
 
         try {
             // Lấy danh sách sản phẩm chi tiết của phiếu nhập này từ DAO
-            List<ChiTietPhieuNhap> chiTietList = ctDao.layChiTietTheoMaPN(maPN);
+            List<ChiTietPhieuNhapService> chiTietList = ctDao.layChiTietTheoMaPN(maPN);
             if (chiTietList == null || chiTietList.isEmpty()) {
                 JOptionPane.showMessageDialog(this, thongTinChung + "(Không có sản phẩm chi tiết)",
                         "Chi tiết phiếu nhập", JOptionPane.INFORMATION_MESSAGE);
@@ -160,7 +160,7 @@ public class pnlTimKiemPhieuNhap extends JPanel {
             DefaultTableModel ctModel = new DefaultTableModel(colNames, 0);
             double tongTien = 0;
 
-            for (ChiTietPhieuNhap ct : chiTietList) {
+            for (ChiTietPhieuNhapService ct : chiTietList) {
                 String tenSP = (ct.getMaSP() != null && ct.getMaSP().getTenSP() != null) ? ct.getMaSP().getTenSP()
                         : ct.getMaSP().getMaSP();
                 double donGia = ct.getDonGiaNhap() != null ? ct.getDonGiaNhap().doubleValue() : 0.0;

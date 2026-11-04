@@ -8,22 +8,23 @@ import entity.PhieuNhap;
 import entity.PhieuNhap;
 import entity.SanPham;
 
-public class ChiTietPhieuNhap {
+public class ChiTietPhieuNhapService {
     private int soLuongNhap;
     private BigDecimal donGiaNhap;
     private LocalDate hanSuDung;
     private PhieuNhap maPN;
     private SanPham maSP;
 
-    public ChiTietPhieuNhap() {
+    public ChiTietPhieuNhapService() {
     }
 
-    public ChiTietPhieuNhap(PhieuNhap maPN, SanPham maSP) {
+    public ChiTietPhieuNhapService(PhieuNhap maPN, SanPham maSP) {
         this.maPN = maPN;
         this.maSP = maSP;
     }
 
-    public ChiTietPhieuNhap(int soLuongNhap, BigDecimal donGiaNhap, LocalDate hanSuDung, PhieuNhap maPN, SanPham maSP) {
+    public ChiTietPhieuNhapService(int soLuongNhap, BigDecimal donGiaNhap, LocalDate hanSuDung, PhieuNhap maPN,
+            SanPham maSP) {
         this.soLuongNhap = soLuongNhap;
         this.donGiaNhap = donGiaNhap;
         this.hanSuDung = hanSuDung;
@@ -88,7 +89,7 @@ public class ChiTietPhieuNhap {
             return false;
         if (getClass() != obj.getClass())
             return false;
-        ChiTietPhieuNhap other = (ChiTietPhieuNhap) obj;
+        ChiTietPhieuNhapService other = (ChiTietPhieuNhapService) obj;
         if (maPN == null) {
             if (other.maPN != null)
                 return false;

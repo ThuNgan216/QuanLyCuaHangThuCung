@@ -10,7 +10,7 @@ import java.util.List;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 
-import service.ChiTietPhieuNhap;
+import service.ChiTietPhieuNhapService;
 import service.NhapHangService;
 import utils.PetPlusTheme;
 
@@ -150,7 +150,7 @@ public class pnlNhapHang extends JPanel {
                 "DANH SÁCH SẢN PHẨM TRONG PHIẾU:\n";
 
         try {
-            List<ChiTietPhieuNhap> chiTietList = ctDao.layChiTietTheoMaPN(maPN);
+            List<ChiTietPhieuNhapService> chiTietList = ctDao.layChiTietTheoMaPN(maPN);
             if (chiTietList == null || chiTietList.isEmpty()) {
                 JOptionPane.showMessageDialog(this, thongTinChung + "(Không có sản phẩm chi tiết)",
                         "Chi tiết phiếu nhập", JOptionPane.INFORMATION_MESSAGE);
@@ -161,7 +161,7 @@ public class pnlNhapHang extends JPanel {
             DefaultTableModel ctModel = new DefaultTableModel(colNames, 0);
             double tongTien = 0;
 
-            for (ChiTietPhieuNhap ct : chiTietList) {
+            for (ChiTietPhieuNhapService ct : chiTietList) {
                 String tenSP = (ct.getMaSP() != null && ct.getMaSP().getTenSP() != null) ? ct.getMaSP().getTenSP()
                         : ct.getMaSP().getMaSP();
                 double donGia = ct.getDonGiaNhap() != null ? ct.getDonGiaNhap().doubleValue() : 0.0;
@@ -215,7 +215,7 @@ public class pnlNhapHang extends JPanel {
                     html.append(
                             "<tr style='background-color: #f2f2f2;'><th>Mã SP</th><th>Tên sản phẩm</th><th>SL</th><th>Đơn giá</th><th>Thành tiền</th></tr>");
 
-                    for (ChiTietPhieuNhap ct : chiTietList) {
+                    for (ChiTietPhieuNhapService ct : chiTietList) {
                         String tsp = (ct.getMaSP() != null && ct.getMaSP().getTenSP() != null) ? ct.getMaSP().getTenSP()
                                 : ct.getMaSP().getMaSP();
                         double dg = ct.getDonGiaNhap() != null ? ct.getDonGiaNhap().doubleValue() : 0.0;

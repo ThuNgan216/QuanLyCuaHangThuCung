@@ -3,7 +3,7 @@ package gui.panel;
 import dao.ChiTietPhieuNhapDAO;
 import dao.PhieuNhapDAO;
 import entity.PhieuNhap;
-import service.ChiTietPhieuNhap;
+import service.ChiTietPhieuNhapService;
 
 import java.awt.*;
 import java.io.BufferedWriter;
@@ -136,10 +136,10 @@ public class pnlBaoBieuNhapHang extends JPanel {
                         : (pn.getMaNCC() != null ? pn.getMaNCC().getMaNCC() : "");
 
                 // Tính tổng tiền của từng phiếu nhập dựa vào chi tiết sản phẩm
-                List<ChiTietPhieuNhap> dsChiTiet = chiTietDAO.layChiTietTheoMaPN(maPN);
+                List<ChiTietPhieuNhapService> dsChiTiet = chiTietDAO.layChiTietTheoMaPN(maPN);
                 BigDecimal tongTienPhieu = BigDecimal.ZERO;
                 if (dsChiTiet != null) {
-                    for (ChiTietPhieuNhap ct : dsChiTiet) {
+                    for (ChiTietPhieuNhapService ct : dsChiTiet) {
                         BigDecimal donGia = ct.getDonGiaNhap() != null ? ct.getDonGiaNhap() : BigDecimal.ZERO;
                         BigDecimal thanhTien = donGia.multiply(new BigDecimal(ct.getSoLuongNhap()));
                         tongTienPhieu = tongTienPhieu.add(thanhTien);

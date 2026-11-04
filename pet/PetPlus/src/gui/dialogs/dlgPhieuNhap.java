@@ -17,7 +17,7 @@ import java.util.List;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 
-import service.ChiTietPhieuNhap;
+import service.ChiTietPhieuNhapService;
 import service.NhapHangService;
 import utils.PetPlusTheme;
 
@@ -36,7 +36,7 @@ public class dlgPhieuNhap extends JDialog {
 
     private DefaultTableModel modelChiTiet;
     private JTable tableChiTiet;
-    private final List<ChiTietPhieuNhap> danhSachChiTiet = new ArrayList<>();
+    private final List<ChiTietPhieuNhapService> danhSachChiTiet = new ArrayList<>();
 
     private final NhapHangService nhapHangService = new NhapHangService();
     private final SanPhamDAO sanPhamDAO = new SanPhamDAO();
@@ -381,7 +381,7 @@ public class dlgPhieuNhap extends JDialog {
             // Nếu chưa có trong bảng -> Thêm mới 1 dòng bình thường
             if (!daTonTai) {
                 PhieuNhap pnTemp = new PhieuNhap(txtMaPN.getText().trim());
-                ChiTietPhieuNhap ct = new ChiTietPhieuNhap(soLuong, donGia, hsd, pnTemp, sp);
+                ChiTietPhieuNhapService ct = new ChiTietPhieuNhapService(soLuong, donGia, hsd, pnTemp, sp);
                 danhSachChiTiet.add(ct);
 
                 BigDecimal thanhTien = donGia.multiply(new BigDecimal(soLuong));
@@ -449,7 +449,7 @@ public class dlgPhieuNhap extends JDialog {
                     String sqlGetTon = "SELECT soLuongTon FROM SanPham WHERE maSP = ?";
                     String sqlUpdateTon = "UPDATE SanPham SET soLuongTon = ? WHERE maSP = ?";
 
-                    for (ChiTietPhieuNhap ct : danhSachChiTiet) {
+                    for (ChiTietPhieuNhapService ct : danhSachChiTiet) {
                         // Thêm chi tiết
                         try (java.sql.PreparedStatement psCT = con.prepareStatement(sqlCT)) {
                             psCT.setInt(1, ct.getSoLuongNhap());
@@ -550,7 +550,7 @@ public class dlgPhieuNhap extends JDialog {
             SanPham sp = new SanPham(maSP);
             sp.setTenSP(tenSP);
 
-            ChiTietPhieuNhap ct = new ChiTietPhieuNhap(sl, donGia, hsdMacDinh, pnTemp, sp);
+            ChiTietPhieuNhapService ct = new ChiTietPhieuNhapService(sl, donGia, hsdMacDinh, pnTemp, sp);
             danhSachChiTiet.add(ct);
 
             modelChiTiet.addRow(new Object[] {
