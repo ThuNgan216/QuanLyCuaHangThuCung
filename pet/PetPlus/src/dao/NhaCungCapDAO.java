@@ -13,11 +13,11 @@ public class NhaCungCapDAO {
 
     public List<NhaCungCap> layDanhSach() {
         List<NhaCungCap> ds = new ArrayList<>();
-        String sql = "SELECT maNCC, tenNCC, soDienThoai, diaChi, email FROM dbo.NhaCungCap";
+        String sql = "SELECT maNCC, tenNCC, soDienThoai, diaChi, email FROM dbo.NhaCungCap WHERE trangThai <> N'Đã xóa'";
 
         try (Connection con = ConnectDB.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+                PreparedStatement ps = con.prepareStatement(sql);
+                ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
                 NhaCungCap ncc = new NhaCungCap();
@@ -35,9 +35,9 @@ public class NhaCungCapDAO {
     }
 
     public NhaCungCap timTheoMa(String maNCC) {
-        String sql = "SELECT * FROM dbo.NhaCungCap WHERE maNCC = ?";
+        String sql = "SELECT * FROM dbo.NhaCungCap WHERE maNCC = ? AND trangThai <> N'Đã xóa'";
         try (Connection con = ConnectDB.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+                PreparedStatement ps = con.prepareStatement(sql)) {
 
             ps.setString(1, maNCC);
             try (ResultSet rs = ps.executeQuery()) {
@@ -62,9 +62,10 @@ public class NhaCungCapDAO {
         String sql = "SELECT ISNULL(MAX(TRY_CONVERT(INT, SUBSTRING(maNCC, 4, 17))), 0) + 1 AS soMoi "
                 + "FROM dbo.NhaCungCap WHERE maNCC LIKE 'NCC[0-9]%'";
         try (Connection con = ConnectDB.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-            if (rs.next()) return String.format(java.util.Locale.ROOT, "NCC%03d", rs.getInt("soMoi"));
+                PreparedStatement ps = con.prepareStatement(sql);
+                ResultSet rs = ps.executeQuery()) {
+            if (rs.next())
+                return String.format(java.util.Locale.ROOT, "NCC%03d", rs.getInt("soMoi"));
             return "NCC001";
         } catch (SQLException e) {
             throw e;
@@ -74,7 +75,7 @@ public class NhaCungCapDAO {
     public boolean them(NhaCungCap ncc) {
         String sql = "INSERT INTO dbo.NhaCungCap (maNCC, tenNCC, soDienThoai, diaChi, email) VALUES (?, ?, ?, ?, ?)";
         try (Connection con = ConnectDB.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+                PreparedStatement ps = con.prepareStatement(sql)) {
 
             ps.setString(1, ncc.getMaNCC());
             ps.setString(2, ncc.getTenNCC());
@@ -89,9 +90,9 @@ public class NhaCungCapDAO {
     }
 
     public boolean capNhat(NhaCungCap ncc) {
-        String sql = "UPDATE dbo.NhaCungCap SET tenNCC = ?, soDienThoai = ?, diaChi = ?, email = ? WHERE maNCC = ?";
+        String sql = "UPDATE dbo.NhaCungCap SET tenNCC = ?, soDienThoai = ?, diaChi = ?, email = ? WHERE maNCC = ? AND trangThai <> N'Đã xóa'";
         try (Connection con = ConnectDB.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+                PreparedStatement ps = con.prepareStatement(sql)) {
 
             ps.setString(1, ncc.getTenNCC());
             ps.setString(2, ncc.getSoDienThoai());
@@ -106,14 +107,15 @@ public class NhaCungCapDAO {
     }
 
     public boolean xoa(String maNCC) {
-        String sql = "DELETE FROM dbo.NhaCungCap WHERE maNCC = ?";
-        try (Connection con = ConnectDB.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
-
-            ps.setString(1, maNCC);
-            return ps.executeUpdate() > 0;
+        try (Connection con = ConnectDB.getConnection()) {
+            return DeletePolicy.xoaHoacAn(con,
+                    "SELECT 1 FROM dbo.NhaCungCap WITH (XLOCK, HOLDLOCK) WHERE maNCC = ? AND trangThai <> N'Đã xóa'",
+                    new String[] { "SELECT 1 FROM dbo.PhieuNhap WHERE maNCC = ?" },
+                    "UPDATE dbo.NhaCungCap SET trangThai = N'Đã xóa' WHERE maNCC = ? AND trangThai <> N'Đã xóa'",
+                    "DELETE FROM dbo.NhaCungCap WHERE maNCC = ? AND trangThai <> N'Đã xóa'",
+                    maNCC);
         } catch (SQLException e) {
-            throw new IllegalStateException("Không thể xóa nhà cung cấp: " + e.getMessage(), e);
+            throw new IllegalStateException("Không thể xóa hoặc ẩn nhà cung cấp: " + e.getMessage(), e);
         }
     }
 }

@@ -18,7 +18,9 @@ import java.time.LocalDate;
 
 public class ThanhToanDAO {
 
-    /** Dữ liệu cần hiển thị và nạp nhanh từ hóa đơn tiếp nhận đang chờ thanh toán. */
+    /**
+     * Dữ liệu cần hiển thị và nạp nhanh từ hóa đơn tiếp nhận đang chờ thanh toán.
+     */
     public static class PhieuChoThanhToanDTO {
         public final String maHoaDon;
         public final LocalDateTime thoiGianTiepNhan;
@@ -111,13 +113,13 @@ public class ThanhToanDAO {
     public List<Object[]> laySanPham() throws SQLException {
         return layDanhMuc(
                 "SELECT maSP AS ma, tenSP AS ten, giaBan AS gia " +
-                        "FROM SanPham ORDER BY tenSP");
+                        "FROM SanPham WHERE trangThai <> N'Đã xóa' ORDER BY tenSP");
     }
 
     public List<Object[]> layDichVu() throws SQLException {
         return layDanhMuc(
                 "SELECT maDichVu AS ma, tenDichVu AS ten, donGia AS gia " +
-                        "FROM DichVu ORDER BY tenDichVu");
+                        "FROM DichVu WHERE trangThai NOT IN (N'Ngừng hoạt động', N'Đã xóa') ORDER BY tenDichVu");
     }
 
     private List<Object[]> layDanhMuc(String sql) throws SQLException {
@@ -174,7 +176,7 @@ public class ThanhToanDAO {
 
         String sql = "SELECT maKH, tenKH, sdt, diaChi, " +
                 "hangThanhVien, diemTichLuy " +
-                "FROM KhachHang WHERE sdt LIKE ? ORDER BY sdt";
+                "FROM KhachHang WHERE trangThai <> N'Đã xóa' AND sdt LIKE ? ORDER BY sdt";
 
         try (Connection con = ConnectDB.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql)) {
@@ -199,7 +201,7 @@ public class ThanhToanDAO {
 
     public boolean tonTaiSDT(Connection con, String sdt)
             throws SQLException {
-        String sql = "SELECT 1 FROM KhachHang WHERE sdt = ?";
+        String sql = "SELECT 1 FROM KhachHang WHERE sdt = ? AND trangThai <> N'Đã xóa'";
 
         try (PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, sdt);
@@ -360,39 +362,51 @@ public class ThanhToanDAO {
         }
     }
 
-    /** Lưu phần trăm giảm tự động cho từng dòng sản phẩm vào bảng khuyến mãi sản phẩm hiện có. */
+    /**
+     * Lưu phần trăm giảm tự động cho từng dòng sản phẩm vào bảng khuyến mãi sản
+     * phẩm hiện có.
+     */
     public void themKhuyenMaiSanPham(Connection con, String maHD, List<Object[]> dong, KhuyenMai km)
             throws SQLException {
-        if (km == null || km.getMaKhuyenMai() == null || km.getPhanTramGiam() <= 0) return;
+        if (km == null || km.getMaKhuyenMai() == null || km.getPhanTramGiam() <= 0)
+            return;
         Set<String> maSanPhamApDung = new HashSet<>(km.getMaSanPhamApDung());
-        if (maSanPhamApDung.isEmpty()) return;
+        if (maSanPhamApDung.isEmpty())
+            return;
         Map<String, Long> soLuongTheoMa = new LinkedHashMap<>();
         for (Object[] row : dong) {
-            if (!"Sản phẩm".equals(row[0])) continue;
+            if (!"Sản phẩm".equals(row[0]))
+                continue;
             String maSP = String.valueOf(row[1]);
-            if (!maSanPhamApDung.contains(maSP)) continue;
+            if (!maSanPhamApDung.contains(maSP))
+                continue;
             soLuongTheoMa.put(maSP, Math.addExact(soLuongTheoMa.getOrDefault(maSP, 0L),
                     ((Number) row[3]).longValue()));
         }
         Set<String> maSanPhamDatNguong = new HashSet<>();
         for (Map.Entry<String, Long> entry : soLuongTheoMa.entrySet()) {
-            if (entry.getValue() >= km.getSoLuongToiThieu()) maSanPhamDatNguong.add(entry.getKey());
+            if (entry.getValue() >= km.getSoLuongToiThieu())
+                maSanPhamDatNguong.add(entry.getKey());
         }
-        if (maSanPhamDatNguong.isEmpty()) return;
+        if (maSanPhamDatNguong.isEmpty())
+            return;
 
         String sql = "INSERT INTO KhuyenMaiSanPham "
                 + "(maKhuyenMaiMaSanPham, mucGiam, maSP, maKhuyenMai, maHoaDon) VALUES (?, ?, ?, ?, ?)";
         try (PreparedStatement ps = con.prepareStatement(sql)) {
             for (Object[] row : dong) {
-                if (!"Sản phẩm".equals(row[0])) continue;
-                if (!maSanPhamDatNguong.contains(String.valueOf(row[1]))) continue;
+                if (!"Sản phẩm".equals(row[0]))
+                    continue;
+                if (!maSanPhamDatNguong.contains(String.valueOf(row[1])))
+                    continue;
                 int soLuong = ((Number) row[3]).intValue();
                 long donGia = ((Number) row[4]).longValue();
                 BigDecimal tienGiam = BigDecimal.valueOf(soLuong)
                         .multiply(BigDecimal.valueOf(donGia))
                         .multiply(BigDecimal.valueOf(km.getPhanTramGiam()))
                         .divide(BigDecimal.valueOf(100), 0, java.math.RoundingMode.HALF_UP);
-                if (tienGiam.signum() <= 0) continue;
+                if (tienGiam.signum() <= 0)
+                    continue;
                 ps.setString(1, "KMSP" + java.util.UUID.randomUUID().toString()
                         .replace("-", "").toUpperCase(java.util.Locale.ROOT));
                 ps.setBigDecimal(2, tienGiam);
@@ -437,7 +451,7 @@ public class ThanhToanDAO {
     public List<KhuyenMai> layKhuyenMaiHieuLuc() throws SQLException {
         String sql = "SELECT maKhuyenMai, tenKhuyenMai, phanTramGiam, dieuKienApDung, ngayBatDau, ngayKetThuc "
                 + "FROM KhuyenMai "
-                + "WHERE (ngayBatDau IS NULL OR ngayBatDau <= ?) AND (ngayKetThuc IS NULL OR ngayKetThuc >= ?) "
+                + "WHERE trangThai <> N'Đã xóa' AND (ngayBatDau IS NULL OR ngayBatDau <= ?) AND (ngayKetThuc IS NULL OR ngayKetThuc >= ?) "
                 + "ORDER BY tenKhuyenMai";
         List<KhuyenMai> ds = new ArrayList<>();
         java.sql.Date homNay = java.sql.Date.valueOf(LocalDate.now());

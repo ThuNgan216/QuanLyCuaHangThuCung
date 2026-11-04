@@ -3,7 +3,6 @@ package gui.dialogs;
 import dao.NhaCungCapDAO;
 import dao.NhanVienDAO;
 import dao.SanPhamDAO;
-import entity.ChiTietPhieuNhap;
 import entity.NhaCungCap;
 import entity.NhanVien;
 import entity.PhieuNhap;
@@ -17,8 +16,9 @@ import java.util.Date;
 import java.util.List;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+
+import service.ChiTietPhieuNhapService;
 import service.NhapHangService;
-import utils.Auth;
 import utils.PetPlusTheme;
 
 public class dlgPhieuNhap extends JDialog {
@@ -36,8 +36,7 @@ public class dlgPhieuNhap extends JDialog {
 
     private DefaultTableModel modelChiTiet;
     private JTable tableChiTiet;
-    private JButton btnHoanTat;
-    private final List<ChiTietPhieuNhap> danhSachChiTiet = new ArrayList<>();
+    private final List<ChiTietPhieuNhapService> danhSachChiTiet = new ArrayList<>();
 
     private final NhapHangService nhapHangService = new NhapHangService();
     private final SanPhamDAO sanPhamDAO = new SanPhamDAO();
@@ -101,7 +100,8 @@ public class dlgPhieuNhap extends JDialog {
         // Custom Renderer cho ComboBox Nhà Cung Cấp
         cboNhaCungCap.setRenderer(new DefaultListCellRenderer() {
             @Override
-            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected,
+                    boolean cellHasFocus) {
                 super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
                 if (value instanceof NhaCungCap) {
                     NhaCungCap ncc = (NhaCungCap) value;
@@ -121,7 +121,8 @@ public class dlgPhieuNhap extends JDialog {
         // Custom Renderer cho ComboBox Nhân Viên
         cboNhanVien.setRenderer(new DefaultListCellRenderer() {
             @Override
-            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected,
+                    boolean cellHasFocus) {
                 super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
                 if (value instanceof NhanVien) {
                     NhanVien nv = (NhanVien) value;
@@ -132,23 +133,41 @@ public class dlgPhieuNhap extends JDialog {
         });
 
         int row = 0;
-        g.gridx = 0; g.gridy = row; g.weightx = 0.1; pnlTop.add(new JLabel("Mã Phiếu Nhập:"), g);
-        g.gridx = 1; g.weightx = 0.4; pnlTop.add(txtMaPN, g);
-        g.gridx = 2; g.weightx = 0.1; pnlTop.add(new JLabel("Nhà Cung Cấp:"), g);
-        g.gridx = 3; g.weightx = 0.4; pnlTop.add(cboNhaCungCap, g);
+        g.gridx = 0;
+        g.gridy = row;
+        g.weightx = 0.1;
+        pnlTop.add(new JLabel("Mã Phiếu Nhập:"), g);
+        g.gridx = 1;
+        g.weightx = 0.4;
+        pnlTop.add(txtMaPN, g);
+        g.gridx = 2;
+        g.weightx = 0.1;
+        pnlTop.add(new JLabel("Nhà Cung Cấp:"), g);
+        g.gridx = 3;
+        g.weightx = 0.4;
+        pnlTop.add(cboNhaCungCap, g);
 
         row++;
-        g.gridx = 0; g.gridy = row; g.weightx = 0.1; pnlTop.add(new JLabel("Nhân Viên Nhập:"), g);
-        g.gridx = 1; g.weightx = 0.4; pnlTop.add(cboNhanVien, g);
-        g.gridx = 2; g.weightx = 0.1; pnlTop.add(new JLabel("Ngày Lập:"), g);
-        g.gridx = 3; g.weightx = 0.4; pnlTop.add(txtNgayLap, g);
+        g.gridx = 0;
+        g.gridy = row;
+        g.weightx = 0.1;
+        pnlTop.add(new JLabel("Nhân Viên Nhập:"), g);
+        g.gridx = 1;
+        g.weightx = 0.4;
+        pnlTop.add(cboNhanVien, g);
+        g.gridx = 2;
+        g.weightx = 0.1;
+        pnlTop.add(new JLabel("Ngày Lập:"), g);
+        g.gridx = 3;
+        g.weightx = 0.4;
+        pnlTop.add(txtNgayLap, g);
 
         add(pnlTop, BorderLayout.NORTH);
 
         // --- 2. PHẦN CHI TIẾT SẢN PHẨM & BẢNG (CENTER) ---
         JPanel pnlCenter = new JPanel(new BorderLayout(8, 8));
         pnlCenter.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 10));
-        
+
         // Chia 2 dòng rõ rệt cho khu vực thêm sản phẩm
         JPanel pnlAddSP = new JPanel(new GridLayout(2, 1, 5, 8));
         pnlAddSP.setBorder(BorderFactory.createTitledBorder("Thêm sản phẩm vào phiếu nhập"));
@@ -159,7 +178,8 @@ public class dlgPhieuNhap extends JDialog {
         cboSanPham.setPreferredSize(new Dimension(400, 28));
         cboSanPham.setRenderer(new DefaultListCellRenderer() {
             @Override
-            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected,
+                    boolean cellHasFocus) {
                 super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
                 if (value instanceof SanPham) {
                     SanPham sp = (SanPham) value;
@@ -203,31 +223,28 @@ public class dlgPhieuNhap extends JDialog {
                     } else {
                         txtDonGia.setText("");
                     }
-                } catch (Exception ignored) {}
+                } catch (Exception ignored) {
+                }
             }
         });
 
         // Bảng chi tiết sản phẩm nhập
-        String[] columns = {"Mã SP", "Tên Sản Phẩm", "Số Lượng", "Đơn Giá Nhập", "Hạn Sử Dụng", "Thành Tiền"};
+        String[] columns = { "Mã SP", "Tên Sản Phẩm", "Nhà Cung Cấp", "Số Lượng", "Đơn Giá Nhập", "Hạn Sử Dụng",
+                "Thành Tiền" };
         modelChiTiet = new DefaultTableModel(columns, 0) {
             @Override
-            public boolean isCellEditable(int row, int column) { return false; }
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
         };
         tableChiTiet = new JTable(modelChiTiet);
         tableChiTiet.setRowHeight(28);
-        tableChiTiet.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         pnlCenter.add(new JScrollPane(tableChiTiet), BorderLayout.CENTER);
-        JButton btnXoaDong = new JButton("Xóa dòng đã chọn");
-        JPanel pnlXoaDong = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 4));
-        pnlXoaDong.add(btnXoaDong);
-        pnlCenter.add(pnlXoaDong, BorderLayout.SOUTH);
-        btnXoaDong.addActionListener(e -> xoaDongChiTiet());
 
         add(pnlCenter, BorderLayout.CENTER);
 
         // --- 3. PHẦN NÚT HOÀN TẤT & HỦY (SOUTH) ---
-        btnHoanTat = new JButton("Hoàn Tất & Nhập Kho");
-        btnHoanTat.setEnabled(false);
+        JButton btnHoanTat = new JButton("Hoàn Tất & Nhập Kho");
         JButton btnHuy = new JButton("Hủy Bỏ");
         btnHoanTat.setBackground(new Color(250, 48, 115));
         btnHoanTat.setForeground(Color.WHITE);
@@ -241,6 +258,27 @@ public class dlgPhieuNhap extends JDialog {
         btnThemSP.addActionListener(e -> xuLyThemSanPham());
         btnHoanTat.addActionListener(e -> xuLyHoanTat());
         btnHuy.addActionListener(e -> dispose());
+
+        cboNhaCungCap.addActionListener(e -> {
+            NhaCungCap nccSelected = (NhaCungCap) cboNhaCungCap.getSelectedItem();
+            if (nccSelected != null) {
+                // Nếu bảng đã có sản phẩm mà đổi NCC -> Cảnh báo và xóa bảng để tránh râu ông
+                // nọ cắm cằm bà kia
+                if (modelChiTiet.getRowCount() > 0) {
+                    int confirm = JOptionPane.showConfirmDialog(this,
+                            "Đổi nhà cung cấp sẽ làm trống danh sách sản phẩm đã chọn. Bạn có chắc chắn muốn đổi?",
+                            "Xác nhận", JOptionPane.YES_NO_OPTION);
+                    if (confirm == JOptionPane.YES_OPTION) {
+                        modelChiTiet.setRowCount(0);
+                        danhSachChiTiet.clear();
+                    } else {
+                        // Nếu không đồng ý thì trả lại giá trị cũ (hoặc giữ nguyên logic tùy ý)
+                        return;
+                    }
+                }
+                capNhatDanhSachSanPhamTheoNCC(nccSelected.getMaNCC());
+            }
+        });
     }
 
     private void taiDuLieuComboBox() {
@@ -250,32 +288,14 @@ public class dlgPhieuNhap extends JDialog {
                 cboNhaCungCap.addItem(ncc);
             }
 
-            cboNhanVien.setEnabled(false);
-            NhanVien taiKhoanDangNhap = Auth.user == null
-                    ? null : nhanVienDAO.timTheoMa(Auth.user.getMaNV());
-            if (taiKhoanDangNhap == null) {
-                throw new IllegalStateException("Không tìm thấy nhân viên đang đăng nhập trong database.");
+            cboNhanVien.removeAllItems();
+            if (utils.Auth.user != null) {
+                cboNhanVien.addItem(utils.Auth.user);
             }
-            cboNhanVien.addItem(taiKhoanDangNhap);
-            cboNhanVien.setSelectedIndex(0);
-            btnHoanTat.setEnabled(true);
+            cboNhanVien.setEnabled(false);
         } catch (Exception ex) {
-            btnHoanTat.setEnabled(false);
-            JOptionPane.showMessageDialog(this, "Lỗi tải dữ liệu danh mục: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    private void xoaDongChiTiet() {
-        int selected = tableChiTiet.getSelectedRow();
-        if (selected < 0) {
-            JOptionPane.showMessageDialog(this, "Chọn dòng sản phẩm cần xóa.", "Chưa chọn dòng",
-                    JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-        int row = tableChiTiet.convertRowIndexToModel(selected);
-        if (row >= 0 && row < danhSachChiTiet.size()) {
-            danhSachChiTiet.remove(row);
-            modelChiTiet.removeRow(row);
+            JOptionPane.showMessageDialog(this, "Lỗi tải dữ liệu danh mục: " + ex.getMessage(), "Lỗi",
+                    JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -285,7 +305,7 @@ public class dlgPhieuNhap extends JDialog {
             List<PhieuNhap> ds = dao.layDanhSach();
             int stt = ds.size() + 1;
             String maMoi;
-            
+
             while (true) {
                 maMoi = String.format("PN%03d", stt);
                 boolean trung = false;
@@ -295,7 +315,8 @@ public class dlgPhieuNhap extends JDialog {
                         break;
                     }
                 }
-                if (!trung) break;
+                if (!trung)
+                    break;
                 stt++;
             }
             txtMaPN.setText(maMoi);
@@ -315,7 +336,8 @@ public class dlgPhieuNhap extends JDialog {
             String slText = txtSoLuong.getText().trim();
             String giaText = txtDonGia.getText().trim();
             if (slText.isEmpty() || giaText.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Vui lòng nhập số lượng và đơn giá.", "Cảnh báo", JOptionPane.WARNING_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Vui lòng nhập số lượng và đơn giá.", "Cảnh báo",
+                        JOptionPane.WARNING_MESSAGE);
                 return;
             }
 
@@ -332,25 +354,58 @@ public class dlgPhieuNhap extends JDialog {
             Date dateHSD = (Date) spnTrangThaiHSD.getValue();
             LocalDate hsd = dateHSD.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
 
-            PhieuNhap pnTemp = new PhieuNhap(txtMaPN.getText().trim());
-            ChiTietPhieuNhap ct = new ChiTietPhieuNhap(soLuong, donGia, hsd, pnTemp, sp);
+            // Kiểm tra xem sản phẩm này đã có trong bảng chi tiết chưa
+            boolean daTonTai = false;
+            for (int i = 0; i < modelChiTiet.getRowCount(); i++) {
+                String maSPInTable = (String) modelChiTiet.getValueAt(i, 0); // Cột 0: Mã SP
+                if (maSPInTable.equals(sp.getMaSP())) {
+                    // Nếu đã có -> Cập nhật thành số lượng mới mà bro vừa nhập (ghi đè)
+                    BigDecimal thanhTienMoi = donGia.multiply(new BigDecimal(soLuong));
 
-            danhSachChiTiet.add(ct);
-            BigDecimal thanhTien = donGia.multiply(new BigDecimal(soLuong));
+                    // Cập nhật lại giao diện bảng
+                    modelChiTiet.setValueAt(soLuong, i, 3); // Cột 3: Số lượng (gán bằng số mới nhập)
+                    modelChiTiet.setValueAt(String.format("%,.0f đ", donGia), i, 4); // Cập nhật đơn giá
+                    modelChiTiet.setValueAt(hsd.toString(), i, 5); // Cập nhật HSD
+                    modelChiTiet.setValueAt(String.format("%,.0f đ", thanhTienMoi), i, 6); // Thành Tiền
 
-            modelChiTiet.addRow(new Object[]{
-                    sp.getMaSP(),
-                    sp.getTenSP(),
-                    soLuong,
-                    String.format("%,.0f đ", donGia),
-                    hsd.toString(),
-                    String.format("%,.0f đ", thanhTien)
-            });
+                    // Cập nhật trong danh sách thực tế dùng để lưu Database
+                    danhSachChiTiet.get(i).setSoLuongNhap(soLuong);
+                    danhSachChiTiet.get(i).setDonGiaNhap(donGia);
+                    danhSachChiTiet.get(i).setHanSuDung(hsd);
+
+                    daTonTai = true;
+                    break;
+                }
+            }
+
+            // Nếu chưa có trong bảng -> Thêm mới 1 dòng bình thường
+            if (!daTonTai) {
+                PhieuNhap pnTemp = new PhieuNhap(txtMaPN.getText().trim());
+                ChiTietPhieuNhapService ct = new ChiTietPhieuNhapService(soLuong, donGia, hsd, pnTemp, sp);
+                danhSachChiTiet.add(ct);
+
+                BigDecimal thanhTien = donGia.multiply(new BigDecimal(soLuong));
+
+                NhaCungCap ncc = (NhaCungCap) cboNhaCungCap.getSelectedItem();
+                String tenNCC = ncc != null ? ncc.getTenNCC() : "";
+                cboNhaCungCap.setEnabled(false); // Khóa không cho đổi NCC khi đã có hàng
+
+                modelChiTiet.addRow(new Object[] {
+                        sp.getMaSP(),
+                        sp.getTenSP(),
+                        tenNCC,
+                        soLuong,
+                        String.format("%,.0f đ", donGia),
+                        hsd.toString(),
+                        String.format("%,.0f đ", thanhTien)
+                });
+            }
 
             txtSoLuong.setText("");
             txtDonGia.setText("");
         } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "Số lượng và đơn giá phải là định dạng số hợp lệ.", "Lỗi định dạng", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Số lượng và đơn giá phải là định dạng số hợp lệ.", "Lỗi định dạng",
+                    JOptionPane.ERROR_MESSAGE);
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
         }
@@ -359,7 +414,8 @@ public class dlgPhieuNhap extends JDialog {
     private void xuLyHoanTat() {
         try {
             if (danhSachChiTiet.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Phiếu nhập chưa có sản phẩm nào.", "Cảnh báo", JOptionPane.WARNING_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Phiếu nhập chưa có sản phẩm nào.", "Cảnh báo",
+                        JOptionPane.WARNING_MESSAGE);
                 return;
             }
 
@@ -369,43 +425,68 @@ public class dlgPhieuNhap extends JDialog {
             NhaCungCap ncc = (NhaCungCap) cboNhaCungCap.getSelectedItem();
 
             if (nv == null || ncc == null) {
-                JOptionPane.showMessageDialog(this, "Vui lòng chọn nhân viên lập phiếu và nhà cung cấp.", "Cảnh báo", JOptionPane.WARNING_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Vui lòng chọn nhân viên lập phiếu và nhà cung cấp.", "Cảnh báo",
+                        JOptionPane.WARNING_MESSAGE);
                 return;
             }
 
-            PhieuNhap pn = new PhieuNhap();
-            pn.setMaPN(maPN);
-            pn.setNgayNhap(ngayNhap);
-            pn.setMaNV(nv);
-            pn.setMaNCC(ncc);
-
+            // Dùng chung một kết nối duy nhất để quản lý transaction an toàn
             try (java.sql.Connection con = database.ConnectDB.getConnection()) {
                 con.setAutoCommit(false);
                 try {
-                    dao.PhieuNhapDAO pnDao = new dao.PhieuNhapDAO();
-                    pnDao.them(pn, con);
+                    // 1. Thêm Ph phiếu nhập
+                    String sqlPN = "INSERT INTO PhieuNhap (maPN, ngayNhap, maNV, maNCC) VALUES (?, ?, ?, ?)";
+                    try (java.sql.PreparedStatement psPN = con.prepareStatement(sqlPN)) {
+                        psPN.setString(1, maPN);
+                        psPN.setDate(2, java.sql.Date.valueOf(ngayNhap));
+                        psPN.setString(3, nv.getMaNV());
+                        psPN.setString(4, ncc.getMaNCC());
+                        psPN.executeUpdate();
+                    }
 
-                    dao.ChiTietPhieuNhapDAO ctDao = new dao.ChiTietPhieuNhapDAO();
-                    dao.SanPhamDAO spDao = new dao.SanPhamDAO();
+                    // 2. Thêm Chi tiết phiếu nhập và cộng dồn tồn kho trên cùng kết nối 'con'
+                    String sqlCT = "INSERT INTO ChiTietPhieuNhap (soLuongNhap, donGiaNhap, hanSuDung, maPN, maSP) VALUES (?, ?, ?, ?, ?)";
+                    String sqlGetTon = "SELECT soLuongTon FROM SanPham WHERE maSP = ?";
+                    String sqlUpdateTon = "UPDATE SanPham SET soLuongTon = ? WHERE maSP = ?";
 
-                    for (ChiTietPhieuNhap ct : danhSachChiTiet) {
-                        ctDao.them(ct, con);
-
-                        SanPham spCu = spDao.timTheoMa(ct.getMaSP().getMaSP());
-                        if (spCu != null) {
-                            int tonKhoMoi = spCu.getSoLuongTon() + ct.getSoLuongNhap();
-                            String sqlUpdate = "UPDATE SanPham SET soLuongTon = ? WHERE maSP = ?";
-                            try (java.sql.PreparedStatement ps = con.prepareStatement(sqlUpdate)) {
-                                ps.setInt(1, tonKhoMoi);
-                                ps.setString(2, spCu.getMaSP());
-                                ps.executeUpdate();
+                    for (ChiTietPhieuNhapService ct : danhSachChiTiet) {
+                        // Thêm chi tiết
+                        try (java.sql.PreparedStatement psCT = con.prepareStatement(sqlCT)) {
+                            psCT.setInt(1, ct.getSoLuongNhap());
+                            psCT.setBigDecimal(2, ct.getDonGiaNhap());
+                            if (ct.getHanSuDung() != null) {
+                                psCT.setDate(3, java.sql.Date.valueOf(ct.getHanSuDung()));
+                            } else {
+                                psCT.setNull(3, java.sql.Types.DATE);
                             }
+                            psCT.setString(4, maPN);
+                            psCT.setString(5, ct.getMaSP().getMaSP());
+                            psCT.executeUpdate();
+                        }
+
+                        // Lấy tồn kho hiện tại để cộng dồn
+                        int tonKhoHienTai = 0;
+                        try (java.sql.PreparedStatement psGet = con.prepareStatement(sqlGetTon)) {
+                            psGet.setString(1, ct.getMaSP().getMaSP());
+                            try (java.sql.ResultSet rs = psGet.executeQuery()) {
+                                if (rs.next()) {
+                                    tonKhoHienTai = rs.getInt("soLuongTon");
+                                }
+                            }
+                        }
+
+                        // Cập nhật tồn kho mới vào bảng SanPham
+                        int tonKhoMoi = tonKhoHienTai + ct.getSoLuongNhap();
+                        try (java.sql.PreparedStatement psUp = con.prepareStatement(sqlUpdateTon)) {
+                            psUp.setInt(1, tonKhoMoi);
+                            psUp.setString(2, ct.getMaSP().getMaSP());
+                            psUp.executeUpdate();
                         }
                     }
 
-                    con.commit();
+                    con.commit(); // Lưu thành công
                 } catch (Exception exSQL) {
-                    con.rollback();
+                    con.rollback(); // Lỗi thì hoàn tác sạch sẽ
                     throw exSQL;
                 }
             }
@@ -416,7 +497,8 @@ public class dlgPhieuNhap extends JDialog {
 
         } catch (Exception ex) {
             ex.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Lỗi khi lưu phiếu nhập: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Lỗi khi lưu phiếu nhập: " + ex.getMessage(), "Lỗi",
+                    JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -433,6 +515,53 @@ public class dlgPhieuNhap extends JDialog {
             }
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Lỗi tải sản phẩm theo NCC: " + ex.getMessage());
+        }
+    }
+
+    // Hàm nhận danh sách hàng từ thuật toán Gợi ý và điền tự động vào bảng
+    public void importHangTuGoiY(String maNCC, java.util.List<Object[]> danhSachHang) {
+        String tenNCC = "";
+        for (int i = 0; i < cboNhaCungCap.getItemCount(); i++) {
+            NhaCungCap ncc = cboNhaCungCap.getItemAt(i);
+            if (ncc.getMaNCC().equals(maNCC)) {
+                cboNhaCungCap.setSelectedIndex(i);
+                tenNCC = ncc.getTenNCC();
+                break;
+            }
+        }
+
+        cboNhaCungCap.setEnabled(false);
+        PhieuNhap pnTemp = new PhieuNhap(txtMaPN.getText().trim());
+        java.time.LocalDate hsdMacDinh = java.time.LocalDate.now().plusYears(1);
+
+        for (Object[] row : danhSachHang) {
+            String maSP = (String) row[0];
+            String tenSP = (String) row[1];
+            int sl = 0;
+            try {
+                sl = Integer.parseInt(row[2].toString().trim());
+            } catch (Exception e) {
+                sl = 1;
+            }
+
+            java.math.BigDecimal donGia = java.math.BigDecimal.valueOf((float) row[3]);
+            java.math.BigDecimal thanhTien = donGia.multiply(new java.math.BigDecimal(sl));
+
+            SanPham sp = new SanPham(maSP);
+            sp.setTenSP(tenSP);
+
+            ChiTietPhieuNhapService ct = new ChiTietPhieuNhapService(sl, donGia, hsdMacDinh, pnTemp, sp);
+            danhSachChiTiet.add(ct);
+
+            modelChiTiet.addRow(new Object[] {
+                    maSP,
+                    tenSP,
+                    tenNCC,
+                    sl,
+                    String.format("%,.0f đ", donGia),
+                    hsdMacDinh.toString(),
+                    String.format("%,.0f đ", thanhTien)
+            });
         }
     }
 }

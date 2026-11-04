@@ -497,19 +497,19 @@ private void ngungHoatDong() {
         NhanVien nv = getTK();
         if (nv == null) return;
         String username = nv.getMaTK().getTenDangNhap();
-        if (!PetPlusDialogs.confirm(this, "CẢNH BÁO XÓA VĨNH VIỄN",
+        if (!PetPlusDialogs.confirm(this, "XÓA TÀI KHOẢN NHÂN VIÊN",
                 "Tài khoản '" + username + "' đang thuộc nhân viên '" + nv.getTenNV() +
-                "'. Nếu xóa, cả HỒ SƠ NHÂN VIÊN sẽ bị xóa khỏi SQL Server. Bạn vẫn muốn tiếp tục?")) return;
+                "'. Hồ sơ và tài khoản sẽ được xóa nếu chưa có dữ liệu nghiệp vụ; nếu đã được tham chiếu, tài khoản sẽ bị ngừng hoạt động để giữ lịch sử. Tiếp tục?")) return;
         if (!PetPlusDialogs.confirm(this, "XÁC NHẬN LẦN CUỐI",
-                "XÓA VĨNH VIỄN tài khoản '" + username + "' và nhân viên mã " + nv.getMaNV() +
-                "? Nếu nhân viên có hóa đơn hoặc dữ liệu liên quan, cơ sở dữ liệu có thể từ chối thao tác.")) return;
+                "Xác nhận xử lý tài khoản '" + username + "' và nhân viên mã " + nv.getMaNV() +
+                " theo dữ liệu tham chiếu hiện có?")) return;
         try {
             if (taiKhoanDAO.xoa(nv.getMaTK().getMaTK())) {
                 taiDanhSach();
-                PetPlusDialogs.info(this, "Đã xóa", "Đã xóa tài khoản và hồ sơ nhân viên.");
+                PetPlusDialogs.info(this, "Đã xử lý", "Đã xóa hoặc ngừng hoạt động tài khoản theo dữ liệu nghiệp vụ.");
             } else PetPlusDialogs.error(this, "Không thể xóa", "Tài khoản không tồn tại hoặc không được phép xóa.");
         } catch (SQLException e) {
-            sqlError("Không thể xóa. Dữ liệu liên quan có thể đang tham chiếu nhân viên; giao dịch đã rollback.", e);
+            sqlError("Không thể xử lý yêu cầu xóa tài khoản nhân viên.", e);
         }
     }
 

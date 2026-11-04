@@ -98,7 +98,7 @@ public class TiepNhanThuCungDAO {
     public List<DichVu> layDichVuTheoLichHen(String maLichHen) {
         List<DichVu> danhSach = new ArrayList<>();
         String sql = "SELECT maDichVu, tenDichVu, donGia, moTa, trangThai, maLichHen "
-                + "FROM DichVu WHERE maLichHen = ? ORDER BY tenDichVu";
+                + "FROM DichVu WHERE maLichHen = ? AND trangThai <> N'Đã xóa' ORDER BY tenDichVu";
         try (Connection con = ConnectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, maLichHen);
             try (ResultSet rs = ps.executeQuery()) {
@@ -118,7 +118,7 @@ public class TiepNhanThuCungDAO {
                 + "ROW_NUMBER() OVER (PARTITION BY d.tenDichVu ORDER BY CASE WHEN d.maLichHen IS NULL THEN 0 ELSE 1 END, "
                 + "lh.thoiGianHen DESC, d.maDichVu DESC) AS thuTu "
                 + "FROM DichVu d LEFT JOIN LichHen lh ON lh.maLichHen = d.maLichHen "
-                + "WHERE d.trangThai <> N'Ngừng hoạt động') "
+                + "WHERE d.trangThai NOT IN (N'Ngừng hoạt động', N'Đã xóa')) "
                 + "SELECT maDichVu, tenDichVu, donGia, moTa, trangThai, maLichHen "
                 + "FROM DichVuMau WHERE thuTu = 1 ORDER BY tenDichVu";
         try (Connection con = ConnectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql);
@@ -134,7 +134,7 @@ public class TiepNhanThuCungDAO {
     public List<KhachHang> timKhachHangTheoSdt(String soDienThoai) {
         List<KhachHang> danhSach = new ArrayList<>();
         String sql = "SELECT maKH, tenKH, sdt, diaChi, hangThanhVien, diemTichLuy "
-                + "FROM KhachHang WHERE REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(COALESCE(sdt, ''), ' ', ''), "
+                + "FROM KhachHang WHERE trangThai <> N'Đã xóa' AND REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(COALESCE(sdt, ''), ' ', ''), "
                 + "'-', ''), '.', ''), '+', ''), '(', ''), ')', '') LIKE ? ORDER BY tenKH";
         try (Connection con = ConnectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, "%" + soDienThoai + "%");
@@ -159,7 +159,9 @@ public class TiepNhanThuCungDAO {
     public List<ThuCung> layThuCung() {
         List<ThuCung> danhSach = new ArrayList<>();
         String sql = "SELECT maThuCung, tenThuCung, loai, giong, gioiTinh, canNang, ngaySinh, "
-                + "tinhTrangSK, tiemChung, maKH FROM ThuCung ORDER BY tenThuCung";
+                + "tinhTrangSK, tiemChung, ThuCung.maKH FROM ThuCung "
+                + "INNER JOIN KhachHang kh ON kh.maKH = ThuCung.maKH "
+                + "WHERE ThuCung.trangThai <> N'Đã xóa' AND kh.trangThai <> N'Đã xóa' ORDER BY tenThuCung";
         try (Connection con = ConnectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql);
                 ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {

@@ -48,11 +48,6 @@ import javax.swing.table.JTableHeader;
 import appColor.AppColors;
 import dao.ChiTietHoaDonDAO;
 
-/**
- * Dialog xem chi tiết hóa đơn (chỉ xem).
- * Mỗi lần mở tạo một dialog mới: new dlgChiTietHoaDon(owner,
- * view).setVisible(true);
- */
 public class dlgChiTietHoaDon extends JDialog {
 
     private static final Color PINK_LIGHT = new Color(0xFD, 0xEC, 0xF1);
@@ -432,9 +427,11 @@ public class dlgChiTietHoaDon extends JDialog {
         lblTamTinh.setText(money(tamTinhLong));
         lblGiamGia.setText(giamGia > 0 ? "-" + money(giamGia) : money(0));
         StringBuilder maGiamGia = new StringBuilder();
-        if (v.maKhuyenMai != null && !v.maKhuyenMai.isEmpty()) maGiamGia.append(v.maKhuyenMai);
+        if (v.maKhuyenMai != null && !v.maKhuyenMai.isEmpty())
+            maGiamGia.append(v.maKhuyenMai);
         if (v.maKhuyenMaiSanPham != null && !v.maKhuyenMaiSanPham.isEmpty()) {
-            if (maGiamGia.length() > 0) maGiamGia.append(" / ");
+            if (maGiamGia.length() > 0)
+                maGiamGia.append(" / ");
             maGiamGia.append(v.maKhuyenMaiSanPham);
         }
         lblMaGiamGia.setText(maGiamGia.length() == 0 ? "—" : maGiamGia.toString());

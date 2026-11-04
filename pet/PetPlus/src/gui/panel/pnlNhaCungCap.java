@@ -59,7 +59,7 @@ public class pnlNhaCungCap extends JPanel {
         pnlTimKiem.add(txtTimKiem);
         pnlTimKiem.add(btnTimKiem);
         pnlTimKiem.add(btnLamMoi);
-        
+
         pnlTop.add(pnlTimKiem, BorderLayout.WEST);
 
         // 2. Cụm nút thao tác (Đẩy sang phải)
@@ -75,11 +75,12 @@ public class pnlNhaCungCap extends JPanel {
         pnlNut.add(btnSua);
         pnlNut.add(btnXoa);
         pnlNut.add(btnXemSP);
-        
+
         pnlTop.add(pnlNut, BorderLayout.EAST);
 
         // --- Bảng danh sách ---
-        model = new DefaultTableModel(new Object[]{"Mã NCC", "Tên nhà cung cấp", "Số điện thoại", "Địa chỉ", "Email"}, 0) {
+        model = new DefaultTableModel(
+                new Object[] { "Mã NCC", "Tên nhà cung cấp", "Số điện thoại", "Địa chỉ", "Email" }, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
@@ -113,7 +114,7 @@ public class pnlNhaCungCap extends JPanel {
             dlgNhaCungCap dlg = new dlgNhaCungCap(SwingUtilities.getWindowAncestor(this), null);
             dlg.setVisible(true);
             if (dlg.isDaLuu()) {
-                taiDanhSach(); 
+                taiDanhSach();
             }
         });
 
@@ -121,7 +122,8 @@ public class pnlNhaCungCap extends JPanel {
         btnSua.addActionListener(e -> {
             int selectedRow = table.getSelectedRow();
             if (selectedRow < 0) {
-                JOptionPane.showMessageDialog(this, "Vui lòng chọn nhà cung cấp cần chỉnh sửa trên bảng.", "Thông báo", JOptionPane.WARNING_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Vui lòng chọn nhà cung cấp cần chỉnh sửa trên bảng.", "Thông báo",
+                        JOptionPane.WARNING_MESSAGE);
                 return;
             }
 
@@ -135,7 +137,7 @@ public class pnlNhaCungCap extends JPanel {
                 dlgNhaCungCap dlg = new dlgNhaCungCap(SwingUtilities.getWindowAncestor(this), nccDangChon);
                 dlg.setVisible(true);
                 if (dlg.isDaLuu()) {
-                    taiDanhSach(); 
+                    taiDanhSach();
                 }
             }
         });
@@ -166,7 +168,7 @@ public class pnlNhaCungCap extends JPanel {
     private void hienThiTable(List<NhaCungCap> ds) {
         model.setRowCount(0);
         for (NhaCungCap ncc : ds) {
-            model.addRow(new Object[]{
+            model.addRow(new Object[] {
                     ncc.getMaNCC(),
                     ncc.getTenNCC(),
                     ncc.getSoDienThoai() == null ? "" : ncc.getSoDienThoai(),
@@ -179,12 +181,14 @@ public class pnlNhaCungCap extends JPanel {
     private void xoaNCC() {
         int selectedRow = table.getSelectedRow();
         if (selectedRow < 0) {
-            JOptionPane.showMessageDialog(this, "Vui lòng chọn nhà cung cấp cần xóa trên bảng.", "Thông báo", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn nhà cung cấp cần xóa trên bảng.", "Thông báo",
+                    JOptionPane.WARNING_MESSAGE);
             return;
         }
 
         String ma = model.getValueAt(selectedRow, 0).toString();
-        int confirm = JOptionPane.showConfirmDialog(this, "Bạn có chắc chắn muốn xóa nhà cung cấp " + ma + "?", "Xác nhận", JOptionPane.YES_NO_OPTION);
+        int confirm = JOptionPane.showConfirmDialog(this, "Bạn có chắc chắn muốn xóa nhà cung cấp " + ma + "?",
+                "Xác nhận", JOptionPane.YES_NO_OPTION);
         if (confirm == JOptionPane.YES_OPTION) {
             try {
                 if (service.xoa(ma)) {
@@ -200,7 +204,8 @@ public class pnlNhaCungCap extends JPanel {
     private void xemSanPhamCungCap() {
         int selectedRow = table.getSelectedRow();
         if (selectedRow < 0) {
-            JOptionPane.showMessageDialog(this, "Vui lòng chọn một nhà cung cấp trên bảng để xem sản phẩm.", "Thông báo", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn một nhà cung cấp trên bảng để xem sản phẩm.",
+                    "Thông báo", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
@@ -211,15 +216,18 @@ public class pnlNhaCungCap extends JPanel {
             // Lấy data từ hàm DAO vừa tạo ở Bước 1
             List<Object[]> dsSP = new dao.SanPhamDAO().layDanhSachSanPhamVaGiaNhapTheoNCC(maNCC);
             if (dsSP.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Nhà cung cấp này hiện chưa cung cấp sản phẩm nào cho hệ thống.", "Thông tin", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Nhà cung cấp này hiện chưa cung cấp sản phẩm nào cho hệ thống.",
+                        "Thông tin", JOptionPane.INFORMATION_MESSAGE);
                 return;
             }
 
             // Tạo bảng popup
-            String[] cols = {"Mã SP", "Tên Sản Phẩm", "Giá Nhập Thực Tế", "Tồn Kho"};
+            String[] cols = { "Mã SP", "Tên Sản Phẩm", "Giá Nhập Thực Tế", "Tồn Kho" };
             DefaultTableModel modelSP = new DefaultTableModel(cols, 0) {
                 @Override
-                public boolean isCellEditable(int row, int column) { return false; }
+                public boolean isCellEditable(int row, int column) {
+                    return false;
+                }
             };
 
             for (Object[] row : dsSP) {

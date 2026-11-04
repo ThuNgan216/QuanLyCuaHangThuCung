@@ -32,7 +32,7 @@ public class MaVachDAO {
         if (maVach == null || maVach.trim().isEmpty()) return null;
         String sql = "SELECT sp.maSP, sp.tenSP, sp.giaBan, sp.soLuongTon "
                 + "FROM dbo.MaVach mv INNER JOIN dbo.SanPham sp ON mv.maSP = sp.maSP "
-                + "WHERE mv.maVach = ?";
+                + "WHERE mv.maVach = ? AND sp.trangThai <> N'Đã xóa'";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, maVach.trim());
             try (ResultSet rs = ps.executeQuery()) {
@@ -69,7 +69,7 @@ public class MaVachDAO {
             try {
                 conn.setAutoCommit(false);
                 conn.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
-                String sqlSP = "SELECT maSP FROM dbo.SanPham WITH (UPDLOCK, HOLDLOCK) WHERE maSP = ?";
+                String sqlSP = "SELECT maSP FROM dbo.SanPham WITH (UPDLOCK, HOLDLOCK) WHERE maSP = ? AND trangThai <> N'Đã xóa'";
                 try (PreparedStatement ps = conn.prepareStatement(sqlSP)) {
                     ps.setString(1, maSP.trim());
                     try (ResultSet rs = ps.executeQuery()) {
@@ -131,7 +131,7 @@ public class MaVachDAO {
                 conn.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
 
                 try (PreparedStatement ps = conn.prepareStatement(
-                        "SELECT maSP FROM dbo.SanPham WITH (UPDLOCK, HOLDLOCK) WHERE maSP = ?")) {
+                        "SELECT maSP FROM dbo.SanPham WITH (UPDLOCK, HOLDLOCK) WHERE maSP = ? AND trangThai <> N'Đã xóa'")) {
                     ps.setString(1, maSPSach);
                     try (ResultSet rs = ps.executeQuery()) {
                         if (!rs.next()) throw new SQLException("Sản phẩm không tồn tại: " + maSPSach);
@@ -176,7 +176,7 @@ public class MaVachDAO {
 
                 SanPhamQuet sanPham;
                 try (PreparedStatement ps = conn.prepareStatement(
-                        "SELECT maSP, tenSP, giaBan, soLuongTon FROM dbo.SanPham WHERE maSP = ?")) {
+                        "SELECT maSP, tenSP, giaBan, soLuongTon FROM dbo.SanPham WHERE maSP = ? AND trangThai <> N'Đã xóa'")) {
                     ps.setString(1, maSPSach);
                     try (ResultSet rs = ps.executeQuery()) {
                         if (!rs.next()) throw new SQLException("Không tải lại được sản phẩm " + maSPSach + ".");

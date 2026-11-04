@@ -2,8 +2,9 @@ package gui.panel;
 
 import dao.ChiTietPhieuNhapDAO;
 import dao.PhieuNhapDAO;
-import entity.ChiTietPhieuNhap;
 import entity.PhieuNhap;
+import service.ChiTietPhieuNhapService;
+
 import java.awt.*;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -65,10 +66,12 @@ public class pnlBaoBieuNhapHang extends JPanel {
         add(pnlTopWrapper, BorderLayout.NORTH);
 
         // --- 2. BẢNG CHI TIẾT THỐNG KÊ (CENTER) ---
-        String[] columns = {"Mã Phiếu Nhập", "Ngày Lập", "Nhân Viên Nhập", "Nhà Cung Cấp", "Tổng Tiền Nhập"};
+        String[] columns = { "Mã Phiếu Nhập", "Ngày Lập", "Nhân Viên Nhập", "Nhà Cung Cấp", "Tổng Tiền Nhập" };
         model = new DefaultTableModel(columns, 0) {
             @Override
-            public boolean isCellEditable(int row, int column) { return false; }
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
         };
         table = new JTable(model);
         table.setRowHeight(28);
@@ -98,8 +101,7 @@ public class pnlBaoBieuNhapHang extends JPanel {
         card.setBackground(bg);
         card.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(new Color(218, 225, 233)),
-                BorderFactory.createEmptyBorder(12, 15, 12, 15)
-        ));
+                BorderFactory.createEmptyBorder(12, 15, 12, 15)));
 
         JLabel lblTitle = new JLabel(title);
         lblTitle.setFont(new Font("Arial", Font.PLAIN, 13));
@@ -117,25 +119,27 @@ public class pnlBaoBieuNhapHang extends JPanel {
         try {
             model.setRowCount(0);
             List<PhieuNhap> ds = phieuNhapDAO.layDanhSach();
-            
+
             int tongSoPhieu = ds.size();
             BigDecimal tongChiPhiAll = BigDecimal.ZERO;
 
             for (PhieuNhap pn : ds) {
                 String maPN = pn.getMaPN() != null ? pn.getMaPN() : "";
                 String ngayLap = pn.getNgayNhap() != null ? pn.getNgayNhap().toString() : "";
-                
-                String tenNV = (pn.getMaNV() != null && pn.getMaNV().getTenNV() != null) 
-                        ? pn.getMaNV().getTenNV() : (pn.getMaNV() != null ? pn.getMaNV().getMaNV() : "");
-                
-                String tenNCC = (pn.getMaNCC() != null && pn.getMaNCC().getTenNCC() != null) 
-                        ? pn.getMaNCC().getTenNCC() : (pn.getMaNCC() != null ? pn.getMaNCC().getMaNCC() : "");
+
+                String tenNV = (pn.getMaNV() != null && pn.getMaNV().getTenNV() != null)
+                        ? pn.getMaNV().getTenNV()
+                        : (pn.getMaNV() != null ? pn.getMaNV().getMaNV() : "");
+
+                String tenNCC = (pn.getMaNCC() != null && pn.getMaNCC().getTenNCC() != null)
+                        ? pn.getMaNCC().getTenNCC()
+                        : (pn.getMaNCC() != null ? pn.getMaNCC().getMaNCC() : "");
 
                 // Tính tổng tiền của từng phiếu nhập dựa vào chi tiết sản phẩm
-                List<ChiTietPhieuNhap> dsChiTiet = chiTietDAO.layChiTietTheoMaPN(maPN);
+                List<ChiTietPhieuNhapService> dsChiTiet = chiTietDAO.layChiTietTheoMaPN(maPN);
                 BigDecimal tongTienPhieu = BigDecimal.ZERO;
                 if (dsChiTiet != null) {
-                    for (ChiTietPhieuNhap ct : dsChiTiet) {
+                    for (ChiTietPhieuNhapService ct : dsChiTiet) {
                         BigDecimal donGia = ct.getDonGiaNhap() != null ? ct.getDonGiaNhap() : BigDecimal.ZERO;
                         BigDecimal thanhTien = donGia.multiply(new BigDecimal(ct.getSoLuongNhap()));
                         tongTienPhieu = tongTienPhieu.add(thanhTien);
@@ -143,7 +147,7 @@ public class pnlBaoBieuNhapHang extends JPanel {
                 }
                 tongChiPhiAll = tongChiPhiAll.add(tongTienPhieu);
 
-                model.addRow(new Object[]{
+                model.addRow(new Object[] {
                         maPN,
                         ngayLap,
                         tenNV,
@@ -158,7 +162,8 @@ public class pnlBaoBieuNhapHang extends JPanel {
             return true;
 
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Không thể tải dữ liệu báo biểu: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Không thể tải dữ liệu báo biểu: " + ex.getMessage(), "Lỗi",
+                    JOptionPane.ERROR_MESSAGE);
             return false;
         }
     }
@@ -169,7 +174,8 @@ public class pnlBaoBieuNhapHang extends JPanel {
         chooser.setFileFilter(new FileNameExtensionFilter("Tệp CSV (*.csv)", "csv"));
         chooser.setSelectedFile(new File("BaoCaoNhapHang_" + LocalDate.now().format(
                 DateTimeFormatter.ofPattern("yyyyMMdd")) + ".csv"));
-        if (chooser.showSaveDialog(this) != JFileChooser.APPROVE_OPTION) return;
+        if (chooser.showSaveDialog(this) != JFileChooser.APPROVE_OPTION)
+            return;
 
         File tep = chooser.getSelectedFile();
         if (!tep.getName().toLowerCase(Locale.ROOT).endsWith(".csv")) {
@@ -179,7 +185,8 @@ public class pnlBaoBieuNhapHang extends JPanel {
             int luaChon = JOptionPane.showConfirmDialog(this,
                     "Tệp đã tồn tại. Bạn có muốn ghi đè không?", "Xác nhận ghi đè",
                     JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
-            if (luaChon != JOptionPane.YES_OPTION) return;
+            if (luaChon != JOptionPane.YES_OPTION)
+                return;
         }
 
         try (BufferedWriter writer = Files.newBufferedWriter(tep.toPath(), StandardCharsets.UTF_8)) {
@@ -211,7 +218,8 @@ public class pnlBaoBieuNhapHang extends JPanel {
 
     private void ghiDongCsv(BufferedWriter writer, Object... giaTri) throws IOException {
         for (int i = 0; i < giaTri.length; i++) {
-            if (i > 0) writer.write(';');
+            if (i > 0)
+                writer.write(';');
             String chuoi = String.valueOf(giaTri[i]).replace("\"", "\"\"");
             writer.write('"');
             writer.write(chuoi);

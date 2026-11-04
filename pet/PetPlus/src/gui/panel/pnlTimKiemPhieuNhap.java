@@ -1,8 +1,8 @@
 package gui.panel;
 
 import dao.ChiTietPhieuNhapDAO;
-import entity.ChiTietPhieuNhap;
 import entity.PhieuNhap;
+import service.ChiTietPhieuNhapService;
 import service.NhapHangService;
 import utils.PetPlusTheme;
 
@@ -18,7 +18,7 @@ public class pnlTimKiemPhieuNhap extends JPanel {
     private JTable table;
     private final NhapHangService service = new NhapHangService();
     private final ChiTietPhieuNhapDAO ctDao = new ChiTietPhieuNhapDAO();
-    
+
     private final JTextField txtKeyword = new JTextField(20);
     private final JButton btnTimKiem = new JButton("Tìm Kiếm");
     private final JButton btnXemChiTiet = new JButton("Xem Chi Tiết");
@@ -58,10 +58,12 @@ public class pnlTimKiemPhieuNhap extends JPanel {
         add(pnlTop, BorderLayout.NORTH);
 
         // Bảng kết quả hiển thị Tên Nhân Viên và Tên Nhà Cung Cấp
-        String[] columns = {"Mã Phiếu Nhập", "Ngày Lập", "Nhân Viên Nhập", "Nhà Cung Cấp"};
+        String[] columns = { "Mã Phiếu Nhập", "Ngày Lập", "Nhân Viên Nhập", "Nhà Cung Cấp" };
         model = new DefaultTableModel(columns, 0) {
             @Override
-            public boolean isCellEditable(int row, int column) { return false; }
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
         };
         table = new JTable(model);
         table.setRowHeight(28);
@@ -96,71 +98,77 @@ public class pnlTimKiemPhieuNhap extends JPanel {
         try {
             model.setRowCount(0);
             List<PhieuNhap> danhSach = service.layDanhSachPhieuNhap();
-            
+
             for (PhieuNhap pn : danhSach) {
                 String maPN = pn.getMaPN() != null ? pn.getMaPN() : "";
                 String ngayLap = pn.getNgayNhap() != null ? pn.getNgayNhap().toString() : "";
-                
+
                 // Lấy tên Nhân viên và tên Nhà cung cấp an toàn
-                String tenNV = (pn.getMaNV() != null && pn.getMaNV().getTenNV() != null) 
-                        ? pn.getMaNV().getTenNV() : (pn.getMaNV() != null ? pn.getMaNV().getMaNV() : "");
-                
-                String tenNCC = (pn.getMaNCC() != null && pn.getMaNCC().getTenNCC() != null) 
-                        ? pn.getMaNCC().getTenNCC() : (pn.getMaNCC() != null ? pn.getMaNCC().getMaNCC() : "");
+                String tenNV = (pn.getMaNV() != null && pn.getMaNV().getTenNV() != null)
+                        ? pn.getMaNV().getTenNV()
+                        : (pn.getMaNV() != null ? pn.getMaNV().getMaNV() : "");
+
+                String tenNCC = (pn.getMaNCC() != null && pn.getMaNCC().getTenNCC() != null)
+                        ? pn.getMaNCC().getTenNCC()
+                        : (pn.getMaNCC() != null ? pn.getMaNCC().getMaNCC() : "");
 
                 // Lọc theo từ khóa (Mã PN, Tên NV hoặc Tên NCC)
-                if (tuKhoa.isEmpty() || 
-                    maPN.toLowerCase().contains(tuKhoa.toLowerCase()) || 
-                    tenNV.toLowerCase().contains(tuKhoa.toLowerCase()) || 
-                    tenNCC.toLowerCase().contains(tuKhoa.toLowerCase())) {
-                    
-                    model.addRow(new Object[]{ maPN, ngayLap, tenNV, tenNCC });
+                if (tuKhoa.isEmpty() ||
+                        maPN.toLowerCase().contains(tuKhoa.toLowerCase()) ||
+                        tenNV.toLowerCase().contains(tuKhoa.toLowerCase()) ||
+                        tenNCC.toLowerCase().contains(tuKhoa.toLowerCase())) {
+
+                    model.addRow(new Object[] { maPN, ngayLap, tenNV, tenNCC });
                 }
             }
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Không thể tìm kiếm phiếu nhập: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Không thể tìm kiếm phiếu nhập: " + ex.getMessage(), "Lỗi",
+                    JOptionPane.ERROR_MESSAGE);
         }
     }
 
-private void hienThiChiTietPhieuNhap() {
+    private void hienThiChiTietPhieuNhap() {
         int selectedRow = table.getSelectedRow();
         if (selectedRow < 0) {
-            JOptionPane.showMessageDialog(this, "Vui lòng chọn phiếu nhập cần xem chi tiết trên bảng.", "Thông báo", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn phiếu nhập cần xem chi tiết trên bảng.", "Thông báo",
+                    JOptionPane.WARNING_MESSAGE);
             return;
         }
 
         String maPN = model.getValueAt(selectedRow, 0).toString();
         String ngayLap = model.getValueAt(selectedRow, 1).toString();
-        String tenNV = model.getValueAt(selectedRow, 2).toString();   // Lấy cột 3: Tên nhân viên
+        String tenNV = model.getValueAt(selectedRow, 2).toString(); // Lấy cột 3: Tên nhân viên
         String tenNCC = model.getValueAt(selectedRow, 3).toString(); // Lấy cột 4: Tên nhà cung cấp
 
         String thongTinChung = "Mã Phiếu Nhập: " + maPN + "\n" +
-                               "Ngày Lập: " + ngayLap + "\n" +
-                               "Nhân Viên Nhập: " + tenNV + "\n" +
-                               "Nhà Cung Cấp: " + tenNCC + "\n\n" +
-                               "DANH SÁCH SẢN PHẨM TRONG PHIẾU:\n";
+                "Ngày Lập: " + ngayLap + "\n" +
+                "Nhân Viên Nhập: " + tenNV + "\n" +
+                "Nhà Cung Cấp: " + tenNCC + "\n\n" +
+                "DANH SÁCH SẢN PHẨM TRONG PHIẾU:\n";
 
         try {
             // Lấy danh sách sản phẩm chi tiết của phiếu nhập này từ DAO
-            List<ChiTietPhieuNhap> chiTietList = ctDao.layChiTietTheoMaPN(maPN);
+            List<ChiTietPhieuNhapService> chiTietList = ctDao.layChiTietTheoMaPN(maPN);
             if (chiTietList == null || chiTietList.isEmpty()) {
-                JOptionPane.showMessageDialog(this, thongTinChung + "(Không có sản phẩm chi tiết)", "Chi tiết phiếu nhập", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(this, thongTinChung + "(Không có sản phẩm chi tiết)",
+                        "Chi tiết phiếu nhập", JOptionPane.INFORMATION_MESSAGE);
                 return;
             }
 
             // Tạo bảng con hiển thị chi tiết sản phẩm trong Dialog popup
-            String[] colNames = {"Mã SP", "Tên Sản Phẩm", "Số Lượng", "Đơn Giá Nhập", "Thành Tiền"};
+            String[] colNames = { "Mã SP", "Tên Sản Phẩm", "Số Lượng", "Đơn Giá Nhập", "Thành Tiền" };
             DefaultTableModel ctModel = new DefaultTableModel(colNames, 0);
             double tongTien = 0;
 
-            for (ChiTietPhieuNhap ct : chiTietList) {
-                String tenSP = (ct.getMaSP() != null && ct.getMaSP().getTenSP() != null) ? ct.getMaSP().getTenSP() : ct.getMaSP().getMaSP();
+            for (ChiTietPhieuNhapService ct : chiTietList) {
+                String tenSP = (ct.getMaSP() != null && ct.getMaSP().getTenSP() != null) ? ct.getMaSP().getTenSP()
+                        : ct.getMaSP().getMaSP();
                 double donGia = ct.getDonGiaNhap() != null ? ct.getDonGiaNhap().doubleValue() : 0.0;
                 int soLuong = ct.getSoLuongNhap();
                 double thanhTien = soLuong * donGia;
                 tongTien += thanhTien;
 
-                ctModel.addRow(new Object[]{
+                ctModel.addRow(new Object[] {
                         ct.getMaSP().getMaSP(),
                         tenSP,
                         soLuong,
@@ -176,11 +184,11 @@ private void hienThiChiTietPhieuNhap() {
 
             JPanel pnlDialog = new JPanel(new BorderLayout(10, 10));
             pnlDialog.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-            
+
             JTextArea txtInfo = new JTextArea(thongTinChung);
             txtInfo.setEditable(false);
             txtInfo.setFont(new Font("Times New Roman", Font.PLAIN, 14));
-            
+
             pnlDialog.add(txtInfo, BorderLayout.NORTH);
             pnlDialog.add(scrollPane, BorderLayout.CENTER);
 
@@ -192,7 +200,8 @@ private void hienThiChiTietPhieuNhap() {
             JOptionPane.showMessageDialog(this, pnlDialog, "Chi Tiết Phiếu Nhập - " + maPN, JOptionPane.PLAIN_MESSAGE);
 
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Không thể tải chi tiết sản phẩm: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Không thể tải chi tiết sản phẩm: " + ex.getMessage(), "Lỗi",
+                    JOptionPane.ERROR_MESSAGE);
         }
     }
 }

@@ -75,7 +75,7 @@ public class pnlThanhToan extends JPanel {
     private final DanhMuc dsSanPham = new DanhMuc(LOAI_SP, "Tìm sản phẩm theo tên hoặc mã...");
     private final DanhMuc dsDichVu = new DanhMuc(LOAI_DV, "Tìm dịch vụ theo tên hoặc mã...");
 
-    // Thông tin đơn hàng
+    // Thông tin hóa đơn
     private final JTextField txtOrderCode = field("", false);
     private final JTextField txtOrderDate = field("", false);
     private final JTextField txtEmployee = field("", false);
@@ -114,7 +114,7 @@ public class pnlThanhToan extends JPanel {
     private long tienGiamKhuyenMaiSanPham;
     private boolean dangNapKhuyenMai = false;
     private final JRadioButton rbCash = new JRadioButton("Tiền mặt", true);
-    private final JRadioButton rbQR = new JRadioButton("QR Code");
+    private final JRadioButton rbQR = new JRadioButton("Chuyển khoản");
     private JButton[] nutTienNhanh = new JButton[0];
     private JButton btnConfirm;
     private long total = 0;
@@ -452,9 +452,10 @@ public class pnlThanhToan extends JPanel {
         KhuyenMai totNhat = null;
         for (KhuyenMai km : khuyenMaiSanPhamHieuLuc) {
             int hangApDung = km.getHangKhachHangApDung();
-            // Hạng cao hơn được hưởng ưu đãi của hạng thấp hơn; khách mới chỉ dùng được loại "Tất cả".
-            if (hangApDung != 0 && hangKhach < hangApDung) continue;
-            if (layMaSanPhamDatNguong(km).isEmpty()) continue;
+            if (hangApDung != 0 && hangKhach < hangApDung)
+                continue;
+            if (layMaSanPhamDatNguong(km).isEmpty())
+                continue;
             if (totNhat == null || km.getPhanTramGiam() > totNhat.getPhanTramGiam()) {
                 totNhat = km;
             }
@@ -467,15 +468,18 @@ public class pnlThanhToan extends JPanel {
         java.util.Set<String> maSanPhamApDung = new java.util.HashSet<>(km.getMaSanPhamApDung());
         java.util.Map<String, Long> soLuongTheoMa = new java.util.HashMap<>();
         for (int row = 0; row < modelDon.getRowCount(); row++) {
-            if (!LOAI_SP.equals(modelDon.getValueAt(row, C_LOAI))) continue;
+            if (!LOAI_SP.equals(modelDon.getValueAt(row, C_LOAI)))
+                continue;
             String maSP = String.valueOf(modelDon.getValueAt(row, C_MA));
-            if (!maSanPhamApDung.contains(maSP)) continue;
+            if (!maSanPhamApDung.contains(maSP))
+                continue;
             long soLuong = ((Number) modelDon.getValueAt(row, C_SL)).longValue();
             soLuongTheoMa.put(maSP, Math.addExact(soLuongTheoMa.getOrDefault(maSP, 0L), soLuong));
         }
         java.util.Set<String> maDatNguong = new java.util.HashSet<>();
         for (java.util.Map.Entry<String, Long> entry : soLuongTheoMa.entrySet()) {
-            if (entry.getValue() >= km.getSoLuongToiThieu()) maDatNguong.add(entry.getKey());
+            if (entry.getValue() >= km.getSoLuongToiThieu())
+                maDatNguong.add(entry.getKey());
         }
         return maDatNguong;
     }
@@ -650,10 +654,11 @@ public class pnlThanhToan extends JPanel {
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         actions.setOpaque(false);
         JButton btnQuetMaVach = outlineButton("Quét mã vạch");
-        btnQuetMaVach.setToolTipText("Quét sản phẩm bằng webcam và thêm vào đơn hàng đang lập.");
+        btnQuetMaVach.setToolTipText("Quét sản phẩm bằng webcam và thêm vào hóa đơn đang lập.");
         btnQuetMaVach.addActionListener(e -> moQuetMaVach(
                 SwingUtilities.getWindowAncestor(this) instanceof Frame
-                        ? (Frame) SwingUtilities.getWindowAncestor(this) : null));
+                        ? (Frame) SwingUtilities.getWindowAncestor(this)
+                        : null));
         JButton btnPhieuChoThanhToan = outlineButton("Chọn phiếu chờ thanh toán");
         btnPhieuChoThanhToan
                 .setToolTipText("Nạp thông tin khách hàng và dịch vụ từ phiếu tiếp nhận đang chờ thanh toán.");
@@ -666,6 +671,7 @@ public class pnlThanhToan extends JPanel {
         return p;
     }
 
+    // Quét mã vạch
     public void moQuetMaVach(Frame parent) {
         new dlgQuetMaVach(parent, this::themSanPhamTheoMaVach).setVisible(true);
     }
@@ -798,7 +804,7 @@ public class pnlThanhToan extends JPanel {
             return;
         }
         themVaoDon(LOAI_SP, sanPham.getMaSP(), sanPham.getTenSP(), Math.round(sanPham.getGiaBan()));
-        lblGoiY.setText("Đã thêm " + sanPham.getTenSP() + " vào đơn hàng • Mã vạch: " + maVach);
+        lblGoiY.setText("Đã thêm " + sanPham.getTenSP() + " vào hóa đơn • Mã vạch: " + maVach);
     }
 
     private void moChonPhieuChoThanhToan() {
@@ -1032,9 +1038,9 @@ public class pnlThanhToan extends JPanel {
     private JPanel createOrderCard() {
         JPanel content = new JPanel(new BorderLayout());
         content.setOpaque(false);
-        content.add(rows(new String[] { "Mã đơn hàng:", "Ngày tạo:", "Nhân viên:" },
+        content.add(rows(new String[] { "Mã hóa đơn:", "Ngày tạo:", "Nhân viên:" },
                 new JComponent[] { txtOrderCode, txtOrderDate, txtEmployee }), BorderLayout.NORTH);
-        return card("Thông tin đơn hàng", content);
+        return card("Thông tin hóa đơn", content);
     }
 
     private JPanel createCustomerCard() {
@@ -1094,7 +1100,7 @@ public class pnlThanhToan extends JPanel {
         actions.add(remove);
         actions.setPreferredSize(new Dimension(0, 28));
         content.add(actions, BorderLayout.SOUTH);
-        return card("Đơn hàng đã chọn", content);
+        return card("Hóa đơn đã chọn", content);
     }
 
     private JPanel createPaymentCard() {
@@ -1127,7 +1133,7 @@ public class pnlThanhToan extends JPanel {
         chkSuDungDiem.setForeground(TEXT);
         chkSuDungDiem.setFocusPainted(false);
         chkSuDungDiem
-                .setToolTipText("Quy đổi 1 điểm tích lũy thành 100 đ; mức giảm không vượt quá số tiền đơn hàng.");
+                .setToolTipText("Quy đổi 1 điểm tích lũy thành 100 đ; mức giảm không vượt quá số tiền hóa đơn.");
         sumGrid.add(chkSuDungDiem);
         sumGrid.add(lblGiamDiem);
 
@@ -1294,7 +1300,7 @@ public class pnlThanhToan extends JPanel {
         };
     }
 
-    // ================== SỬA ĐƠN HÀNG ==================
+    // ================== SỬA HÓA ĐƠN ==================
     private void suaSoLuong() {
         int r = tblDon.getSelectedRow();
         if (r < 0) {
@@ -1381,7 +1387,7 @@ public class pnlThanhToan extends JPanel {
                 subtotal = Math.addExact(subtotal, line);
             }
         } catch (ArithmeticException ex) {
-            JOptionPane.showMessageDialog(this, "Giá trị đơn hàng vượt giới hạn tính toán.");
+            JOptionPane.showMessageDialog(this, "Giá trị hóa đơn vượt giới hạn tính toán.");
             return;
         }
 
@@ -1394,9 +1400,11 @@ public class pnlThanhToan extends JPanel {
             java.util.Set<String> maSanPhamDatNguong = layMaSanPhamDatNguong(khuyenMaiSanPhamDangApDung);
             try {
                 for (int i = 0; i < modelDon.getRowCount(); i++) {
-                    if (!LOAI_SP.equals(modelDon.getValueAt(i, C_LOAI))) continue;
+                    if (!LOAI_SP.equals(modelDon.getValueAt(i, C_LOAI)))
+                        continue;
                     String maSP = String.valueOf(modelDon.getValueAt(i, C_MA));
-                    if (!maSanPhamDatNguong.contains(maSP)) continue;
+                    if (!maSanPhamDatNguong.contains(maSP))
+                        continue;
                     long line = ((Number) modelDon.getValueAt(i, C_TIEN)).longValue();
                     long giamDong = Math.round(line * rate / 100.0);
                     modelDon.setValueAt(giamDong, i, C_GIAM);
@@ -1426,9 +1434,11 @@ public class pnlThanhToan extends JPanel {
         lblSubtotal.setText(MONEY.format(subtotal) + " đ");
         lblDiscount.setText("-" + MONEY.format(discountInvoice) + " đ");
         lblTenKhuyenMaiSanPham.setText(khuyenMaiSanPhamDangApDung == null
-                ? "Không áp dụng" : khuyenMaiSanPhamDangApDung.getTenKhuyenMai());
+                ? "Không áp dụng"
+                : khuyenMaiSanPhamDangApDung.getTenKhuyenMai());
         lblTenKhuyenMaiSanPham.setToolTipText(khuyenMaiSanPhamDangApDung == null
-                ? null : "Sản phẩm: " + String.join(", ", khuyenMaiSanPhamDangApDung.getMaSanPhamApDung())
+                ? null
+                : "Sản phẩm: " + String.join(", ", khuyenMaiSanPhamDangApDung.getMaSanPhamApDung())
                         + " | Số lượng tối thiểu mỗi loại: " + khuyenMaiSanPhamDangApDung.getSoLuongToiThieu()
                         + (khuyenMaiSanPhamDangApDung.getDieuKienApDung().isEmpty() ? ""
                                 : " | Điều kiện: " + khuyenMaiSanPhamDangApDung.getDieuKienApDung()));
@@ -1451,11 +1461,11 @@ public class pnlThanhToan extends JPanel {
     // ================== XÁC NHẬN / LƯU ĐƠN ==================
     private void confirmPayment() {
         if (Auth.user == null) {
-            JOptionPane.showMessageDialog(this, "Hãy đăng nhập để lập đơn hàng.");
+            JOptionPane.showMessageDialog(this, "Hãy đăng nhập để lập hóa đơn.");
             return;
         }
         if (modelDon.getRowCount() == 0) {
-            JOptionPane.showMessageDialog(this, "Chưa chọn sản phẩm hoặc dịch vụ cho đơn hàng.");
+            JOptionPane.showMessageDialog(this, "Chưa chọn sản phẩm hoặc dịch vụ cho hóa đơn.");
             return;
         }
         if (khachMoi) {
@@ -1520,7 +1530,7 @@ public class pnlThanhToan extends JPanel {
         final String maNV = Auth.user.getMaNV();
         final List<Object[]> dong = chupDongHang();
         final long tongTien = total;
-        final String phuongThuc = rbCash.isSelected() ? "Tiền mặt" : "QR Code";
+        final String phuongThuc = rbCash.isSelected() ? "Tiền mặt" : "Chuyển khoản";
         final KhuyenMai khuyenMai = layKhuyenMaiDangChon();
         final String maKhuyenMai = khuyenMai == null ? null : khuyenMai.getMaKhuyenMai();
         final KhuyenMai khuyenMaiSanPham = khuyenMaiSanPhamDangApDung;
@@ -1609,7 +1619,7 @@ public class pnlThanhToan extends JPanel {
                 } catch (Exception ex) {
                     Throwable loi = nguyenNhan(ex);
                     JOptionPane.showMessageDialog(pnlThanhToan.this,
-                            "Không thể lưu đơn hàng: " + loi.getMessage(),
+                            "Không thể lưu hóa đơn: " + loi.getMessage(),
                             "Lỗi cơ sở dữ liệu", JOptionPane.ERROR_MESSAGE);
                 }
             }
@@ -1783,7 +1793,7 @@ public class pnlThanhToan extends JPanel {
     private void hienThiQR() {
         if (dlgQR == null) {
             Window owner = SwingUtilities.getWindowAncestor(this);
-            dlgQR = new JDialog(owner, "Thanh toán QR Code", Dialog.ModalityType.MODELESS);
+            dlgQR = new JDialog(owner, "Thanh toán Chuyển khoản", Dialog.ModalityType.MODELESS);
 
             JPanel content = new JPanel(new BorderLayout(14, 0));
             content.setBackground(Color.WHITE);
@@ -1898,7 +1908,8 @@ public class pnlThanhToan extends JPanel {
             String nhat = "-".repeat(RONG_HD);
             StringBuilder sb = new StringBuilder();
             sb.append(gach).append("\r\n");
-            sb.append(canGiua("PETPLUS")).append("\r\n");
+            sb.append(canGiua("CỦA HÀNG THÚ CƯNG PETPLUS")).append("\r\n");
+            sb.append(canGiua("Địa chỉ: 480 Nguyễn Thái Sơn, Quận Gò Vấp, TP. HCM")).append('\n');
             sb.append(canGiua("HÓA ĐƠN BÁN HÀNG")).append("\r\n");
             sb.append(gach).append("\r\n");
             sb.append("Mã hóa đơn : ").append(maHD).append("\r\n");

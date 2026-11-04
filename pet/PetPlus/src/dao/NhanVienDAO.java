@@ -267,21 +267,8 @@ public class NhanVienDAO {
         }
     }
 
-    // 6. Ngừng hoạt động tài khoản, không xóa dữ liệu nhân viên
+    // 6. Xóa cứng nếu chưa phát sinh lịch sử; nếu đã được tham chiếu thì khóa tài khoản.
     public boolean xoa(String maNV) throws SQLException {
-
-        String sql = "UPDATE TaiKhoan " +
-                "SET trangThai = N'Ngừng hoạt động' " +
-                "WHERE maTK = (" +
-                "SELECT maTK FROM NhanVien WHERE maNV = ?) " +
-                "AND tenDangNhap <> N'admin'";
-
-        try (Connection conn = ConnectDB.getConnection();
-                PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setString(1, maNV);
-
-            return ps.executeUpdate() > 0;
-        }
+        return new TaiKhoanDAO().xoaNhanVien(maNV);
     }
 }
