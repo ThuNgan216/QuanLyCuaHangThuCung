@@ -817,3 +817,7 @@ BEGIN
     ALTER TABLE dbo.KhachHang
         ADD CONSTRAINT UQ_KhachHang_SDT UNIQUE (sdt);
 END;
+
+/*Tạo mã thanh toán*/
+ALTER TABLE HoaDon ADD maGiaoDichNH NVARCHAR(64) NULL;
+CREATE UNIQUE INDEX UX_HoaDon_GDNH ON HoaDon(maGiaoDichNH) WHERE maGiaoDichNH IS NOT NULL;

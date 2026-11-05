@@ -312,6 +312,36 @@ public class ThanhToanDAO {
         }
     }
 
+    // ================= GIAO DỊCH NGÂN HÀNG (CHUYỂN KHOẢN TỰ ĐỘNG)
+    // =================
+
+    /**
+     * Mã giao dịch ngân hàng này đã được gắn vào một hóa đơn chưa.
+     * Yêu cầu cột HoaDon.maGiaoDichNH (xem file SQL kèm theo).
+     */
+    public boolean daDungMaGiaoDich(String maGiaoDich) throws SQLException {
+        String sql = "SELECT 1 FROM HoaDon WHERE maGiaoDichNH = ?";
+        try (Connection con = ConnectDB.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, maGiaoDich);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        }
+    }
+
+    /**
+     * Gắn mã giao dịch ngân hàng vào hóa đơn, cùng transaction với lúc lưu hóa đơn.
+     */
+    public void ganMaGiaoDichNH(Connection con, String maHD, String maGiaoDich) throws SQLException {
+        String sql = "UPDATE HoaDon SET maGiaoDichNH = ? WHERE maHoaDon = ?";
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, maGiaoDich);
+            ps.setString(2, maHD);
+            ps.executeUpdate();
+        }
+    }
+
     /** Hoàn tất phần thanh toán trên hóa đơn đã được tạo lúc tiếp nhận. */
     public void capNhatThanhToanHoaDon(Connection con, String maHD, String maNV, String maPTTT)
             throws SQLException {
