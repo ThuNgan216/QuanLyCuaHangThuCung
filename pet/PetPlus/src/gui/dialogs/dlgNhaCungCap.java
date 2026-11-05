@@ -21,7 +21,8 @@ public class dlgNhaCungCap extends JDialog {
     private boolean daLuu = false;
 
     public dlgNhaCungCap(Window owner, NhaCungCap ncc) {
-        super(owner, ncc == null ? "Thêm Nhà Cung Cấp Mới" : "Cập Nhật Thông Tin Nhà Cung Cấp", ModalityType.APPLICATION_MODAL);
+        super(owner, ncc == null ? "Thêm Nhà Cung Cấp Mới" : "Cập Nhật Thông Tin Nhà Cung Cấp",
+                ModalityType.APPLICATION_MODAL);
         this.nccHienTai = ncc;
         khoiTaoGiaoDien();
     }
@@ -87,9 +88,12 @@ public class dlgNhaCungCap extends JDialog {
     }
 
     private void themDong(JPanel p, GridBagConstraints g, int y, String label, JComponent c) {
-        g.gridx = 0; g.gridy = y; g.weightx = 0;
+        g.gridx = 0;
+        g.gridy = y;
+        g.weightx = 0;
         p.add(new JLabel(label), g);
-        g.gridx = 1; g.weightx = 1;
+        g.gridx = 1;
+        g.weightx = 1;
         p.add(c, g);
     }
 

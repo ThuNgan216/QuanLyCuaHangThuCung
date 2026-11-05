@@ -3,7 +3,6 @@ package gui.dialogs;
 import dao.NhaCungCapDAO;
 import dao.NhanVienDAO;
 import dao.SanPhamDAO;
-import entity.ChiTietPhieuNhap;
 import entity.NhaCungCap;
 import entity.NhanVien;
 import entity.PhieuNhap;
@@ -17,6 +16,8 @@ import java.util.Date;
 import java.util.List;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+
+import service.ChiTietPhieuNhapService;
 import service.NhapHangService;
 import utils.PetPlusTheme;
 
@@ -35,7 +36,7 @@ public class dlgPhieuNhap extends JDialog {
 
     private DefaultTableModel modelChiTiet;
     private JTable tableChiTiet;
-    private final List<ChiTietPhieuNhap> danhSachChiTiet = new ArrayList<>();
+    private final List<ChiTietPhieuNhapService> danhSachChiTiet = new ArrayList<>();
 
     private final NhapHangService nhapHangService = new NhapHangService();
     private final SanPhamDAO sanPhamDAO = new SanPhamDAO();
@@ -99,7 +100,8 @@ public class dlgPhieuNhap extends JDialog {
         // Custom Renderer cho ComboBox Nhà Cung Cấp
         cboNhaCungCap.setRenderer(new DefaultListCellRenderer() {
             @Override
-            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected,
+                    boolean cellHasFocus) {
                 super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
                 if (value instanceof NhaCungCap) {
                     NhaCungCap ncc = (NhaCungCap) value;
@@ -119,7 +121,8 @@ public class dlgPhieuNhap extends JDialog {
         // Custom Renderer cho ComboBox Nhân Viên
         cboNhanVien.setRenderer(new DefaultListCellRenderer() {
             @Override
-            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected,
+                    boolean cellHasFocus) {
                 super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
                 if (value instanceof NhanVien) {
                     NhanVien nv = (NhanVien) value;
@@ -130,23 +133,41 @@ public class dlgPhieuNhap extends JDialog {
         });
 
         int row = 0;
-        g.gridx = 0; g.gridy = row; g.weightx = 0.1; pnlTop.add(new JLabel("Mã Phiếu Nhập:"), g);
-        g.gridx = 1; g.weightx = 0.4; pnlTop.add(txtMaPN, g);
-        g.gridx = 2; g.weightx = 0.1; pnlTop.add(new JLabel("Nhà Cung Cấp:"), g);
-        g.gridx = 3; g.weightx = 0.4; pnlTop.add(cboNhaCungCap, g);
+        g.gridx = 0;
+        g.gridy = row;
+        g.weightx = 0.1;
+        pnlTop.add(new JLabel("Mã Phiếu Nhập:"), g);
+        g.gridx = 1;
+        g.weightx = 0.4;
+        pnlTop.add(txtMaPN, g);
+        g.gridx = 2;
+        g.weightx = 0.1;
+        pnlTop.add(new JLabel("Nhà Cung Cấp:"), g);
+        g.gridx = 3;
+        g.weightx = 0.4;
+        pnlTop.add(cboNhaCungCap, g);
 
         row++;
-        g.gridx = 0; g.gridy = row; g.weightx = 0.1; pnlTop.add(new JLabel("Nhân Viên Nhập:"), g);
-        g.gridx = 1; g.weightx = 0.4; pnlTop.add(cboNhanVien, g);
-        g.gridx = 2; g.weightx = 0.1; pnlTop.add(new JLabel("Ngày Lập:"), g);
-        g.gridx = 3; g.weightx = 0.4; pnlTop.add(txtNgayLap, g);
+        g.gridx = 0;
+        g.gridy = row;
+        g.weightx = 0.1;
+        pnlTop.add(new JLabel("Nhân Viên Nhập:"), g);
+        g.gridx = 1;
+        g.weightx = 0.4;
+        pnlTop.add(cboNhanVien, g);
+        g.gridx = 2;
+        g.weightx = 0.1;
+        pnlTop.add(new JLabel("Ngày Lập:"), g);
+        g.gridx = 3;
+        g.weightx = 0.4;
+        pnlTop.add(txtNgayLap, g);
 
         add(pnlTop, BorderLayout.NORTH);
 
         // --- 2. PHẦN CHI TIẾT SẢN PHẨM & BẢNG (CENTER) ---
         JPanel pnlCenter = new JPanel(new BorderLayout(8, 8));
         pnlCenter.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 10));
-        
+
         // Chia 2 dòng rõ rệt cho khu vực thêm sản phẩm
         JPanel pnlAddSP = new JPanel(new GridLayout(2, 1, 5, 8));
         pnlAddSP.setBorder(BorderFactory.createTitledBorder("Thêm sản phẩm vào phiếu nhập"));
@@ -157,7 +178,8 @@ public class dlgPhieuNhap extends JDialog {
         cboSanPham.setPreferredSize(new Dimension(400, 28));
         cboSanPham.setRenderer(new DefaultListCellRenderer() {
             @Override
-            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected,
+                    boolean cellHasFocus) {
                 super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
                 if (value instanceof SanPham) {
                     SanPham sp = (SanPham) value;
@@ -201,15 +223,19 @@ public class dlgPhieuNhap extends JDialog {
                     } else {
                         txtDonGia.setText("");
                     }
-                } catch (Exception ignored) {}
+                } catch (Exception ignored) {
+                }
             }
         });
 
         // Bảng chi tiết sản phẩm nhập
-        String[] columns = {"Mã SP", "Tên Sản Phẩm", "Nhà Cung Cấp", "Số Lượng", "Đơn Giá Nhập", "Hạn Sử Dụng", "Thành Tiền"};
+        String[] columns = { "Mã SP", "Tên Sản Phẩm", "Nhà Cung Cấp", "Số Lượng", "Đơn Giá Nhập", "Hạn Sử Dụng",
+                "Thành Tiền" };
         modelChiTiet = new DefaultTableModel(columns, 0) {
             @Override
-            public boolean isCellEditable(int row, int column) { return false; }
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
         };
         tableChiTiet = new JTable(modelChiTiet);
         tableChiTiet.setRowHeight(28);
@@ -234,24 +260,25 @@ public class dlgPhieuNhap extends JDialog {
         btnHuy.addActionListener(e -> dispose());
 
         cboNhaCungCap.addActionListener(e -> {
-    NhaCungCap nccSelected = (NhaCungCap) cboNhaCungCap.getSelectedItem();
-    if (nccSelected != null) {
-        // Nếu bảng đã có sản phẩm mà đổi NCC -> Cảnh báo và xóa bảng để tránh râu ông nọ cắm cằm bà kia
-        if (modelChiTiet.getRowCount() > 0) {
-            int confirm = JOptionPane.showConfirmDialog(this,
-                "Đổi nhà cung cấp sẽ làm trống danh sách sản phẩm đã chọn. Bạn có chắc chắn muốn đổi?",
-                "Xác nhận", JOptionPane.YES_NO_OPTION);
-            if (confirm == JOptionPane.YES_OPTION) {
-                modelChiTiet.setRowCount(0);
-                danhSachChiTiet.clear();
-            } else {
-                // Nếu không đồng ý thì trả lại giá trị cũ (hoặc giữ nguyên logic tùy ý)
-                return;
+            NhaCungCap nccSelected = (NhaCungCap) cboNhaCungCap.getSelectedItem();
+            if (nccSelected != null) {
+                // Nếu bảng đã có sản phẩm mà đổi NCC -> Cảnh báo và xóa bảng để tránh râu ông
+                // nọ cắm cằm bà kia
+                if (modelChiTiet.getRowCount() > 0) {
+                    int confirm = JOptionPane.showConfirmDialog(this,
+                            "Đổi nhà cung cấp sẽ làm trống danh sách sản phẩm đã chọn. Bạn có chắc chắn muốn đổi?",
+                            "Xác nhận", JOptionPane.YES_NO_OPTION);
+                    if (confirm == JOptionPane.YES_OPTION) {
+                        modelChiTiet.setRowCount(0);
+                        danhSachChiTiet.clear();
+                    } else {
+                        // Nếu không đồng ý thì trả lại giá trị cũ (hoặc giữ nguyên logic tùy ý)
+                        return;
+                    }
+                }
+                capNhatDanhSachSanPhamTheoNCC(nccSelected.getMaNCC());
             }
-        }
-        capNhatDanhSachSanPhamTheoNCC(nccSelected.getMaNCC());
-    }
-});
+        });
     }
 
     private void taiDuLieuComboBox() {
@@ -261,12 +288,14 @@ public class dlgPhieuNhap extends JDialog {
                 cboNhaCungCap.addItem(ncc);
             }
 
-            List<NhanVien> dsNV = nhanVienDAO.layDanhSach();
-            for (NhanVien nv : dsNV) {
-                cboNhanVien.addItem(nv);
+            cboNhanVien.removeAllItems();
+            if (utils.Auth.user != null) {
+                cboNhanVien.addItem(utils.Auth.user);
             }
+            cboNhanVien.setEnabled(false);
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Lỗi tải dữ liệu danh mục: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Lỗi tải dữ liệu danh mục: " + ex.getMessage(), "Lỗi",
+                    JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -276,7 +305,7 @@ public class dlgPhieuNhap extends JDialog {
             List<PhieuNhap> ds = dao.layDanhSach();
             int stt = ds.size() + 1;
             String maMoi;
-            
+
             while (true) {
                 maMoi = String.format("PN%03d", stt);
                 boolean trung = false;
@@ -286,7 +315,8 @@ public class dlgPhieuNhap extends JDialog {
                         break;
                     }
                 }
-                if (!trung) break;
+                if (!trung)
+                    break;
                 stt++;
             }
             txtMaPN.setText(maMoi);
@@ -306,7 +336,8 @@ public class dlgPhieuNhap extends JDialog {
             String slText = txtSoLuong.getText().trim();
             String giaText = txtDonGia.getText().trim();
             if (slText.isEmpty() || giaText.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Vui lòng nhập số lượng và đơn giá.", "Cảnh báo", JOptionPane.WARNING_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Vui lòng nhập số lượng và đơn giá.", "Cảnh báo",
+                        JOptionPane.WARNING_MESSAGE);
                 return;
             }
 
@@ -334,7 +365,7 @@ public class dlgPhieuNhap extends JDialog {
                     // Cập nhật lại giao diện bảng
                     modelChiTiet.setValueAt(soLuong, i, 3); // Cột 3: Số lượng (gán bằng số mới nhập)
                     modelChiTiet.setValueAt(String.format("%,.0f đ", donGia), i, 4); // Cập nhật đơn giá
-                    modelChiTiet.setValueAt(hsd.toString(), i, 5);                   // Cập nhật HSD
+                    modelChiTiet.setValueAt(hsd.toString(), i, 5); // Cập nhật HSD
                     modelChiTiet.setValueAt(String.format("%,.0f đ", thanhTienMoi), i, 6); // Thành Tiền
 
                     // Cập nhật trong danh sách thực tế dùng để lưu Database
@@ -350,7 +381,7 @@ public class dlgPhieuNhap extends JDialog {
             // Nếu chưa có trong bảng -> Thêm mới 1 dòng bình thường
             if (!daTonTai) {
                 PhieuNhap pnTemp = new PhieuNhap(txtMaPN.getText().trim());
-                ChiTietPhieuNhap ct = new ChiTietPhieuNhap(soLuong, donGia, hsd, pnTemp, sp);
+                ChiTietPhieuNhapService ct = new ChiTietPhieuNhapService(soLuong, donGia, hsd, pnTemp, sp);
                 danhSachChiTiet.add(ct);
 
                 BigDecimal thanhTien = donGia.multiply(new BigDecimal(soLuong));
@@ -359,7 +390,7 @@ public class dlgPhieuNhap extends JDialog {
                 String tenNCC = ncc != null ? ncc.getTenNCC() : "";
                 cboNhaCungCap.setEnabled(false); // Khóa không cho đổi NCC khi đã có hàng
 
-                modelChiTiet.addRow(new Object[]{
+                modelChiTiet.addRow(new Object[] {
                         sp.getMaSP(),
                         sp.getTenSP(),
                         tenNCC,
@@ -373,7 +404,8 @@ public class dlgPhieuNhap extends JDialog {
             txtSoLuong.setText("");
             txtDonGia.setText("");
         } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "Số lượng và đơn giá phải là định dạng số hợp lệ.", "Lỗi định dạng", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Số lượng và đơn giá phải là định dạng số hợp lệ.", "Lỗi định dạng",
+                    JOptionPane.ERROR_MESSAGE);
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
         }
@@ -382,7 +414,8 @@ public class dlgPhieuNhap extends JDialog {
     private void xuLyHoanTat() {
         try {
             if (danhSachChiTiet.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Phiếu nhập chưa có sản phẩm nào.", "Cảnh báo", JOptionPane.WARNING_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Phiếu nhập chưa có sản phẩm nào.", "Cảnh báo",
+                        JOptionPane.WARNING_MESSAGE);
                 return;
             }
 
@@ -392,7 +425,8 @@ public class dlgPhieuNhap extends JDialog {
             NhaCungCap ncc = (NhaCungCap) cboNhaCungCap.getSelectedItem();
 
             if (nv == null || ncc == null) {
-                JOptionPane.showMessageDialog(this, "Vui lòng chọn nhân viên lập phiếu và nhà cung cấp.", "Cảnh báo", JOptionPane.WARNING_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Vui lòng chọn nhân viên lập phiếu và nhà cung cấp.", "Cảnh báo",
+                        JOptionPane.WARNING_MESSAGE);
                 return;
             }
 
@@ -415,7 +449,7 @@ public class dlgPhieuNhap extends JDialog {
                     String sqlGetTon = "SELECT soLuongTon FROM SanPham WHERE maSP = ?";
                     String sqlUpdateTon = "UPDATE SanPham SET soLuongTon = ? WHERE maSP = ?";
 
-                    for (ChiTietPhieuNhap ct : danhSachChiTiet) {
+                    for (ChiTietPhieuNhapService ct : danhSachChiTiet) {
                         // Thêm chi tiết
                         try (java.sql.PreparedStatement psCT = con.prepareStatement(sqlCT)) {
                             psCT.setInt(1, ct.getSoLuongNhap());
@@ -463,7 +497,8 @@ public class dlgPhieuNhap extends JDialog {
 
         } catch (Exception ex) {
             ex.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Lỗi khi lưu phiếu nhập: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Lỗi khi lưu phiếu nhập: " + ex.getMessage(), "Lỗi",
+                    JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -514,10 +549,10 @@ public class dlgPhieuNhap extends JDialog {
             SanPham sp = new SanPham(maSP);
             sp.setTenSP(tenSP);
 
-            ChiTietPhieuNhap ct = new ChiTietPhieuNhap(sl, donGia, hsdMacDinh, pnTemp, sp);
+            ChiTietPhieuNhapService ct = new ChiTietPhieuNhapService(sl, donGia, hsdMacDinh, pnTemp, sp);
             danhSachChiTiet.add(ct);
 
-            modelChiTiet.addRow(new Object[]{
+            modelChiTiet.addRow(new Object[] {
                     maSP,
                     tenSP,
                     tenNCC,

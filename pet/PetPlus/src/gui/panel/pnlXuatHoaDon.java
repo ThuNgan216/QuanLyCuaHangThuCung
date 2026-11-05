@@ -596,7 +596,8 @@ public class pnlXuatHoaDon extends JPanel {
             ten.append(hd.tenKhuyenMai).append(" (").append(hd.phanTramGiam).append("%)");
         }
         if (hd.tenKhuyenMaiSanPham != null) {
-            if (ten.length() > 0) ten.append(" / ");
+            if (ten.length() > 0)
+                ten.append(" / ");
             ten.append(hd.tenKhuyenMaiSanPham).append(" (")
                     .append(hd.phanTramGiamSanPham).append("% sản phẩm)");
         }
@@ -617,7 +618,7 @@ public class pnlXuatHoaDon extends JPanel {
         StringBuilder sb = new StringBuilder();
         String line = "=".repeat(60);
         sb.append(center("CỦA HÀNG THÚ CƯNG PETPLUS", 70)).append('\n');
-        sb.append(center("Địa chỉ: 650 Lê Văn Thọ, Quận Gò Vấp, TP. HCM", 40)).append('\n');
+        sb.append(center("Địa chỉ: 480 Nguyễn Thái Sơn, Quận Gò Vấp, TP. HCM", 40)).append('\n');
         sb.append(line).append('\n');
         sb.append(center("HÓA ĐƠN BÁN HÀNG", 60)).append('\n');
         sb.append(line).append('\n');

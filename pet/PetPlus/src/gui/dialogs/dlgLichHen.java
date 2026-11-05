@@ -318,17 +318,8 @@ public class dlgLichHen extends JDialog {
 
             LocalDateTime time = LocalDateTime.parse(txtThoiGian.getText().trim(), F);
 
-<<<<<<< HEAD
             boolean doiGio = duLieu == null || duLieu.getThoiGianHen() == null
                     || !duLieu.getThoiGianHen().equals(time);
-=======
-            // Khi sửa mà không đổi giờ (vd chỉ xác nhận / hủy lịch đã qua giờ) thì không ép
-            // tương lai.
-            boolean doiGio = duLieu == null || duLieu.getThoiGianHen() == null
-                    || !time.equals(duLieu.getThoiGianHen()
-                            .truncatedTo(java.time.temporal.ChronoUnit.MINUTES));
-
->>>>>>> main
             if (doiGio && !time.isAfter(LocalDateTime.now()))
                 throw new IllegalArgumentException(
                         "Thời gian hẹn phải ở tương lai.");

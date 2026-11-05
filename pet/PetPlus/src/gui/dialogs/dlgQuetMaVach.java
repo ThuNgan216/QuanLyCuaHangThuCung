@@ -223,12 +223,14 @@ public class dlgQuetMaVach extends JDialog {
                                 ? "Mã vạch: " + maVach
                                 : "Đã quét: " + maVach + " • Nhấn Quét tiếp để quét mã khác.");
                         System.out.println("Mã vạch được xác nhận: " + maVach);
-                        if (scanTimer != null) scanTimer.stop();
+                        if (scanTimer != null)
+                            scanTimer.stop();
                         btnBatDau.setText("Quét tiếp");
                         btnBatDau.setEnabled(true);
                         maVachChoXacNhan = null;
                         soKhungLienTiep = 0;
-                        if (onMaVachQuet != null) onMaVachQuet.accept(maVach.trim());
+                        if (onMaVachQuet != null)
+                            onMaVachQuet.accept(maVach.trim());
                     } catch (Exception ex) {
                         System.err.println("Lỗi xử lý mã vạch: " + ex.getMessage());
                     }
@@ -238,26 +240,33 @@ public class dlgQuetMaVach extends JDialog {
         scanTimer.start();
     }
 
-    /** Thử khung hình gốc trước, rồi tăng tương phản/crop/phóng to khi mã khó đọc. */
+    /**
+     * Thử khung hình gốc trước, rồi tăng tương phản/crop/phóng to khi mã khó đọc.
+     */
     private static String docGiaiMaVach(BufferedImage image, Map<DecodeHintType, Object> hints) {
         String ma = thuGiaiMa(image, hints);
-        if (ma != null) return ma;
+        if (ma != null)
+            return ma;
 
-        // Mã có thể gần sát mép khung hình; tăng tương phản toàn ảnh trước để không cắt mất quiet zone.
+        // Mã có thể gần sát mép khung hình; tăng tương phản toàn ảnh trước để không cắt
+        // mất quiet zone.
         BufferedImage roNetToanAnh = tangTuongPhan(image);
         ma = thuGiaiMa(roNetToanAnh, hints);
-        if (ma != null) return ma;
+        if (ma != null)
+            return ma;
 
         // Chỉ bỏ một viền nhỏ quanh ảnh, giữ lại gần như toàn bộ chiều dài mã.
         BufferedImage crop = catGiua(image, 0.98, 0.94);
         BufferedImage roNet = tangTuongPhan(crop);
         BufferedImage phongTo = phongTo(roNet, 1.5);
         ma = thuGiaiMa(phongTo, hints);
-        if (ma != null) return ma;
+        if (ma != null)
+            return ma;
 
         // Hỗ trợ mã bị xoay dọc trước camera điện thoại.
         ma = thuGiaiMa(xoay(phongTo, true), hints);
-        if (ma != null) return ma;
+        if (ma != null)
+            return ma;
         return thuGiaiMa(xoay(phongTo, false), hints);
     }
 
@@ -285,20 +294,23 @@ public class dlgQuetMaVach extends JDialog {
     /** Bỏ mã nhỏ hoặc nằm sát rìa để tránh bắt nhầm mã trên đồ vật phía sau. */
     private static boolean namTrongVungQuet(Result result, BufferedImage image) {
         ResultPoint[] points = result.getResultPoints();
-        if (points == null || points.length < 2) return false;
+        if (points == null || points.length < 2)
+            return false;
 
         float minX = Float.MAX_VALUE;
         float maxX = Float.MIN_VALUE;
         float minY = Float.MAX_VALUE;
         float maxY = Float.MIN_VALUE;
         for (ResultPoint point : points) {
-            if (point == null) continue;
+            if (point == null)
+                continue;
             minX = Math.min(minX, point.getX());
             maxX = Math.max(maxX, point.getX());
             minY = Math.min(minY, point.getY());
             maxY = Math.max(maxY, point.getY());
         }
-        if (minX == Float.MAX_VALUE || minY == Float.MAX_VALUE) return false;
+        if (minX == Float.MAX_VALUE || minY == Float.MAX_VALUE)
+            return false;
 
         double centerX = (minX + maxX) / 2.0;
         double centerY = (minY + maxY) / 2.0;
@@ -320,7 +332,10 @@ public class dlgQuetMaVach extends JDialog {
         return image.getSubimage(x, y, width, height);
     }
 
-    /** Kéo giãn tương phản theo percentile để giảm ảnh hưởng của lóe sáng trên màn hình. */
+    /**
+     * Kéo giãn tương phản theo percentile để giảm ảnh hưởng của lóe sáng trên màn
+     * hình.
+     */
     private static BufferedImage tangTuongPhan(BufferedImage image) {
         BufferedImage gray = new BufferedImage(image.getWidth(), image.getHeight(),
                 BufferedImage.TYPE_BYTE_GRAY);
@@ -339,7 +354,8 @@ public class dlgQuetMaVach extends JDialog {
 
         int low = percentile(histogram, total * 2 / 100);
         int high = percentile(histogram, total * 98 / 100);
-        if (high <= low) return gray;
+        if (high <= low)
+            return gray;
 
         for (int y = 0; y < gray.getHeight(); y++) {
             for (int x = 0; x < gray.getWidth(); x++) {
@@ -356,7 +372,8 @@ public class dlgQuetMaVach extends JDialog {
         long count = 0;
         for (int i = 0; i < histogram.length; i++) {
             count += histogram[i];
-            if (count >= target) return i;
+            if (count >= target)
+                return i;
         }
         return histogram.length - 1;
     }

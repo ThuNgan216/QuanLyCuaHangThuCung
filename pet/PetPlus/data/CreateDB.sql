@@ -1,32 +1,8 @@
-﻿/* ============================================================
-   PETPLUS DATABASE
-   HE THONG QUAN LY CUA HANG THU CUNG
-
-   19 THUC THE + DU LIEU MAU
-   SQL Server
-
-   LUU Y: Script nay XOA database PETPLUS cu va tao lai tu dau.
-   Hay sao luu du lieu cu truoc khi chay neu can giu lai.
-   ============================================================ */
+﻿
 USE master;
-
-
 GO
-/* 1. XOA DATABASE CU NEU TON TAI */
-IF DB_ID(N'PETPLUS') IS NOT NULL
-    BEGIN
-        ALTER DATABASE PETPLUS
-            SET SINGLE_USER
-            WITH ROLLBACK IMMEDIATE;
-        DROP DATABASE PETPLUS;
-    END
 
-
-GO
-/* 2. TAO DATABASE MOI */
 CREATE DATABASE PETPLUS;
-
-
 GO
 USE PETPLUS;
 
@@ -807,3 +783,37 @@ FROM   TichDiem;
 
 GO
 USE PETPLUS;
+
+/*
+   Thêm ràng buộc mỗi số điện thoại chỉ thuộc một khách hàng.
+   Script này dùng cho database PETPLUS đã tồn tại; không xóa hoặc tạo lại database.
+   Nếu dữ liệu hiện tại có số điện thoại trùng, cần xử lý các bản ghi đó trước.
+*/
+
+
+IF OBJECT_ID(N'dbo.KhachHang', N'U') IS NULL
+BEGIN
+    ;THROW 50001, N'Không tìm thấy bảng dbo.KhachHang trong database PETPLUS.', 1;
+END;
+
+IF EXISTS (
+    SELECT sdt
+    FROM dbo.KhachHang
+    WHERE sdt IS NOT NULL
+    GROUP BY sdt
+    HAVING COUNT(*) > 1
+)
+BEGIN
+    ;THROW 50002, N'Có số điện thoại khách hàng bị trùng. Hãy xử lý dữ liệu trùng trước khi thêm ràng buộc.', 1;
+END;
+
+IF NOT EXISTS (
+    SELECT 1
+    FROM sys.key_constraints
+    WHERE name = N'UQ_KhachHang_SDT'
+      AND parent_object_id = OBJECT_ID(N'dbo.KhachHang')
+)
+BEGIN
+    ALTER TABLE dbo.KhachHang
+        ADD CONSTRAINT UQ_KhachHang_SDT UNIQUE (sdt);
+END;

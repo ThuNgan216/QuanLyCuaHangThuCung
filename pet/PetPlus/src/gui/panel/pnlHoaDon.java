@@ -46,8 +46,8 @@ import entity.KhachHang;
 
 public class pnlHoaDon extends JPanel {
 
-    private static final Color PINK_LIGHT = new Color(0xFFF0F5); // nền tiêu đề
-    private static final Color PINK_SELECT = new Color(0xFFE0EA); // nền ô đang chọn
+    private static final Color PINK_LIGHT = new Color(0xFFF0F5);
+    private static final Color PINK_SELECT = new Color(0xFFE0EA);
 
     private static final String[] COLUMNS = { "STT", "Mã đơn hàng", "Tên khách hàng", "Số điện thoại", "Ngày lập",
             "Thành tiền" };
@@ -106,7 +106,7 @@ public class pnlHoaDon extends JPanel {
     }
 
     // ================= DANH SÁCH ĐƠN HÀNG (TRÁI) =================
-    private java.util.function.Consumer<String> onChonHoaDon; // Này để chọn hóa đơn sẽ chuyern sang chi tiết hóa đơn
+    private java.util.function.Consumer<String> onChonHoaDon;
 
     public void setOnChonHoaDon(java.util.function.Consumer<String> c) {
         this.onChonHoaDon = c;
@@ -139,12 +139,10 @@ public class pnlHoaDon extends JPanel {
         table.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
             public void mouseClicked(java.awt.event.MouseEvent e) {
-                int viewRow = table.rowAtPoint(e.getPoint()); // dòng thật sự được click (-1 nếu click vùng trống)
+                int viewRow = table.rowAtPoint(e.getPoint());
                 if (viewRow < 0 || onChonHoaDon == null)
                     return;
                 int modelRow = table.convertRowIndexToModel(viewRow);
-
-                // Tự tìm cột "Mã ..." theo tên cột, khỏi phụ thuộc vị trí
                 int colMa = 1;
                 for (int i = 0; i < model.getColumnCount(); i++) {
                     if (model.getColumnName(i).toLowerCase().contains("mã")) {
@@ -211,7 +209,6 @@ public class pnlHoaDon extends JPanel {
     }
 
     // ================= THAO TÁC (PHẢI) =================
-    // ================= THAO TÁC (PHẢI) =================
     private JPanel createActionPanel() {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(AppColors.WHITE);
@@ -235,7 +232,7 @@ public class pnlHoaDon extends JPanel {
             @Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
-                if (getText().isEmpty()) { // placeholder
+                if (getText().isEmpty()) {
                     g.setColor(Color.GRAY);
                     g.setFont(getFont());
                     g.drawString("Tìm kiếm", getInsets().left, (getHeight() + g.getFontMetrics().getAscent()) / 2 - 2);

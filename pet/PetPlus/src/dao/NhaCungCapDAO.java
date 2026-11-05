@@ -16,8 +16,8 @@ public class NhaCungCapDAO {
         String sql = "SELECT maNCC, tenNCC, soDienThoai, diaChi, email FROM dbo.NhaCungCap WHERE trangThai <> N'Đã xóa'";
 
         try (Connection con = ConnectDB.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+                PreparedStatement ps = con.prepareStatement(sql);
+                ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
                 NhaCungCap ncc = new NhaCungCap();
@@ -37,7 +37,7 @@ public class NhaCungCapDAO {
     public NhaCungCap timTheoMa(String maNCC) {
         String sql = "SELECT * FROM dbo.NhaCungCap WHERE maNCC = ? AND trangThai <> N'Đã xóa'";
         try (Connection con = ConnectDB.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+                PreparedStatement ps = con.prepareStatement(sql)) {
 
             ps.setString(1, maNCC);
             try (ResultSet rs = ps.executeQuery()) {
@@ -84,7 +84,7 @@ public class NhaCungCapDAO {
     public boolean them(NhaCungCap ncc) {
         String sql = "INSERT INTO dbo.NhaCungCap (maNCC, tenNCC, soDienThoai, diaChi, email) VALUES (?, ?, ?, ?, ?)";
         try (Connection con = ConnectDB.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+                PreparedStatement ps = con.prepareStatement(sql)) {
 
             ps.setString(1, ncc.getMaNCC());
             ps.setString(2, ncc.getTenNCC());
@@ -101,7 +101,7 @@ public class NhaCungCapDAO {
     public boolean capNhat(NhaCungCap ncc) {
         String sql = "UPDATE dbo.NhaCungCap SET tenNCC = ?, soDienThoai = ?, diaChi = ?, email = ? WHERE maNCC = ? AND trangThai <> N'Đã xóa'";
         try (Connection con = ConnectDB.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+                PreparedStatement ps = con.prepareStatement(sql)) {
 
             ps.setString(1, ncc.getTenNCC());
             ps.setString(2, ncc.getSoDienThoai());
