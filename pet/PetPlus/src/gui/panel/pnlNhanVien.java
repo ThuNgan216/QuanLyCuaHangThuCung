@@ -10,7 +10,8 @@ import gui.dialogs.dlgNhanVien;
 import gui.dialogs.dlgNhanVien.PetPlusDialogs;
 import gui.dialogs.dlgPhanQuyen;
 import gui.dialogs.dlgTaiKhoan;
-
+import gui.dialogs.dlgThemChucVu;
+import utils.Auth;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
@@ -19,7 +20,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-
 
 public class pnlNhanVien extends JPanel {
     private final NhanVienDAO nhanVienDAO = new NhanVienDAO();
@@ -83,7 +83,8 @@ public class pnlNhanVien extends JPanel {
     }
 
     public void chonTab(String tenTab) {
-        if (tenTab == null) return;
+        if (tenTab == null)
+            return;
         if (TRANG_NHAN_VIEN.equalsIgnoreCase(tenTab)
                 || TRANG_TAI_KHOAN.equalsIgnoreCase(tenTab)
                 || TRANG_PHAN_QUYEN.equalsIgnoreCase(tenTab)) {
@@ -132,7 +133,10 @@ public class pnlNhanVien extends JPanel {
 
     private static DefaultTableModel model(String... titles) {
         return new DefaultTableModel(titles, 0) {
-            @Override public boolean isCellEditable(int row, int col) { return false; }
+            @Override
+            public boolean isCellEditable(int row, int col) {
+                return false;
+            }
         };
     }
 
@@ -150,20 +154,32 @@ public class pnlNhanVien extends JPanel {
         JPanel search = createSearchBar("Tìm nhân viên:", txtTimNV, btnTim, btnReset);
         btnTim.addActionListener(e -> timNhanVien());
         txtTimNV.addActionListener(e -> timNhanVien());
-        btnReset.addActionListener(e -> { txtTimNV.setText(""); taiDanhSach(); });
+        btnReset.addActionListener(e -> {
+            txtTimNV.setText("");
+            taiDanhSach();
+        });
         p.add(search, BorderLayout.NORTH);
         p.add(PetPlusUI.scrollTable(tblNV), BorderLayout.CENTER);
 
         JButton btnThem = PetPlusUI.button("+ Thêm nhân viên", true);
         JButton btnSua = PetPlusUI.button("Sửa thông tin", true);
         JButton btnNgung = PetPlusUI.button("Ngừng hoạt động", true);
+        JButton btnChucVu = PetPlusUI.button("+ Thêm chức vụ", true);
         btnThem.addActionListener(e -> themNhanVien());
         btnSua.addActionListener(e -> suaNhanVien());
         btnNgung.addActionListener(e -> ngungHoatDong());
-        p.add(createFooter(lblCountNV, btnThem, btnSua, btnNgung), BorderLayout.SOUTH);
+        btnChucVu.addActionListener(e -> themChucVu());
+        p.add(createFooter(
+                lblCountNV,
+                btnThem,
+                btnChucVu,
+                btnSua,
+                btnNgung), BorderLayout.SOUTH);
         tblNV.addMouseListener(new java.awt.event.MouseAdapter() {
-            @Override public void mouseClicked(java.awt.event.MouseEvent e) {
-                if (e.getClickCount() == 2) suaNhanVien();
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                if (e.getClickCount() == 2)
+                    suaNhanVien();
             }
         });
         return p;
@@ -176,25 +192,30 @@ public class pnlNhanVien extends JPanel {
         p.add(createSearchBar("Tìm tài khoản:", txtTimTK, btnTim, btnReset), BorderLayout.NORTH);
         btnTim.addActionListener(e -> locTaiKhoan());
         txtTimTK.addActionListener(e -> locTaiKhoan());
-        btnReset.addActionListener(e -> { txtTimTK.setText(""); taiDanhSach(); });
+        btnReset.addActionListener(e -> {
+            txtTimTK.setText("");
+            taiDanhSach();
+        });
         p.add(PetPlusUI.scrollTable(tblTK), BorderLayout.CENTER);
 
         JButton add = PetPlusUI.button("+ Thêm tài khoản", true);
         JButton edit = PetPlusUI.button("Cập nhật", true);
-    
+
         JButton lock = PetPlusUI.button("Khóa tài khoản", false);
         JButton unlock = PetPlusUI.button("Mở khóa", false);
         add.setToolTipText("Tạo hồ sơ nhân viên và tài khoản gắn với hồ sơ");
-       
+
         add.addActionListener(e -> themNhanVien());
         edit.addActionListener(e -> capNhatTaiKhoan());
         lock.addActionListener(e -> doiTrangThai("Ngừng hoạt động"));
         unlock.addActionListener(e -> doiTrangThai("Hoạt động"));
-     
+
         p.add(createFooter(lblCountTK, add, edit, lock, unlock), BorderLayout.SOUTH);
         tblTK.addMouseListener(new java.awt.event.MouseAdapter() {
-            @Override public void mouseClicked(java.awt.event.MouseEvent e) {
-                if (e.getClickCount() == 2) capNhatTaiKhoan();
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                if (e.getClickCount() == 2)
+                    capNhatTaiKhoan();
             }
         });
         return p;
@@ -202,10 +223,10 @@ public class pnlNhanVien extends JPanel {
 
     private JPanel trangPhanQuyen() {
         JPanel p = basePage();
-        
+
         JPanel heading = PetPlusUI.panel(new BorderLayout(), PetPlusUI.WHITE);
         heading.setBorder(new EmptyBorder(18, 20, 18, 20));
-        
+
         p.add(heading, BorderLayout.NORTH);
         p.add(PetPlusUI.scrollTable(tblQuyen), BorderLayout.CENTER);
         JButton edit = PetPlusUI.button("Cập nhật phân quyền", true);
@@ -238,22 +259,27 @@ public class pnlNhanVien extends JPanel {
         footer.setBorder(new EmptyBorder(4, 0, 5, 0));
         footer.add(count, BorderLayout.WEST);
         JPanel actions = PetPlusUI.panel(new FlowLayout(FlowLayout.RIGHT, 9, 0), PetPlusUI.BACKGROUND);
-        for (JButton b : buttons) actions.add(b);
+        for (JButton b : buttons)
+            actions.add(b);
         footer.add(actions, BorderLayout.CENTER);
         return footer;
     }
 
-   
-    private void taiDanhSach() {
-        try {
-            danhSach = nhanVienDAO.layDanhSach();
-            hienThiNhanVien(danhSach);
-            locTaiKhoan();
-            hienThiQuyen(danhSach);
-        } catch (SQLException e) { sqlError("Không thể tải danh sách", e); }
-    }
+   private void taiDanhSach() {
+    try {
+        VaiTroHelper.taiLai();
 
- 
+        danhSach = nhanVienDAO.layDanhSach();
+
+        hienThiNhanVien(danhSach);
+        locTaiKhoan();
+        hienThiQuyen(danhSach);
+
+    } catch (SQLException e) {
+        sqlError("Không thể tải danh sách", e);
+    }
+}
+
     private String hienThiChucVu(NhanVien nv) {
         String chuan = VaiTroHelper.chuanHoaChucVu(nv.getChucVu());
         return chuan == null ? nv.getChucVu() : chuan;
@@ -263,8 +289,8 @@ public class pnlNhanVien extends JPanel {
         modelNV.setRowCount(0);
         for (NhanVien nv : ds) {
             TaiKhoan tk = nv.getMaTK();
-            modelNV.addRow(new Object[]{nv.getMaNV(), nv.getTenNV(), nv.getSdt(), nv.getCccd(),
-                nv.getDiaChi(), nv.getEmail(), hienThiChucVu(nv), tk == null ? "" : tk.getTrangThai()});
+            modelNV.addRow(new Object[] { nv.getMaNV(), nv.getTenNV(), nv.getSdt(), nv.getCccd(),
+                    nv.getDiaChi(), nv.getEmail(), hienThiChucVu(nv), tk == null ? "" : tk.getTrangThai() });
         }
         lblCountNV.setText(ds.size() + " nhân viên");
     }
@@ -273,9 +299,11 @@ public class pnlNhanVien extends JPanel {
         modelTK.setRowCount(0);
         for (NhanVien nv : ds) {
             TaiKhoan tk = nv.getMaTK();
-            if (tk == null) continue;
-            modelTK.addRow(new Object[]{tk.getMaTK(), nv.getMaNV(), nv.getTenNV(),
-                tk.getTenDangNhap(), hienThiChucVu(nv), VaiTroHelper.tenVaiTro(tk.getVaiTro()), tk.getTrangThai()});
+            if (tk == null)
+                continue;
+            modelTK.addRow(new Object[] { tk.getMaTK(), nv.getMaNV(), nv.getTenNV(),
+                    tk.getTenDangNhap(), hienThiChucVu(nv), VaiTroHelper.tenVaiTro(tk.getVaiTro()),
+                    tk.getTrangThai() });
         }
         lblCountTK.setText(modelTK.getRowCount() + " tài khoản");
     }
@@ -284,9 +312,10 @@ public class pnlNhanVien extends JPanel {
         modelQuyen.setRowCount(0);
         for (NhanVien nv : ds) {
             TaiKhoan tk = nv.getMaTK();
-            if (tk == null) continue;
-            modelQuyen.addRow(new Object[]{tk.getMaTK(), nv.getTenNV(), hienThiChucVu(nv),
-                tk.getVaiTro(), VaiTroHelper.tenVaiTro(tk.getVaiTro()), tk.getTrangThai()});
+            if (tk == null)
+                continue;
+            modelQuyen.addRow(new Object[] { tk.getMaTK(), nv.getTenNV(), hienThiChucVu(nv),
+                    tk.getVaiTro(), VaiTroHelper.tenVaiTro(tk.getVaiTro()), tk.getTrangThai() });
         }
         lblCountQuyen.setText(modelQuyen.getRowCount() + " quyền tài khoản");
     }
@@ -296,25 +325,32 @@ public class pnlNhanVien extends JPanel {
         try {
             List<NhanVien> ds = nhanVienDAO.timKiem(tuKhoa);
             hienThiNhanVien(ds);
-            if (ds.isEmpty()) PetPlusDialogs.info(this, "Kết quả tìm kiếm", "Không tìm thấy nhân viên phù hợp.");
-        } catch (SQLException e) { sqlError("Không thể tìm nhân viên", e); }
+            if (ds.isEmpty())
+                PetPlusDialogs.info(this, "Kết quả tìm kiếm", "Không tìm thấy nhân viên phù hợp.");
+        } catch (SQLException e) {
+            sqlError("Không thể tìm nhân viên", e);
+        }
     }
 
     private void locTaiKhoan() {
         String k = txtTimTK.getText().trim().toLowerCase(Locale.ROOT);
-        if (k.isEmpty()) { hienThiTaiKhoan(danhSach); return; }
+        if (k.isEmpty()) {
+            hienThiTaiKhoan(danhSach);
+            return;
+        }
         List<NhanVien> filtered = new ArrayList<>();
         for (NhanVien nv : danhSach) {
             TaiKhoan tk = nv.getMaTK();
-            if (tk == null) continue;
+            if (tk == null)
+                continue;
             String joined = (nv.getMaNV() + " " + nv.getTenNV() + " " + tk.getMaTK() +
-                " " + tk.getTenDangNhap() + " " + tk.getVaiTro()).toLowerCase(Locale.ROOT);
-            if (joined.contains(k)) filtered.add(nv);
+                    " " + tk.getTenDangNhap() + " " + tk.getVaiTro()).toLowerCase(Locale.ROOT);
+            if (joined.contains(k))
+                filtered.add(nv);
         }
         hienThiTaiKhoan(filtered);
     }
 
-    
     private NhanVien selected(JTable table, DefaultTableModel model, int col, boolean keyIsAccount) {
         int row = table.getSelectedRow();
         if (row < 0) {
@@ -324,39 +360,54 @@ public class pnlNhanVien extends JPanel {
         int mRow = table.convertRowIndexToModel(row);
         String key = String.valueOf(model.getValueAt(mRow, col));
         for (NhanVien nv : danhSach) {
-            if (!keyIsAccount && key.equalsIgnoreCase(nv.getMaNV())) return nv;
-            if (keyIsAccount && nv.getMaTK() != null && key.equalsIgnoreCase(nv.getMaTK().getMaTK())) return nv;
+            if (!keyIsAccount && key.equalsIgnoreCase(nv.getMaNV()))
+                return nv;
+            if (keyIsAccount && nv.getMaTK() != null && key.equalsIgnoreCase(nv.getMaTK().getMaTK()))
+                return nv;
         }
         PetPlusDialogs.error(this, "Dữ liệu cũ", "Không tìm thấy hồ sơ tương ứng. Hãy làm mới danh sách.");
         return null;
     }
 
-    private NhanVien getNV() { return selected(tblNV, modelNV, 0, false); }
-    private NhanVien getTK() { return selected(tblTK, modelTK, 0, true); }
-    private NhanVien getQuyen() { return selected(tblQuyen, modelQuyen, 0, true); }
+    private NhanVien getNV() {
+        return selected(tblNV, modelNV, 0, false);
+    }
+
+    private NhanVien getTK() {
+        return selected(tblTK, modelTK, 0, true);
+    }
+
+    private NhanVien getQuyen() {
+        return selected(tblQuyen, modelQuyen, 0, true);
+    }
 
     private NhanVien layMoiNhat(String maNV) throws SQLException {
         for (NhanVien nv : nhanVienDAO.layDanhSach())
-            if (nv.getMaNV().equalsIgnoreCase(maNV)) return nv;
+            if (nv.getMaNV().equalsIgnoreCase(maNV))
+                return nv;
         return null;
     }
 
     private void themNhanVien() {
         dlgNhanVien d = new dlgNhanVien(SwingUtilities.getWindowAncestor(this), null);
         NhanVien nv = d.open();
-        if (nv == null) return;
+        if (nv == null)
+            return;
         try {
             if (nhanVienDAO.them(nv)) {
                 taiDanhSach();
                 PetPlusDialogs.info(this, "Tạo thành công", "Đã tạo hồ sơ " + nv.getMaNV()
-                    + " và tài khoản: " + nv.getMaTK().getTenDangNhap());
+                        + " và tài khoản: " + nv.getMaTK().getTenDangNhap());
             }
-        } catch (SQLException e) { sqlError("Không thể thêm nhân viên. Kiểm tra mã NV, mã TK, tên đăng nhập, CCCD trùng.", e); }
+        } catch (SQLException e) {
+            sqlError("Không thể thêm nhân viên. Kiểm tra mã NV, mã TK, tên đăng nhập, CCCD trùng.", e);
+        }
     }
 
     private void suaNhanVien() {
         NhanVien nv = getNV();
-        if (nv == null) return;
+        if (nv == null)
+            return;
         try {
             NhanVien latest = layMoiNhat(nv.getMaNV());
             if (latest == null) {
@@ -366,92 +417,93 @@ public class pnlNhanVien extends JPanel {
             }
             dlgNhanVien d = new dlgNhanVien(SwingUtilities.getWindowAncestor(this), latest);
             NhanVien update = d.open();
-            if (update == null) return;
+            if (update == null)
+                return;
             if (luuHoSoVaVaiTro(latest, update, update.getMaTK().getVaiTro())) {
                 taiDanhSach();
-                PetPlusDialogs.info(this, "Cập nhật thành công", "Thông tin nhân viên, chức vụ và vai trò đã được lưu.");
-            } else PetPlusDialogs.error(this, "Không thành công", "Không thể lưu đồng bộ nhân viên và vai trò.");
-        } catch (SQLException e) { sqlError("Không thể sửa nhân viên", e); }
+                PetPlusDialogs.info(this, "Cập nhật thành công",
+                        "Thông tin nhân viên, chức vụ và vai trò đã được lưu.");
+            } else
+                PetPlusDialogs.error(this, "Không thành công", "Không thể lưu đồng bộ nhân viên và vai trò.");
+        } catch (SQLException e) {
+            sqlError("Không thể sửa nhân viên", e);
+        }
     }
 
-    
-private void ngungHoatDong() {
-    NhanVien nv = getNV();
+    private void ngungHoatDong() {
+        NhanVien nv = getNV();
 
-    if (nv == null) {
-        return;
-    }
-
-    TaiKhoan tk = nv.getMaTK();
-
-    if (tk == null) {
-        PetPlusDialogs.error(
-            this,
-            "Lỗi",
-            "Nhân viên chưa có tài khoản."
-        );
-        return;
-    }
-
-    if ("Ngừng hoạt động".equals(tk.getTrangThai())) {
-        PetPlusDialogs.info(
-            this,
-            "Thông báo",
-            "Tài khoản này đã ngừng hoạt động."
-        );
-        return;
-    }
-
-    if (!PetPlusDialogs.confirm(
-            this,
-            "Ngừng hoạt động",
-            "Bạn có muốn ngừng hoạt động tài khoản của "
-                + nv.getTenNV() + " (" + nv.getMaNV() + ")?"
-    )) {
-        return;
-    }
-
-    try {
-        boolean ketQua = taiKhoanDAO.doiTrangThai(
-            tk.getMaTK(),
-            "Ngừng hoạt động"
-        );
-
-        if (ketQua) {
-            taiDanhSach();
-
-            PetPlusDialogs.info(
-                this,
-                "Thành công",
-                "Đã ngừng hoạt động tài khoản.\n"
-                    + "Hồ sơ nhân viên vẫn được giữ."
-            );
-        } else {
-            PetPlusDialogs.error(
-                this,
-                "Thất bại",
-                "Không tìm thấy tài khoản cần cập nhật."
-            );
+        if (nv == null) {
+            return;
         }
 
-    } catch (SQLException e) {
-        sqlError("Không thể ngừng hoạt động", e);
-    }
-}
+        TaiKhoan tk = nv.getMaTK();
 
+        if (tk == null) {
+            PetPlusDialogs.error(
+                    this,
+                    "Lỗi",
+                    "Nhân viên chưa có tài khoản.");
+            return;
+        }
+
+        if ("Ngừng hoạt động".equals(tk.getTrangThai())) {
+            PetPlusDialogs.info(
+                    this,
+                    "Thông báo",
+                    "Tài khoản này đã ngừng hoạt động.");
+            return;
+        }
+
+        if (!PetPlusDialogs.confirm(
+                this,
+                "Ngừng hoạt động",
+                "Bạn có muốn ngừng hoạt động tài khoản của "
+                        + nv.getTenNV() + " (" + nv.getMaNV() + ")?")) {
+            return;
+        }
+
+        try {
+            boolean ketQua = taiKhoanDAO.doiTrangThai(
+                    tk.getMaTK(),
+                    "Ngừng hoạt động");
+
+            if (ketQua) {
+                taiDanhSach();
+
+                PetPlusDialogs.info(
+                        this,
+                        "Thành công",
+                        "Đã ngừng hoạt động tài khoản.\n"
+                                + "Hồ sơ nhân viên vẫn được giữ.");
+            } else {
+                PetPlusDialogs.error(
+                        this,
+                        "Thất bại",
+                        "Không tìm thấy tài khoản cần cập nhật.");
+            }
+
+        } catch (SQLException e) {
+            sqlError("Không thể ngừng hoạt động", e);
+        }
+    }
 
     private void capNhatTaiKhoan() {
         NhanVien selected = getTK();
-        if (selected == null) return;
+        if (selected == null)
+            return;
         try {
             NhanVien nv = layMoiNhat(selected.getMaNV());
-            if (nv == null) { taiDanhSach(); return; }
+            if (nv == null) {
+                taiDanhSach();
+                return;
+            }
             dlgTaiKhoan d = new dlgTaiKhoan(SwingUtilities.getWindowAncestor(this), nv);
-            if (!d.open()) return;
+            if (!d.open())
+                return;
             String vaiTroMoi = d.getVaiTro();
             NhanVien nvMoi = voiChucVu(nv, vaiTroMoi);
 
-            
             if (!nhanVienDAO.capNhat(nvMoi)) {
                 PetPlusDialogs.error(this, "Không thành công", "Không cập nhật được chức vụ nhân viên.");
                 return;
@@ -466,48 +518,59 @@ private void ngungHoatDong() {
             }
             if (!ok) {
                 khoiPhucHoSo(nv, null);
-                PetPlusDialogs.error(this, "Không thành công", "Không thể cập nhật tài khoản; đã thử khôi phục chức vụ cũ.");
+                PetPlusDialogs.error(this, "Không thành công",
+                        "Không thể cập nhật tài khoản; đã thử khôi phục chức vụ cũ.");
                 return;
             }
             taiDanhSach();
             PetPlusDialogs.info(this, "Cập nhật thành công", "Tài khoản và chức vụ nhân viên đã được đồng bộ.");
-        } catch (SQLException e) { sqlError("Không thể cập nhật tài khoản", e); }
+        } catch (SQLException e) {
+            sqlError("Không thể cập nhật tài khoản", e);
+        }
     }
 
     private void doiTrangThai(String trangThai) {
         NhanVien nv = getTK();
-        if (nv == null) return;
+        if (nv == null)
+            return;
         String now = nv.getMaTK().getTrangThai();
         if (trangThai.equals(now)) {
             PetPlusDialogs.info(this, "Trạng thái không đổi", "Tài khoản đã ở trạng thái: " + trangThai);
             return;
         }
         if (!PetPlusDialogs.confirm(this, trangThai.equals("Hoạt động") ? "Mở khóa tài khoản" : "Khóa tài khoản",
-                "Đổi trạng thái tài khoản " + nv.getMaTK().getTenDangNhap() + " thành '" + trangThai + "'?")) return;
+                "Đổi trạng thái tài khoản " + nv.getMaTK().getTenDangNhap() + " thành '" + trangThai + "'?"))
+            return;
         try {
             if (taiKhoanDAO.doiTrangThai(nv.getMaTK().getMaTK(), trangThai)) {
                 taiDanhSach();
                 PetPlusDialogs.info(this, "Thành công", "Đã cập nhật trạng thái tài khoản.");
-            } else PetPlusDialogs.error(this, "Không thành công", "Không tìm thấy tài khoản.");
-        } catch (SQLException e) { sqlError("Không thể thay đổi trạng thái", e); }
+            } else
+                PetPlusDialogs.error(this, "Không thành công", "Không tìm thấy tài khoản.");
+        } catch (SQLException e) {
+            sqlError("Không thể thay đổi trạng thái", e);
+        }
     }
 
-  
     private void xoaTaiKhoan() {
         NhanVien nv = getTK();
-        if (nv == null) return;
+        if (nv == null)
+            return;
         String username = nv.getMaTK().getTenDangNhap();
         if (!PetPlusDialogs.confirm(this, "XÓA TÀI KHOẢN NHÂN VIÊN",
                 "Tài khoản '" + username + "' đang thuộc nhân viên '" + nv.getTenNV() +
-                "'. Hồ sơ và tài khoản sẽ được xóa nếu chưa có dữ liệu nghiệp vụ; nếu đã được tham chiếu, tài khoản sẽ bị ngừng hoạt động để giữ lịch sử. Tiếp tục?")) return;
+                        "'. Hồ sơ và tài khoản sẽ được xóa nếu chưa có dữ liệu nghiệp vụ; nếu đã được tham chiếu, tài khoản sẽ bị ngừng hoạt động để giữ lịch sử. Tiếp tục?"))
+            return;
         if (!PetPlusDialogs.confirm(this, "XÁC NHẬN LẦN CUỐI",
                 "Xác nhận xử lý tài khoản '" + username + "' và nhân viên mã " + nv.getMaNV() +
-                " theo dữ liệu tham chiếu hiện có?")) return;
+                        " theo dữ liệu tham chiếu hiện có?"))
+            return;
         try {
             if (taiKhoanDAO.xoa(nv.getMaTK().getMaTK())) {
                 taiDanhSach();
                 PetPlusDialogs.info(this, "Đã xử lý", "Đã xóa hoặc ngừng hoạt động tài khoản theo dữ liệu nghiệp vụ.");
-            } else PetPlusDialogs.error(this, "Không thể xóa", "Tài khoản không tồn tại hoặc không được phép xóa.");
+            } else
+                PetPlusDialogs.error(this, "Không thể xóa", "Tài khoản không tồn tại hoặc không được phép xóa.");
         } catch (SQLException e) {
             sqlError("Không thể xử lý yêu cầu xóa tài khoản nhân viên.", e);
         }
@@ -515,19 +578,27 @@ private void ngungHoatDong() {
 
     private void phanQuyen() {
         NhanVien selected = getQuyen();
-        if (selected == null) return;
+        if (selected == null)
+            return;
         try {
             NhanVien nv = layMoiNhat(selected.getMaNV());
-            if (nv == null) { taiDanhSach(); return; }
+            if (nv == null) {
+                taiDanhSach();
+                return;
+            }
             dlgPhanQuyen d = new dlgPhanQuyen(SwingUtilities.getWindowAncestor(this), nv);
-            if (!d.open()) return;
+            if (!d.open())
+                return;
             String vaiTroMoi = d.getVaiTro();
             if (luuHoSoVaVaiTro(nv, voiChucVu(nv, vaiTroMoi), vaiTroMoi)) {
                 taiDanhSach();
                 PetPlusDialogs.info(this, "Đã phân quyền",
                         "Vai trò và chức vụ mới: " + VaiTroHelper.tenVaiTro(vaiTroMoi));
-            } else PetPlusDialogs.error(this, "Không thành công", "Không thể lưu đồng bộ phân quyền và chức vụ.");
-        } catch (SQLException e) { sqlError("Không thể phân quyền", e); }
+            } else
+                PetPlusDialogs.error(this, "Không thành công", "Không thể lưu đồng bộ phân quyền và chức vụ.");
+        } catch (SQLException e) {
+            sqlError("Không thể phân quyền", e);
+        }
     }
 
     /** Tạo bản ghi nhân viên với chức vụ trùng khớp với vai trò của tài khoản. */
@@ -539,12 +610,11 @@ private void ngungHoatDong() {
                 nv.getDiaChi(), nv.getEmail(), VaiTroHelper.tenVaiTro(vaiTro), tk);
     }
 
-   
-     
     private boolean luuHoSoVaVaiTro(NhanVien cu, NhanVien moi, String vaiTroMoi)
             throws SQLException {
         NhanVien daChuanHoa = voiChucVu(moi, vaiTroMoi);
-        if (!nhanVienDAO.capNhat(daChuanHoa)) return false;
+        if (!nhanVienDAO.capNhat(daChuanHoa))
+            return false;
         boolean ok;
         try {
             ok = taiKhoanDAO.doiVaiTro(cu.getMaTK().getMaTK(), vaiTroMoi);
@@ -568,10 +638,45 @@ private void ngungHoatDong() {
                 throw new SQLException("DAO không xác nhận khôi phục đủ hồ sơ và vai trò cũ.");
             }
         } catch (SQLException loiKhoiPhuc) {
-            if (loiGoc != null) loiGoc.addSuppressed(loiKhoiPhuc);
+            if (loiGoc != null)
+                loiGoc.addSuppressed(loiKhoiPhuc);
             PetPlusDialogs.error(this, "Cần kiểm tra dữ liệu",
                     "Khôi phục sau lỗi không thành công. Hãy kiểm tra lại chức vụ và vai trò trong SQL Server.\n"
-                    + loiKhoiPhuc.getMessage());
+                            + loiKhoiPhuc.getMessage());
+        }
+    }
+
+    private void themChucVu() {
+
+        if (!Auth.hasFullAccess()) {
+            PetPlusDialogs.error(
+                    this,
+                    "Không đủ quyền",
+                    "Bạn không có quyền thêm chức vụ.");
+            return;
+        }
+
+        try {
+            // Lấy các chức vụ đã được lưu trong SQL Server
+            VaiTroHelper.taiLai();
+
+            dlgThemChucVu dialog = new dlgThemChucVu(
+                    SwingUtilities.getWindowAncestor(this));
+
+            if (!dialog.open()) {
+                return;
+            }
+
+            // Cập nhật dữ liệu giao diện
+            taiDanhSach();
+
+            PetPlusDialogs.info(
+                    this,
+                    "Thêm thành công",
+                    "Chức vụ mới đã được thêm vào danh sách.\n");
+
+        } catch (SQLException e) {
+            sqlError("Không thể tải danh sách chức vụ", e);
         }
     }
 

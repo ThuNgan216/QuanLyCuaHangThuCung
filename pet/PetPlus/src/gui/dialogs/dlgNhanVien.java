@@ -1,6 +1,7 @@
 package gui.dialogs;
 
 import dao.NhanVienDAO;
+import dao.TaiKhoanDAO;
 import entity.NhanVien;
 import entity.TaiKhoan;
 
@@ -8,10 +9,12 @@ import javax.swing.*;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.border.EmptyBorder;
-import javax.swing.event.DocumentEvent;
 import java.awt.*;
 import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.Locale;
+import java.util.Map;
 
 public class dlgNhanVien extends JDialog {
     private final NhanVien nhanVienCu;
@@ -23,7 +26,7 @@ public class dlgNhanVien extends JDialog {
     private final JTextField txtDiaChi = PetPlusUI.textField();
     private final JTextField txtEmail = PetPlusUI.textField();
     private final JPasswordField txtMatKhau = new JPasswordField();
-    private final JComboBox<String> cboChucVu = new JComboBox<>(VaiTroHelper.CHUC_VU);
+    private final JComboBox<String> cboChucVu = new JComboBox<>(VaiTroHelper.danhSachTen());
     private final JComboBox<String> cboTrangThai = new JComboBox<>(new String[] { "Hoạt động", "Ngừng hoạt động" });
     private boolean maNVTaoThatBai;
     private String loiTaoMa;
@@ -327,41 +330,87 @@ public class dlgNhanVien extends JDialog {
     }
 
     public static final class VaiTroHelper {
-        public static final String[] TEN_VAI_TRO = {
-                "Bán hàng / Thu ngân", "Kho", "Chăm sóc thú cưng", "Quản lý"
-        };
-        public static final String[] CHUC_VU = TEN_VAI_TRO.clone();
-        public static final String[] MA_VAI_TRO = {
-                "BAN_HANG", "KHO", "CHAM_SOC", "QUAN_LY"
-        };
+
+        private static final Map<String, String> DANH_SACH = new LinkedHashMap<>();
+
+        static {
+            DANH_SACH.put("BAN_HANG", "Bán hàng / Thu ngân");
+            DANH_SACH.put("KHO", "Kho");
+            DANH_SACH.put("CHAM_SOC", "Chăm sóc thú cưng");
+            DANH_SACH.put("QUAN_LY", "Quản lý");
+        }
 
         private VaiTroHelper() {
         }
 
-        public static String chuanHoaChucVu(String giaTri) {
+        public static synchronized void taiLai() throws SQLException {
+            Map<String, String> dsMoi = new TaiKhoanDAO().layDanhSachVaiTro();
+
+            for (Map.Entry<String, String> entry : dsMoi.entrySet()) {
+                DANH_SACH.putIfAbsent(
+                        entry.getKey(),
+                        entry.getValue());
+            }
+        }
+
+        public static synchronized String[] danhSachTen() {
+            return DANH_SACH.values().toArray(new String[0]);
+        }
+
+        public static synchronized boolean themChucVu(
+                String ma, String ten) {
+
+            if (ma == null || ten == null)
+                return false;
+
+            ma = ma.trim().toUpperCase(Locale.ROOT);
+            ten = ten.trim();
+
+            if (!ma.matches("[A-Z][A-Z0-9_]{2,49}")
+                    || ma.equals("ADMIN")
+                    || ten.isEmpty()
+                    || ten.length() > 100) {
+                return false;
+            }
+
+            for (Map.Entry<String, String> entry : DANH_SACH.entrySet()) {
+                if (entry.getKey().equalsIgnoreCase(ma)
+                        || entry.getValue().equalsIgnoreCase(ten)) {
+                    return false;
+                }
+            }
+
+            DANH_SACH.put(ma, ten);
+            return true;
+        }
+
+        public static synchronized String chuanHoaChucVu(String giaTri) {
             if (giaTri == null)
                 return null;
 
             String s = giaTri.trim();
 
-            for (int i = 0; i < TEN_VAI_TRO.length; i++) {
-                if (s.equalsIgnoreCase(TEN_VAI_TRO[i])
-                        || s.equalsIgnoreCase(MA_VAI_TRO[i])) {
-                    return TEN_VAI_TRO[i];
+            for (Map.Entry<String, String> entry : DANH_SACH.entrySet()) {
+                if (s.equalsIgnoreCase(entry.getKey())
+                        || s.equalsIgnoreCase(entry.getValue())) {
+                    return entry.getValue();
                 }
             }
 
             return null;
         }
 
-        public static String tuChucVu(String chucVu) {
+        public static synchronized String tuChucVu(String chucVu) {
             String ten = chuanHoaChucVu(chucVu);
-            if (ten == null)
-                throw new IllegalArgumentException("Chức vụ không hợp lệ: " + chucVu);
-            for (int i = 0; i < TEN_VAI_TRO.length; i++)
-                if (TEN_VAI_TRO[i].equals(ten))
-                    return MA_VAI_TRO[i];
-            throw new IllegalArgumentException("Không tìm thấy mã vai trò: " + chucVu);
+
+            for (Map.Entry<String, String> entry : DANH_SACH.entrySet()) {
+                if (entry.getValue().equals(ten)) {
+                    return entry.getKey();
+                }
+            }
+
+            throw new IllegalArgumentException(
+                    "Chức vụ không hợp lệ: " + chucVu);
         }
 
         public static String tenVaiTro(String ma) {
@@ -370,16 +419,23 @@ public class dlgNhanVien extends JDialog {
         }
 
         public static String maVaiTro(String ten) {
-            if ("ADMIN".equalsIgnoreCase(ten))
+            if ("ADMIN".equalsIgnoreCase(ten)) {
                 return "ADMIN";
+            }
+
             return tuChucVu(ten);
         }
 
-        public static String giuMaNeuKhongDoi(String maCu, String tenMoi) {
+        public static String giuMaNeuKhongDoi(
+                String maCu, String tenMoi) {
+
             String tenCu = chuanHoaChucVu(maCu);
             String tenChon = chuanHoaChucVu(tenMoi);
-            if (tenCu != null && tenCu.equals(tenChon))
+
+            if (tenCu != null && tenCu.equals(tenChon)) {
                 return maCu;
+            }
+
             return tuChucVu(tenMoi);
         }
     }

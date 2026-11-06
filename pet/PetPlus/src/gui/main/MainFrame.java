@@ -41,6 +41,7 @@ import gui.panel.pnlThanhToan;
 import gui.panel.pnlXemLichLamViec;
 import gui.panel.pnlXepLichLamViec;
 import utils.PetPlusTheme;
+import gui.panel.pnlTimKiemNhanVien;
 
 public class MainFrame extends JFrame {
     private static final Color PRIMARY = new Color(250, 48, 115);
@@ -459,6 +460,9 @@ public class MainFrame extends JFrame {
             cardName = "Trang chủ";
         } else if ("Phân quyền vai trò".equals(action)) {
             cardName = "Nhân viên";
+        } else if ("Nhân viên".equals(action) && menuIndex == 4) {
+            cardName = "Tìm kiếm nhân viên";
+            title = "Tìm kiếm nhân viên";
         }
 
         // Hiển thị giao diện chức năng
@@ -482,6 +486,8 @@ public class MainFrame extends JFrame {
     }
 
     private JPanel createPage(String cardName, String title) {
+        if ("Tìm kiếm nhân viên".equals(cardName))
+            return new pnlTimKiemNhanVien();
         if ("Nhà cung cấp".equals(cardName))
             return new pnlNhaCungCap();
         if ("Khuyến mãi".equals(cardName))

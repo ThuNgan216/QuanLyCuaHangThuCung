@@ -11,11 +11,12 @@ import java.awt.*;
 public class dlgPhanQuyen extends JDialog {
     private boolean accepted;
     private final String maVaiTroCu;
-    private final JComboBox<String> cbo = new JComboBox<>(VaiTroHelper.TEN_VAI_TRO);
+    private final JComboBox<String> cbo = new JComboBox<>(VaiTroHelper.danhSachTen());
 
     public dlgPhanQuyen(Window owner, NhanVien nv) {
         super(owner, "Phân quyền nhân viên", ModalityType.APPLICATION_MODAL);
-        if (nv.getMaTK() == null) throw new IllegalArgumentException("Nhân viên chưa có tài khoản");
+        if (nv.getMaTK() == null)
+            throw new IllegalArgumentException("Nhân viên chưa có tài khoản");
         maVaiTroCu = nv.getMaTK().getVaiTro();
         setLayout(new BorderLayout());
         add(PetPlusDialogs.header("PHÂN QUYỀN",
@@ -60,7 +61,11 @@ public class dlgPhanQuyen extends JDialog {
         setLocationRelativeTo(owner);
     }
 
-    public boolean open() { setVisible(true); return accepted; }
+    public boolean open() {
+        setVisible(true);
+        return accepted;
+    }
+
     public String getVaiTro() {
         return VaiTroHelper.giuMaNeuKhongDoi(maVaiTroCu, (String) cbo.getSelectedItem());
     }
