@@ -11,10 +11,13 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Truy vấn dữ liệu dịch vụ trong SQL Server. */
+/**
+ * Truy vấn danh mục dịch vụ trong SQL Server. Chỉ làm việc với dịch vụ của cửa hàng (maLichHen IS NULL);
+ * các bản sao dịch vụ gắn với lịch hẹn do chức năng Tiếp nhận tạo ra, không hiển thị và không quản lý ở đây.
+ */
 public class DichVuDAO {
     private static final String SELECT = "SELECT d.maDichVu, d.tenDichVu, d.donGia, d.moTa, d.trangThai, d.maLichHen "
-            + "FROM DichVu d WHERE d.trangThai <> N'Đã xóa' ";
+            + "FROM DichVu d WHERE d.trangThai <> N'Đã xóa' AND d.maLichHen IS NULL ";
 
     public List<DichVu> layDanhSach() {
         List<DichVu> ds = new ArrayList<>();
@@ -96,7 +99,7 @@ public class DichVuDAO {
         }
     }
 
-    /** Danh mục dịch vụ (không gắn lịch hẹn) đã có dịch vụ cùng tên hay chưa. */
+    /** Danh mục đã có dịch vụ cùng tên hay chưa. */
     public boolean tonTaiTenDanhMuc(String tenDichVu, String maBoQua) {
         String sql = "SELECT 1 FROM DichVu WHERE maLichHen IS NULL AND trangThai <> N'Đã xóa' AND tenDichVu = ?"
                 + (maBoQua == null ? "" : " AND maDichVu <> ?");
@@ -122,20 +125,6 @@ public class DichVuDAO {
             }
         } catch (SQLException e) {
             throw new IllegalStateException("Không thể kiểm tra hóa đơn của dịch vụ: " + e.getMessage(), e);
-        }
-    }
-
-    /** Dịch vụ gắn với lịch hẹn chưa kết thúc: trả về mã lịch hẹn đó, hoặc null nếu không có. */
-    public String layLichHenChuaKetThuc(String maDichVu) {
-        String sql = "SELECT l.maLichHen FROM DichVu d INNER JOIN LichHen l ON l.maLichHen = d.maLichHen "
-                + "WHERE d.maDichVu = ? AND l.trangThai NOT IN " + TienIchDAO.LICH_HEN_KHONG_CON_HIEU_LUC;
-        try (Connection con = ConnectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setString(1, maDichVu);
-            try (ResultSet rs = ps.executeQuery()) {
-                return rs.next() ? rs.getString(1) : null;
-            }
-        } catch (SQLException e) {
-            throw new IllegalStateException("Không thể kiểm tra lịch hẹn của dịch vụ: " + e.getMessage(), e);
         }
     }
 

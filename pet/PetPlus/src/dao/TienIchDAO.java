@@ -6,6 +6,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Locale;
 
+/**
+ * Các xử lý giống nhau của DAO khách hàng, thú cưng, lịch hẹn, dịch vụ được gom về đây
+ * để cả 4 module chạy cùng một cách: sinh mã tự động, nhận biết lỗi trùng khóa, số lần thử lại.
+ */
 final class TienIchDAO {
     private TienIchDAO() {
     }

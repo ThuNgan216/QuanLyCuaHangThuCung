@@ -1,7 +1,6 @@
 package gui.dialogs;
 
 import entity.DichVu;
-import entity.LichHen;
 import service.DichVuService;
 import utils.ThongBao;
 
@@ -12,7 +11,7 @@ import java.math.BigDecimal;
 /**
  * Thêm / sửa dịch vụ. Dialog tự gọi service để lưu: nếu vi phạm nghiệp vụ thì báo lỗi và giữ dialog mở,
  * người dùng không mất dữ liệu đã nhập.
- * Dịch vụ danh mục chọn "Đang hoạt động / Ngừng hoạt động"; dịch vụ gắn lịch hẹn chọn "Đã đặt / Hoàn thành".
+ * Trạng thái chọn "Đang hoạt động" hoặc "Ngừng hoạt động" (ngừng cung cấp nhưng vẫn giữ trong danh mục).
  */
 public class dlgDichVu extends JDialog {
     private final JTextField txtMa = new JTextField(18);
@@ -22,15 +21,12 @@ public class dlgDichVu extends JDialog {
     private final JComboBox<String> cboTrangThai = new JComboBox<>();
     private final DichVuService service = new DichVuService();
     private final DichVu dichVuCu;
-    private final LichHen lichHenCu;
     private boolean saved;
 
     public dlgDichVu(Window owner, DichVu dichVu) {
         super(owner, dichVu == null ? "Thêm dịch vụ" : "Cập nhật dịch vụ", ModalityType.APPLICATION_MODAL);
         this.dichVuCu = dichVu;
-        this.lichHenCu = dichVu == null ? null : dichVu.getMaLichHen();
-        boolean danhMuc = dichVu == null || DichVuService.laDanhMuc(dichVu);
-        for (String tt : DichVuService.trangThaiHopLe(danhMuc))
+        for (String tt : DichVuService.TRANG_THAI_HOP_LE)
             cboTrangThai.addItem(tt);
 
         setLayout(new BorderLayout(10, 10));
@@ -41,11 +37,6 @@ public class dlgDichVu extends JDialog {
         c.fill = GridBagConstraints.HORIZONTAL;
         int dong = 0;
         addRow(form, c, dong++, "Mã dịch vụ:", txtMa);
-        if (!danhMuc) {
-            JTextField txtLichHen = new JTextField(lichHenCu.getMaLichHen(), 18);
-            txtLichHen.setEditable(false);
-            addRow(form, c, dong++, "Gắn lịch hẹn:", txtLichHen);
-        }
         addRow(form, c, dong++, "Tên dịch vụ:", txtTen);
         addRow(form, c, dong++, "Đơn giá (đ):", txtGia);
         addRow(form, c, dong++, "Mô tả:", txtMoTa);
@@ -100,7 +91,7 @@ public class dlgDichVu extends JDialog {
                 throw new IllegalArgumentException("Đơn giá phải là số hợp lệ, ví dụ 120000.");
             }
             DichVu d = new DichVu(txtMa.getText().trim(), txtTen.getText().trim(), gia, txtMoTa.getText().trim(),
-                    (String) cboTrangThai.getSelectedItem(), lichHenCu);
+                    (String) cboTrangThai.getSelectedItem(), null);
             boolean ok = dichVuCu == null ? service.them(d) : service.capNhat(d);
             if (!ok) {
                 ThongBao.khongThayDoi(this);
