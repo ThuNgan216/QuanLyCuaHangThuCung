@@ -2,6 +2,7 @@ package gui.dialogs;
 
 import entity.KhachHang;
 import service.KhachHangService;
+import utils.ThongBao;
 
 import javax.swing.*;
 import java.awt.*;
@@ -16,11 +17,11 @@ public class dlgKhachHang extends JDialog {
     private final JTextField txtDiem = new JTextField(20);
     private final KhachHangService service = new KhachHangService();
     private final KhachHang khachHangCu;
-    private boolean confirmed;
+    private boolean saved;
 
     /** @param khachHang null = thêm mới, khác null = sửa khách hàng đó. */
     public dlgKhachHang(Window owner, KhachHang khachHang) {
-        super(owner, khachHang == null ? "Thêm khách hàng" : "Sửa khách hàng", ModalityType.APPLICATION_MODAL);
+        super(owner, khachHang == null ? "Thêm khách hàng" : "Cập nhật khách hàng", ModalityType.APPLICATION_MODAL);
         this.khachHangCu = khachHang;
         setLayout(new BorderLayout(10, 10));
 
@@ -57,26 +58,20 @@ public class dlgKhachHang extends JDialog {
             txtTen.setText(khachHang.getTenKH());
             txtSdt.setText(giaTri(khachHang.getSdt()));
             txtDiaChi.setText(giaTri(khachHang.getDiaChi()));
-            txtHang.setText(String.valueOf(khachHang.getHangThanhVien()));
+            txtHang.setText(KhachHangService.moTaHang(khachHang.getHangThanhVien(), khachHang.getDiemTichLuy()));
             txtDiem.setText(String.valueOf(khachHang.getDiemTichLuy()));
         } else {
             try {
                 txtMa.setText(service.taoMaMoi());
             } catch (RuntimeException ex) {
                 btnLuu.setEnabled(false);
-                JOptionPane.showMessageDialog(owner, ex.getMessage(), "Không thể tạo mã khách hàng",
-                        JOptionPane.ERROR_MESSAGE);
+                ThongBao.loi(owner, "Không thể tạo mã khách hàng", ex);
             }
-            txtHang.setText("1");
+            txtHang.setText(KhachHangService.moTaHang(entity.HangThanhVien.HANG_1.getMa(), 0));
             txtDiem.setText("0");
         }
 
-        btnLuu.addActionListener(e -> {
-            if (kiemTra()) {
-                confirmed = true;
-                dispose();
-            }
-        });
+        btnLuu.addActionListener(e -> luu());
         btnHuy.addActionListener(e -> dispose());
         getRootPane().setDefaultButton(btnLuu);
 
@@ -91,17 +86,26 @@ public class dlgKhachHang extends JDialog {
         c.gridx = 1; c.weightx = 1; p.add(input, c);
     }
 
-    /** Gọi các hàm kiểm tra của service; sai thì báo lỗi và giữ dialog mở để nhập lại. */
-    private boolean kiemTra() {
+    /**
+     * Lưu ngay trong dialog (giống các dialog thú cưng, lịch hẹn, dịch vụ): nếu service từ chối thì báo lỗi
+     * và giữ dialog mở để người dùng sửa lại, không mất dữ liệu đã nhập.
+     */
+    private void luu() {
         try {
-            KhachHangService.kiemTraTen(txtTen.getText());
-            KhachHangService.kiemTraSdt(txtSdt.getText());
-            KhachHangService.kiemTraDiaChi(txtDiaChi.getText());
-            return true;
-        } catch (IllegalArgumentException ex) {
-            JOptionPane.showMessageDialog(this, ex.getMessage(), "Dữ liệu chưa hợp lệ",
-                    JOptionPane.WARNING_MESSAGE);
-            return false;
+            KhachHang kh = layKhachHang();
+            boolean ok = khachHangCu == null ? service.them(kh) : service.capNhat(kh);
+            if (!ok) {
+                ThongBao.khongThayDoi(this);
+                return;
+            }
+            saved = true;
+            if (khachHangCu == null)
+                ThongBao.daThem(this, "khách hàng", kh.getMaKH());
+            else
+                ThongBao.daCapNhat(this, "khách hàng");
+            dispose();
+        } catch (RuntimeException ex) {
+            ThongBao.xuLy(this, "Không thể lưu khách hàng", ex);
         }
     }
 
@@ -109,11 +113,12 @@ public class dlgKhachHang extends JDialog {
         return s == null ? "" : s;
     }
 
-    public boolean isConfirmed() {
-        return confirmed;
+    public boolean isSaved() {
+        return saved;
     }
 
-    public KhachHang getKhachHang() {
+    private KhachHang layKhachHang() {
+        // Hạng và điểm không sửa tay; service luôn lấy lại từ dữ liệu đang lưu.
         int hang = khachHangCu == null ? 1 : khachHangCu.getHangThanhVien();
         int diem = khachHangCu == null ? 0 : khachHangCu.getDiemTichLuy();
         return new KhachHang(txtMa.getText().trim(), txtTen.getText().trim(), txtSdt.getText().trim(),

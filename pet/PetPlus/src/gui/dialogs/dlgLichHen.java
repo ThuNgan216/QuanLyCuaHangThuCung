@@ -2,6 +2,7 @@ package gui.dialogs;
 
 import entity.*;
 import service.LichHenService;
+import utils.ThongBao;
 import javax.swing.*;
 import java.awt.*;
 import java.time.LocalDateTime;
@@ -16,7 +17,7 @@ public class dlgLichHen extends JDialog {
     private final JTextField txtMa = new JTextField(18), txtThoiGian = new JTextField(18);
     private final JTextField txtTimKH = new JTextField(18);
     private final JButton btnChonThoiGian = new JButton("Chọn ngày, giờ...");
-    private final JComboBox<TrangThaiLichHen> cboTrangThai = new JComboBox<>(TrangThaiLichHen.chonDuoc());
+    private final JComboBox<TrangThaiLichHen> cboTrangThai = new JComboBox<>();
     private final JComboBox<String> cboNV = new JComboBox<>(), cboKH = new JComboBox<>(),
             cboThuCung = new JComboBox<>();
     private final Map<String, NhanVien> nhanVienMap = new LinkedHashMap<>();
@@ -43,8 +44,14 @@ public class dlgLichHen extends JDialog {
         g.fill = GridBagConstraints.HORIZONTAL;
         g.weightx = 1;
         int y = 0;
+        // Trạng thái chọn được phụ thuộc trạng thái hiện tại (máy trạng thái trong TrangThaiLichHen):
+        // lịch mới chỉ chọn Chờ xác nhận / Đã xác nhận; lịch đang sửa chỉ thấy các bước hợp lệ tiếp theo.
+        for (TrangThaiLichHen tt : service.layTrangThaiChoPhep(duLieu))
+            cboTrangThai.addItem(tt);
         txtMa.setEditable(false);
         txtMa.setText(duLieu == null ? service.taoMaMoi() : duLieu.getMaLichHen());
+        if (duLieu == null)
+            txtMa.setToolTipText("Mã gợi ý; hệ thống cấp mã chính thức khi lưu.");
         themDong(form, g, y++, "Mã lịch hẹn:", txtMa);
         txtThoiGian.setEditable(false);
         JPanel pt = new JPanel(new BorderLayout(6, 0));
@@ -90,18 +97,26 @@ public class dlgLichHen extends JDialog {
             if (duLieu.getThoiGianHen() != null)
                 txtThoiGian.setText(duLieu.getThoiGianHen().format(F));
             TrangThaiLichHen ttCu = TrangThaiLichHen.tuTen(duLieu.getTrangThai());
-            if (ttCu != null && ttCu.doTiepNhanQuanLy()) {
-                // Do module tiếp nhận quản lý: hiển thị đúng giá trị, không cho đổi tay
-                cboTrangThai.addItem(ttCu);
-                cboTrangThai.setSelectedItem(ttCu);
+            cboTrangThai.setSelectedItem(ttCu);
+            // Lịch do màn hình Tiếp nhận quản lý: chỉ hiển thị, không cho đổi tay
+            if (ttCu != null && ttCu.doTiepNhanQuanLy())
                 cboTrangThai.setEnabled(false);
-            } else {
-                cboTrangThai.setSelectedItem(ttCu);
-            }
             if (duLieu.getMaNV() != null) {
+                boolean tim = false;
                 for (String k : nhanVienMap.keySet())
-                    if (nhanVienMap.get(k).getMaNV().equals(duLieu.getMaNV().getMaNV()))
+                    if (nhanVienMap.get(k).getMaNV().equals(duLieu.getMaNV().getMaNV())) {
                         cboNV.setSelectedItem(k);
+                        tim = true;
+                    }
+                // Nhân viên cũ không còn nhận lịch (nghỉ việc, đổi bộ phận): vẫn hiển thị để không bị tự đổi
+                // sang nhân viên khác một cách âm thầm; service sẽ báo lỗi nếu giữ nguyên nhân viên này.
+                if (!tim) {
+                    String label = duLieu.getMaNV().getMaNV() + " - " + duLieu.getMaNV().getTenNV()
+                            + " (không còn nhận lịch)";
+                    nhanVienMap.put(label, duLieu.getMaNV());
+                    cboNV.addItem(label);
+                    cboNV.setSelectedItem(label);
+                }
             }
             if (duLieu.getMaKH() != null) {
                 txtTimKH.setText(duLieu.getMaKH().getTenKH() == null ? "" : duLieu.getMaKH().getTenKH());
@@ -348,35 +363,20 @@ public class dlgLichHen extends JDialog {
             thuCung.setMaThuCung(tc.getMaThuCung());
             l.setMaThuCung(thuCung);
 
-            if (duLieu == null) {
-                service.them(l);
-
-                JOptionPane.showMessageDialog(
-                        this,
-                        "Thêm lịch hẹn thành công!",
-                        "Thông báo",
-                        JOptionPane.INFORMATION_MESSAGE);
-            } else {
-                service.capNhat(l);
-
-                JOptionPane.showMessageDialog(
-                        this,
-                        "Cập nhật lịch hẹn thành công!",
-                        "Thông báo",
-                        JOptionPane.INFORMATION_MESSAGE);
+            boolean thanhCong = duLieu == null ? service.them(l) : service.capNhat(l);
+            if (!thanhCong) {
+                ThongBao.khongThayDoi(this);
+                return;
             }
-
             saved = true;
+            if (duLieu == null)
+                ThongBao.daThem(this, "lịch hẹn", l.getMaLichHen());
+            else
+                ThongBao.daCapNhat(this, "lịch hẹn");
             dispose();
 
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(
-                    this,
-                    ex.getMessage() == null
-                            ? "Không thể lưu lịch hẹn."
-                            : ex.getMessage(),
-                    "Lỗi",
-                    JOptionPane.ERROR_MESSAGE);
+        } catch (RuntimeException ex) {
+            ThongBao.xuLy(this, "Không thể lưu lịch hẹn", ex);
         }
     }
 

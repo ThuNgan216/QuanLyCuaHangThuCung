@@ -6,62 +6,82 @@ import service.DichVuService;
 import utils.Auth;
 
 import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
-import java.awt.*;
+import java.text.DecimalFormat;
+import java.util.ArrayList;
 import java.util.List;
 
-public class pnlDichVu extends JPanel {
+/**
+ * Quản lý dịch vụ. Bảng gồm hai loại: dịch vụ trong danh mục (cửa hàng cung cấp) và dịch vụ gắn với một
+ * lịch hẹn cụ thể (sinh ra khi tiếp nhận). Hai loại có tập trạng thái khác nhau nên có cột "Loại" và bộ lọc.
+ * Khung màn hình dùng chung ở pnlQuanLyChung; luật nghiệp vụ ở DichVuService.
+ */
+public class pnlDichVu extends pnlQuanLyChung<DichVu> {
+    private static final String TAT_CA = "Tất cả";
+    private static final String DANH_MUC = "Danh mục";
+    private static final String THEO_LICH = "Theo lịch hẹn";
+    private static final DecimalFormat TIEN = new DecimalFormat("#,##0");
+
     private final DichVuService service = new DichVuService();
-    private final JTextField txtTim = new JTextField(22);
-    private final DefaultTableModel model = new DefaultTableModel(new Object[]{"Mã dịch vụ", "Tên dịch vụ", "Đơn giá", "Mô tả", "Trạng thái"}, 0) {
-        @Override public boolean isCellEditable(int row, int col) { return false; }
-    };
-    private final JTable table = new JTable(model);
+    private final JComboBox<String> cboLoai = new JComboBox<>(new String[] { TAT_CA, DANH_MUC, THEO_LICH });
 
     public pnlDichVu() {
-        setLayout(new BorderLayout(10, 10)); setBackground(Color.WHITE); setBorder(BorderFactory.createEmptyBorder(18, 18, 18, 18));
-        JLabel title = new JLabel("QUẢN LÝ DỊCH VỤ"); title.setFont(new Font("Arial", Font.BOLD, 22)); title.setForeground(new Color(224, 25, 91)); add(title, BorderLayout.NORTH);
-        JPanel top = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 8)); top.setOpaque(false);
-        top.add(new JLabel("Tìm kiếm:")); top.add(txtTim);
-        JButton btnTim = new JButton("Tìm"); JButton btnTai = new JButton("Tải lại"); JButton btnThem = new JButton("Thêm"); JButton btnSua = new JButton("Sửa"); JButton btnXoa = new JButton("Xóa");
-        boolean coQuyenCapNhat = Auth.hasFullAccess() || Auth.hasRole("CHAM_SOC");
-        btnThem.setVisible(coQuyenCapNhat); btnSua.setVisible(coQuyenCapNhat); btnXoa.setVisible(coQuyenCapNhat);
-        top.add(btnTim); top.add(btnTai); top.add(btnThem); top.add(btnSua); top.add(btnXoa); add(top, BorderLayout.BEFORE_FIRST_LINE);
-        table.setRowHeight(27); table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION); table.getTableHeader().setFont(new Font("Arial", Font.BOLD, 12)); add(new JScrollPane(table), BorderLayout.CENTER);
-        btnTim.addActionListener(e -> tim()); txtTim.addActionListener(e -> tim()); btnTai.addActionListener(e -> { txtTim.setText(""); tai(); });
-        btnThem.addActionListener(e -> moDialog(null)); btnSua.addActionListener(e -> { DichVu d = chon(); if (d != null) moDialog(d); }); btnXoa.addActionListener(e -> xoa());
-        tai();
-        utils.PetPlusTheme.apply(this);
+        super("QUẢN LÝ DỊCH VỤ", "dịch vụ", "Mã, tên, mô tả hoặc trạng thái dịch vụ",
+                new String[] { "Mã dịch vụ", "Tên dịch vụ", "Đơn giá (đ)", "Mô tả", "Trạng thái", "Loại" });
+        pnlBoLoc.add(new JLabel("Loại:"));
+        pnlBoLoc.add(cboLoai);
+        cboLoai.addActionListener(e -> taiLai());
+        khoiTao();
     }
 
-    private void tai() { try { hienThi(service.layDanhSach()); } catch (Exception ex) { loi("Không thể tải danh sách dịch vụ", ex); } }
-    private void tim() { try { hienThi(service.timKiem(txtTim.getText())); } catch (Exception ex) { loi("Không thể tìm dịch vụ", ex); } }
-    private void hienThi(List<DichVu> ds) {
-        model.setRowCount(0);
-        for (DichVu d : ds) model.addRow(new Object[]{d.getMaDichVu(), d.getTenDichVu(), d.getDonGia(), d.getMoTa(), d.getTrangThai()});
-    }
-    private DichVu chon() {
-        int row = table.getSelectedRow(); if (row < 0) { JOptionPane.showMessageDialog(this, "Vui lòng chọn một dịch vụ."); return null; }
-        int modelRow = table.convertRowIndexToModel(row); String ma = String.valueOf(model.getValueAt(modelRow, 0));
-        for (DichVu d : service.layDanhSach()) if (d.getMaDichVu().equals(ma)) return d; return null;
-    }
-    private void moDialog(DichVu cu) {
-        try {
-            dlgDichVu dlg = new dlgDichVu(SwingUtilities.getWindowAncestor(this), cu); dlg.setVisible(true);
-            if (dlg.isConfirmed()) {
-                DichVu d = dlg.getDichVu(); boolean ok = cu == null ? service.them(d) : service.capNhat(d);
-                if (ok) { JOptionPane.showMessageDialog(this, "Lưu dịch vụ thành công."); tai(); }
-                else JOptionPane.showMessageDialog(this, "Không có dữ liệu nào được thay đổi.");
-            }
-        } catch (Exception ex) { loi("Không thể lưu dịch vụ", ex); }
-    }
-    private void xoa() {
-        int row = table.getSelectedRow(); if (row < 0) { JOptionPane.showMessageDialog(this, "Vui lòng chọn dịch vụ cần xóa."); return; }
-        String ma = String.valueOf(model.getValueAt(table.convertRowIndexToModel(row), 0));
-        if (JOptionPane.showConfirmDialog(this, "Bạn có chắc muốn xóa dịch vụ " + ma + "?", "Xác nhận", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
-            try { if (service.xoa(ma)) { JOptionPane.showMessageDialog(this, "Đã xóa dịch vụ."); tai(); } else JOptionPane.showMessageDialog(this, "Không tìm thấy dịch vụ."); }
-            catch (Exception ex) { loi("Không thể xử lý yêu cầu xóa dịch vụ", ex); }
+    /** Tìm theo từ khóa rồi lọc theo loại (danh mục / theo lịch hẹn). */
+    @Override
+    protected List<DichVu> layDuLieu(String tuKhoa) {
+        String loai = (String) cboLoai.getSelectedItem();
+        List<DichVu> loc = new ArrayList<>();
+        for (DichVu d : service.timKiem(tuKhoa)) {
+            boolean danhMuc = DichVuService.laDanhMuc(d);
+            if (TAT_CA.equals(loai) || (DANH_MUC.equals(loai) && danhMuc) || (THEO_LICH.equals(loai) && !danhMuc))
+                loc.add(d);
         }
+        return loc;
     }
-    private void loi(String msg, Exception ex) { JOptionPane.showMessageDialog(this, msg + ":\n" + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE); }
+
+    @Override
+    protected Object[] taoDong(DichVu d) {
+        String loai = DichVuService.laDanhMuc(d) ? DANH_MUC : THEO_LICH + " " + d.getMaLichHen().getMaLichHen();
+        return new Object[] { d.getMaDichVu(), d.getTenDichVu(), d.getDonGia() == null ? "" : TIEN.format(d.getDonGia()),
+                d.getMoTa(), d.getTrangThai(), loai };
+    }
+
+    @Override
+    protected DichVu timTheoMa(String ma) {
+        return service.timTheoMa(ma);
+    }
+
+    @Override
+    protected boolean moDialog(DichVu cu) {
+        dlgDichVu dlg = new dlgDichVu(cuaSoCha(), cu);
+        dlg.setVisible(true);
+        return dlg.isSaved();
+    }
+
+    @Override
+    protected boolean xoaTheoMa(String ma) {
+        return service.xoa(ma);
+    }
+
+    @Override
+    protected boolean coQuyenCapNhat() {
+        return Auth.hasFullAccess() || Auth.hasRole("CHAM_SOC");
+    }
+
+    @Override
+    protected String canhBaoKhiXoa() {
+        return "(Nếu dịch vụ đã nằm trong hóa đơn, hệ thống chỉ ẩn nó đi để giữ lịch sử.)";
+    }
+
+    @Override
+    protected void datLaiBoLoc() {
+        cboLoai.setSelectedItem(TAT_CA);
+    }
 }

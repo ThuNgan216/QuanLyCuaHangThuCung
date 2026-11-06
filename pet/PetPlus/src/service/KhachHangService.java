@@ -3,6 +3,7 @@ package service;
 import java.util.List;
 
 import dao.KhachHangDAO;
+import entity.HangThanhVien;
 import entity.KhachHang;
 
 public class KhachHangService {
@@ -16,21 +17,33 @@ public class KhachHangService {
 
     // 2. Tìm khách hàng theo mã
     public KhachHang timTheoMa(String maKH) {
-        if (maKH == null || maKH.trim().isEmpty()) {
-            throw new IllegalArgumentException(
-                    "Mã khách hàng không được để trống.");
-        }
-
-        return khachHangDAO.timTheoMa(maKH.trim());
+        return khachHangDAO.timTheoMa(KiemTra.maBatBuoc(maKH, "khách hàng"));
     }
 
     // 3. Tìm kiếm khách hàng
     public List<KhachHang> timKiem(String tuKhoa) {
-        if (tuKhoa == null || tuKhoa.trim().isEmpty()) {
-            return layDanhSach();
-        }
+        String key = KiemTra.trim(tuKhoa);
+        return key.isEmpty() ? layDanhSach() : khachHangDAO.timKiem(key);
+    }
 
-        return khachHangDAO.timKiem(tuKhoa.trim());
+    /** Tìm kiếm kết hợp lọc theo hạng thành viên (hang = null: không lọc). */
+    public List<KhachHang> timKiem(String tuKhoa, HangThanhVien hang) {
+        List<KhachHang> ds = timKiem(tuKhoa);
+        if (hang == null)
+            return ds;
+        List<KhachHang> loc = new java.util.ArrayList<>();
+        for (KhachHang kh : ds)
+            if (HangThanhVien.tuMa(kh.getHangThanhVien()) == hang)
+                loc.add(kh);
+        return loc;
+    }
+
+    /** Mô tả hạng để hiển thị, ví dụ "Hạng 1 (còn 340 điểm để lên Hạng 2)". */
+    public static String moTaHang(int maHang, int diem) {
+        HangThanhVien hang = HangThanhVien.tuMa(maHang);
+        HangThanhVien tiep = hang.hangTiepTheo();
+        return tiep == null ? hang.getTen() + " (hạng cao nhất)"
+                : hang.getTen() + " (còn " + hang.diemConThieu(diem) + " điểm để lên " + tiep.getTen() + ")";
     }
 
     // 4. Thêm khách hàng
@@ -43,7 +56,7 @@ public class KhachHangService {
             throw new IllegalArgumentException("Thông tin khách hàng không hợp lệ.");
         // Mã do hệ thống phát sinh, không lấy mã người dùng nhập.
         kh.setMaKH(khachHangDAO.taoMaMoi());
-        kh.setHangThanhVien(1);
+        kh.setHangThanhVien(HangThanhVien.HANG_1.getMa());
         kh.setDiemTichLuy(0);
         kiemTraDuLieu(kh);
         if (khachHangDAO.tonTaiSDT(kh.getSdt(), null)) {
@@ -56,41 +69,41 @@ public class KhachHangService {
     // 5. Cập nhật khách hàng
     public boolean capNhat(KhachHang kh) {
         kiemTraDuLieu(kh);
-        KhachHang khCu = khachHangDAO.timTheoMa(kh.getMaKH().trim());
-        if (khCu == null) {
-            throw new IllegalArgumentException("Khách hàng không tồn tại.");
-        }
+        KhachHang khCu = KiemTra.phaiTonTai(khachHangDAO.timTheoMa(kh.getMaKH().trim()), "khách hàng");
         if (khachHangDAO.tonTaiSDT(kh.getSdt(), kh.getMaKH().trim())) {
             throw new IllegalArgumentException(
                     "Số điện thoại này đã được sử dụng cho khách hàng khác.");
         }
         // Không cho phép thay đổi hạng/điểm bằng cách gửi dữ liệu giả từ giao diện.
-        kh.setHangThanhVien(khCu.getHangThanhVien());
+        // Hạng luôn khớp với điểm hiện có và không bị hạ so với hạng đã đạt.
         kh.setDiemTichLuy(khCu.getDiemTichLuy());
+        kh.setHangThanhVien(Math.max(HangThanhVien.tuMa(khCu.getHangThanhVien()).getMa(),
+                HangThanhVien.tuDiem(khCu.getDiemTichLuy()).getMa()));
         return khachHangDAO.capNhat(kh);
     }
 
     // 6. Xóa khách hàng
     public boolean xoa(String maKH) {
-        if (maKH == null || maKH.trim().isEmpty()) {
-            throw new IllegalArgumentException(
-                    "Mã khách hàng không được để trống.");
-        }
+        maKH = KiemTra.maBatBuoc(maKH, "khách hàng");
+        KiemTra.phaiTonTai(khachHangDAO.timTheoMa(maKH), "khách hàng");
 
-        if (khachHangDAO.timTheoMa(maKH.trim()) == null) {
+        // Không xóa khách còn lịch hẹn đang hiệu lực, nếu không lịch của khách bị xóa theo mà
+        // nhân viên không hay biết.
+        if (khachHangDAO.coLichHenChuaKetThuc(maKH)) {
             throw new IllegalArgumentException(
-                    "Khách hàng không tồn tại.");
+                    "Khách hàng này còn lịch hẹn chưa kết thúc. "
+                            + "Vui lòng hoàn thành hoặc hủy các lịch hẹn trước khi xóa khách hàng.");
         }
 
         // Chặn xóa khi còn thú cưng, nếu không khách hàng bị ẩn nhưng thú cưng vẫn hiện
         // với chủ nuôi đã ẩn.
-        if (khachHangDAO.coThuCungDangQuanLy(maKH.trim())) {
+        if (khachHangDAO.coThuCungDangQuanLy(maKH)) {
             throw new IllegalArgumentException(
                     "Khách hàng này còn thú cưng đang quản lý. "
                             + "Vui lòng xóa các thú cưng của khách hàng trước khi xóa khách hàng.");
         }
 
-        return khachHangDAO.xoa(maKH.trim());
+        return khachHangDAO.xoa(maKH);
     }
 
     /**
@@ -101,19 +114,9 @@ public class KhachHangService {
     private static final java.util.regex.Pattern DIA_CHI_HOP_LE = java.util.regex.Pattern
             .compile("[\\p{L}\\p{N}\\s,./\\-]+");
 
-    /** Luật kiểm tra tên, dùng chung cho dialog và service. */
+    /** Luật kiểm tra tên (chữ cái và khoảng trắng, tối đa 100 ký tự), dùng chung với thú cưng qua KiemTra. */
     public static void kiemTraTen(String tenKH) {
-        String ten = tenKH == null ? "" : tenKH.trim();
-        if (ten.isEmpty()) {
-            throw new IllegalArgumentException("Tên khách hàng không được để trống.");
-        }
-        if (ten.length() > 100) {
-            throw new IllegalArgumentException("Tên khách hàng tối đa 100 ký tự.");
-        }
-        if (!ten.matches("[\\p{L}]+(?:\\s+[\\p{L}]+)*")) {
-            throw new IllegalArgumentException(
-                    "Tên khách hàng chỉ được chứa chữ cái và khoảng trắng, không có số hoặc ký tự đặc biệt.");
-        }
+        KiemTra.tenChiChuCai(tenKH, "Tên khách hàng", 100);
     }
 
     /** Luật kiểm tra số điện thoại, dùng chung cho dialog và service. */

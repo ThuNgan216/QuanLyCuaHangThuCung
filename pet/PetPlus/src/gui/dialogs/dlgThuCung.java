@@ -3,6 +3,7 @@ package gui.dialogs;
 import entity.KhachHang;
 import entity.ThuCung;
 import service.ThuCungService;
+import utils.ThongBao;
 
 import javax.swing.*;
 import java.awt.*;
@@ -35,7 +36,7 @@ public class dlgThuCung extends JDialog {
     private final boolean dangSua;
 
     public dlgThuCung(Window parent, ThuCung thuCung) {
-        super(parent, thuCung == null ? "Thêm thú cưng" : "Sửa thông tin thú cưng", ModalityType.APPLICATION_MODAL);
+        super(parent, thuCung == null ? "Thêm thú cưng" : "Cập nhật thú cưng", ModalityType.APPLICATION_MODAL);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         this.dangSua = thuCung != null;
         setLayout(new BorderLayout(12, 12));
@@ -105,11 +106,11 @@ public class dlgThuCung extends JDialog {
         } catch (Exception ex) { JOptionPane.showMessageDialog(this, "Không tải được danh sách khách hàng: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE); }
     }
     private void locKhachHang() {
-        String key = txtTimKhachHang.getText().trim().toLowerCase(new Locale("vi", "VN"));
+        String key = txtTimKhachHang.getText().trim().toLowerCase(Locale.forLanguageTag("vi-VN"));
         KhachHang selected = (KhachHang) cboKhachHang.getSelectedItem();
         cboKhachHang.removeAllItems();
         for (KhachHang kh : danhSachKhachHang) {
-            String haystack = (kh.getMaKH() + " " + kh.getTenKH() + " " + kh.getSdt()).toLowerCase(new Locale("vi", "VN"));
+            String haystack = (kh.getMaKH() + " " + kh.getTenKH() + " " + kh.getSdt()).toLowerCase(Locale.forLanguageTag("vi-VN"));
             if (key.isEmpty() || haystack.contains(key)) cboKhachHang.addItem(kh);
         }
         if (selected != null) for (int i = 0; i < cboKhachHang.getItemCount(); i++) {
@@ -151,7 +152,7 @@ public class dlgThuCung extends JDialog {
         if (cboGiong.getSelectedIndex() < 0 && cboGiong.getItemCount() > 0) cboGiong.setSelectedIndex(0);
     }
 
-    private String taoMaTuDong() { return service.taoMaThuCung(); }
+    private String taoMaTuDong() { return service.taoMaMoi(); }
     /** Mở lịch chọn ngày sinh, không cho nhập ngày bằng tay. */
     private void moChonNgaySinh() {
         LocalDate current;
@@ -176,7 +177,7 @@ public class dlgThuCung extends JDialog {
         dlg.add(calendar, BorderLayout.CENTER); dlg.add(actions, BorderLayout.SOUTH);
         Runnable[] render = new Runnable[1];
         render[0] = () -> {
-            monthLabel.setText(shownMonth[0].getMonth().getDisplayName(TextStyle.FULL, new Locale("vi", "VN")) + " " + shownMonth[0].getYear());
+            monthLabel.setText(shownMonth[0].getMonth().getDisplayName(TextStyle.FULL, Locale.forLanguageTag("vi-VN")) + " " + shownMonth[0].getYear());
             daysPanel.removeAll();
             for (String day : new String[]{"T2", "T3", "T4", "T5", "T6", "T7", "CN"}) daysPanel.add(new JLabel(day, SwingConstants.CENTER));
             LocalDate first = shownMonth[0].atDay(1);
@@ -198,55 +199,48 @@ public class dlgThuCung extends JDialog {
         dlg.pack(); dlg.setMinimumSize(new Dimension(320, 300)); dlg.setLocationRelativeTo(this); dlg.setVisible(true);
     }
 
+    /**
+     * Lưu ngay trong dialog (giống các dialog khách hàng, lịch hẹn, dịch vụ): nếu service từ chối thì báo lỗi
+     * và giữ dialog mở để người dùng sửa lại, không mất dữ liệu đã nhập. Luật kiểm tra nằm ở ThuCungService.
+     */
     private void luu() {
         try {
-            String canNangText = txtCanNang.getText().trim(); float canNang = canNangText.isEmpty() ? -1 : Float.parseFloat(canNangText.replace(',', '.'));
-            String ngayText = txtNgaySinh.getText().trim(); LocalDate ngay = ngayText.isEmpty() ? null : LocalDate.parse(ngayText);
-            KhachHang kh = (KhachHang) cboKhachHang.getSelectedItem();
-            String ten = txtTen.getText().trim();
-            String loaiText = cboLoai.getSelectedItem() == null ? "" : cboLoai.getSelectedItem().toString().trim();
-            String giongText = cboGiong.getSelectedItem() == null ? "" : cboGiong.getSelectedItem().toString().trim();
-            String gioiTinhText = radDuc.isSelected() ? "Đực" : (radCai.isSelected() ? "Cái" : "");
-            if (ten.isEmpty() || loaiText.isEmpty() || giongText.isEmpty() || gioiTinhText.isEmpty()
-                    || ngayText.isEmpty() || kh == null) {
-                JOptionPane.showMessageDialog(this, "Vui lòng nhập đầy đủ thông tin.", "Thiếu thông tin", JOptionPane.WARNING_MESSAGE);
-                return;
+            String canNangText = txtCanNang.getText().trim();
+            float canNang;
+            try {
+                canNang = canNangText.isEmpty() ? ThuCung.CAN_NANG_TRONG : Float.parseFloat(canNangText.replace(',', '.'));
+            } catch (NumberFormatException ex) {
+                throw new IllegalArgumentException("Cân nặng phải là số, ví dụ 4.5.");
             }
-            if (ten.isEmpty() || !ten.matches("^[\\p{L}]+(?:\\s+[\\p{L}]+)*$"))
-                throw new IllegalArgumentException("Tên thú cưng chỉ được chứa chữ cái và khoảng trắng, không có số hoặc ký tự đặc biệt.");
-            String sucKhoe = txtSucKhoe.getText().trim();
-            if (!sucKhoe.isEmpty() && !sucKhoe.matches("^[\\p{L}]+(?:\\s+[\\p{L}]+)*$"))
-                throw new IllegalArgumentException("Tình trạng sức khỏe chỉ được chứa chữ cái và khoảng trắng, không có số hoặc ký tự đặc biệt.");
+            String ngayText = txtNgaySinh.getText().trim();
+            LocalDate ngay;
+            try {
+                ngay = ngayText.isEmpty() ? null : LocalDate.parse(ngayText);
+            } catch (DateTimeParseException ex) {
+                throw new IllegalArgumentException("Ngày sinh nhập theo yyyy-MM-dd, ví dụ 2022-05-20.");
+            }
+            KhachHang kh = (KhachHang) cboKhachHang.getSelectedItem();
+            if (kh == null)
+                throw new IllegalArgumentException("Vui lòng chọn khách hàng sở hữu thú cưng.");
             String gioiTinh = radDuc.isSelected() ? "Đực" : (radCai.isSelected() ? "Cái" : "");
             ThuCung t = new ThuCung(txtMa.getText().trim(), txtTen.getText().trim(), String.valueOf(cboLoai.getSelectedItem()),
-                    String.valueOf(cboGiong.getSelectedItem()), gioiTinh, canNang, ngay,
-                    txtSucKhoe.getText().trim(), txtTiemChung.getText().trim(), kh);
-            if (canNang < -1) throw new IllegalArgumentException("Cân nặng phải lớn hơn hoặc bằng 0.");
-            if (!ngayText.isEmpty() && ngay == null) throw new IllegalArgumentException("Ngày sinh không hợp lệ.");
+                    cboGiong.getSelectedItem() == null ? "" : String.valueOf(cboGiong.getSelectedItem()), gioiTinh,
+                    canNang, ngay, txtSucKhoe.getText().trim(), txtTiemChung.getText().trim(), kh);
 
-            // Lưu ngay trong dialog để nếu DAO/Service thất bại, dialog vẫn mở
-            // và người dùng không mất các thông tin đã nhập.
             boolean thanhCong = dangSua ? service.capNhat(t) : service.them(t);
             if (!thanhCong) {
-                JOptionPane.showMessageDialog(this,
-                        dangSua ? "Không cập nhật được thú cưng. Vui lòng kiểm tra dữ liệu hoặc kết nối cơ sở dữ liệu."
-                                : "Không thêm được thú cưng. Vui lòng kiểm tra dữ liệu hoặc kết nối cơ sở dữ liệu.",
-                        "Không thể lưu", JOptionPane.WARNING_MESSAGE);
+                ThongBao.khongThayDoi(this);
                 return;
             }
             duLieu = t;
             saved = true;
-            JOptionPane.showMessageDialog(this, dangSua ? "Cập nhật thú cưng thành công." : "Thêm thú cưng thành công.",
-                    "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+            if (dangSua)
+                ThongBao.daCapNhat(this, "thú cưng");
+            else
+                ThongBao.daThem(this, "thú cưng", t.getMaThuCung());
             dispose();
-        } catch (NumberFormatException ex) { JOptionPane.showMessageDialog(this, "Cân nặng phải là số, ví dụ 4.5.", "Dữ liệu không hợp lệ", JOptionPane.WARNING_MESSAGE); }
-        catch (DateTimeParseException ex) { JOptionPane.showMessageDialog(this, "Ngày sinh nhập theo yyyy-MM-dd, ví dụ 2022-05-20.", "Dữ liệu không hợp lệ", JOptionPane.WARNING_MESSAGE); }
-        catch (IllegalArgumentException ex) { JOptionPane.showMessageDialog(this, ex.getMessage(), "Dữ liệu không hợp lệ", JOptionPane.WARNING_MESSAGE); }
-        catch (Exception ex) {
-            JOptionPane.showMessageDialog(this,
-                    "Lưu thú cưng thất bại: " + (ex.getMessage() == null ? "Lỗi cơ sở dữ liệu." : ex.getMessage())
-                            + "\nBạn có thể sửa thông tin rồi thử lại.",
-                    "Lỗi lưu dữ liệu", JOptionPane.ERROR_MESSAGE);
+        } catch (RuntimeException ex) {
+            ThongBao.xuLy(this, "Không thể lưu thú cưng", ex);
         }
     }
     private ThuCung duLieu;

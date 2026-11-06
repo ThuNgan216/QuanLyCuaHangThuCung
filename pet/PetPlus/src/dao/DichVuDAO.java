@@ -50,25 +50,92 @@ public class DichVuDAO {
         return ds;
     }
 
+    /** Mã gợi ý để hiển thị; mã thật được sinh lại khi lưu (xem {@link #them}). */
     public String taoMaMoi() {
-        String sql = "SELECT ISNULL(MAX(TRY_CONVERT(INT, SUBSTRING(maDichVu, 3, 18))), 0) + 1 AS soMoi "
-                + "FROM dbo.DichVu WHERE maDichVu LIKE 'DV[0-9]%'";
-        try (Connection con = ConnectDB.getConnection();
-                PreparedStatement ps = con.prepareStatement(sql);
-                ResultSet rs = ps.executeQuery()) {
-            return rs.next() ? String.format(java.util.Locale.ROOT, "DV%03d", rs.getInt("soMoi")) : "DV001";
+        try (Connection con = ConnectDB.getConnection()) {
+            return taoMaMoi(con);
         } catch (SQLException e) {
             throw new IllegalStateException("Không thể tự sinh mã dịch vụ: " + e.getMessage(), e);
         }
     }
 
+    private String taoMaMoi(Connection con) throws SQLException {
+        return TienIchDAO.sinhMa(con, "DichVu", "maDichVu", "DV");
+    }
+
+    /** Thêm dịch vụ; mã được sinh tại đây và sinh lại nếu hai người thêm cùng lúc bị trùng mã. */
     public boolean them(DichVu d) {
         String sql = "INSERT INTO DichVu(maDichVu, tenDichVu, donGia, moTa, trangThai, maLichHen) VALUES(?,?,?,?,?,?)";
-        try (Connection con = ConnectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
-            gan(ps, d);
-            return ps.executeUpdate() > 0;
+        try (Connection con = ConnectDB.getConnection()) {
+            for (int lanThu = 1; lanThu <= TienIchDAO.SO_LAN_THU_TOI_DA; lanThu++) {
+                d.setMaDichVu(taoMaMoi(con));
+                try (PreparedStatement ps = con.prepareStatement(sql)) {
+                    gan(ps, d);
+                    return ps.executeUpdate() > 0;
+                } catch (SQLException e) {
+                    if (!TienIchDAO.laTrungRangBuoc(e, "PK_DichVu") || lanThu == TienIchDAO.SO_LAN_THU_TOI_DA)
+                        throw e;
+                }
+            }
+            return false;
         } catch (SQLException e) {
             throw new IllegalStateException("Không thể thêm dịch vụ: " + e.getMessage(), e);
+        }
+    }
+
+    /** Tìm một dịch vụ (chưa bị xóa) theo mã; null nếu không có. */
+    public DichVu timTheoMa(String ma) {
+        String sql = SELECT + "AND d.maDichVu = ?";
+        try (Connection con = ConnectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, ma);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? doc(rs) : null;
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Không thể đọc dịch vụ: " + e.getMessage(), e);
+        }
+    }
+
+    /** Danh mục dịch vụ (không gắn lịch hẹn) đã có dịch vụ cùng tên hay chưa. */
+    public boolean tonTaiTenDanhMuc(String tenDichVu, String maBoQua) {
+        String sql = "SELECT 1 FROM DichVu WHERE maLichHen IS NULL AND trangThai <> N'Đã xóa' AND tenDichVu = ?"
+                + (maBoQua == null ? "" : " AND maDichVu <> ?");
+        try (Connection con = ConnectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, tenDichVu);
+            if (maBoQua != null)
+                ps.setString(2, maBoQua);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Không thể kiểm tra trùng tên dịch vụ: " + e.getMessage(), e);
+        }
+    }
+
+    /** Dịch vụ đã nằm trong chi tiết hóa đơn hay chưa (khi đó không được đổi tên / đơn giá). */
+    public boolean daDungTrongHoaDon(String maDichVu) {
+        String sql = "SELECT 1 FROM ChiTietHoaDon WHERE maDichVu = ?";
+        try (Connection con = ConnectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, maDichVu);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Không thể kiểm tra hóa đơn của dịch vụ: " + e.getMessage(), e);
+        }
+    }
+
+    /** Dịch vụ gắn với lịch hẹn chưa kết thúc: trả về mã lịch hẹn đó, hoặc null nếu không có. */
+    public String layLichHenChuaKetThuc(String maDichVu) {
+        String sql = "SELECT l.maLichHen FROM DichVu d INNER JOIN LichHen l ON l.maLichHen = d.maLichHen "
+                + "WHERE d.maDichVu = ? AND l.trangThai NOT IN " + TienIchDAO.LICH_HEN_KHONG_CON_HIEU_LUC;
+        try (Connection con = ConnectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, maDichVu);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getString(1) : null;
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Không thể kiểm tra lịch hẹn của dịch vụ: " + e.getMessage(), e);
         }
     }
 
