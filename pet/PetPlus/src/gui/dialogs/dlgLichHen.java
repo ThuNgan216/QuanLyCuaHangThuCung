@@ -11,7 +11,7 @@ import java.time.YearMonth;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.*;
-import java.util.List;
+
 
 public class dlgLichHen extends JDialog {
     private final JTextField txtMa = new JTextField(18), txtThoiGian = new JTextField(18);
@@ -221,7 +221,7 @@ public class dlgLichHen extends JDialog {
         JPanel daysPanel = new JPanel(new GridLayout(0, 7, 3, 3));
         calendar.add(daysPanel, BorderLayout.CENTER);
         LocalDate homNay = LocalDate.now();
-        LocalDateTime gioHienTai = LocalDateTime.now();
+     
         LocalDate[] selectedDate = { banDau.toLocalDate().isBefore(homNay) ? homNay : banDau.toLocalDate() };
         YearMonth[] shownMonth = { YearMonth.from(selectedDate[0]) };
         JPanel timePanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 8, 4));
