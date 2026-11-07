@@ -43,7 +43,8 @@
             "mainClass": "gui.main.LoginFrame",
             "projectName": "PetPlus_6d290777",
             "env": {
-                "PETPLUS_DB_PASSWORD": "${env:PETPLUS_DB_PASSWORD}"
+                "PETPLUS_DB_PASSWORD": "${env:PETPLUS_DB_PASSWORD}",
+                "SEPAY_API_TOKEN": "${env:SEPAY_API_TOKEN}"
             }
         },
         {
