@@ -7,11 +7,12 @@ import javax.swing.*;
 import java.awt.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.time.YearMonth;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.*;
-
+import java.util.List;
 
 public class dlgLichHen extends JDialog {
     private final JTextField txtMa = new JTextField(18), txtThoiGian = new JTextField(18);
@@ -28,6 +29,7 @@ public class dlgLichHen extends JDialog {
     private boolean saved = false;
     private boolean dangNap = false;
     private static final DateTimeFormatter F = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+    private static final String KHONG_CO_NV = "(Không có nhân viên làm việc vào giờ này)";
 
     public dlgLichHen(Window owner, LichHen lichHen) {
         super(owner, lichHen == null ? "Thêm lịch hẹn" : "Cập nhật lịch hẹn", ModalityType.APPLICATION_MODAL);
@@ -60,21 +62,13 @@ public class dlgLichHen extends JDialog {
         themDong(form, g, y++, "Thời gian hẹn:", pt);
         btnChonThoiGian.addActionListener(e -> moChonNgayGio());
         themDong(form, g, y++, "Trạng thái:", cboTrangThai);
-        themDong(form, g, y++, "Nhân viên:", cboNV);
+        themDong(form, g, y++, "Nhân viên (có ca):", cboNV);
         JPanel pk = new JPanel(new BorderLayout(4, 4));
         pk.add(txtTimKH, BorderLayout.NORTH);
         pk.add(cboKH, BorderLayout.CENTER);
         themDong(form, g, y++, "Tìm khách (tên/SĐT):", pk);
         themDong(form, g, y++, "Thú cưng của khách:", cboThuCung);
-        try {
-            for (NhanVien nv : service.layNhanVien()) {
-                String label = nv.getMaNV() + " - " + nv.getTenNV();
-                nhanVienMap.put(label, nv);
-                cboNV.addItem(label);
-            }
-        } catch (RuntimeException ex) {
-            JOptionPane.showMessageDialog(this, ex.getMessage(), "Lỗi tải nhân viên", JOptionPane.ERROR_MESSAGE);
-        }
+        // Danh sách nhân viên được nạp theo giờ hẹn (xem napNhanVienTheoGio), sau khi có thời gian.
         txtTimKH.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
             public void insertUpdate(javax.swing.event.DocumentEvent e) {
                 napKhachHang();
@@ -101,23 +95,7 @@ public class dlgLichHen extends JDialog {
             // Lịch do màn hình Tiếp nhận quản lý: chỉ hiển thị, không cho đổi tay
             if (ttCu != null && ttCu.doTiepNhanQuanLy())
                 cboTrangThai.setEnabled(false);
-            if (duLieu.getMaNV() != null) {
-                boolean tim = false;
-                for (String k : nhanVienMap.keySet())
-                    if (nhanVienMap.get(k).getMaNV().equals(duLieu.getMaNV().getMaNV())) {
-                        cboNV.setSelectedItem(k);
-                        tim = true;
-                    }
-                // Nhân viên cũ không còn nhận lịch (nghỉ việc, đổi bộ phận): vẫn hiển thị để không bị tự đổi
-                // sang nhân viên khác một cách âm thầm; service sẽ báo lỗi nếu giữ nguyên nhân viên này.
-                if (!tim) {
-                    String label = duLieu.getMaNV().getMaNV() + " - " + duLieu.getMaNV().getTenNV()
-                            + " (không còn nhận lịch)";
-                    nhanVienMap.put(label, duLieu.getMaNV());
-                    cboNV.addItem(label);
-                    cboNV.setSelectedItem(label);
-                }
-            }
+            napNhanVienTheoGio();
             if (duLieu.getMaKH() != null) {
                 txtTimKH.setText(duLieu.getMaKH().getTenKH() == null ? "" : duLieu.getMaKH().getTenKH());
                 napKhachHang();
@@ -130,8 +108,10 @@ public class dlgLichHen extends JDialog {
                         if (thuCungMap.get(k).getMaThuCung().equals(duLieu.getMaThuCung().getMaThuCung()))
                             cboThuCung.setSelectedItem(k);
             }
-        } else
+        } else {
             txtThoiGian.setText(LocalDateTime.now().plusDays(1).withSecond(0).withNano(0).format(F));
+            napNhanVienTheoGio();
+        }
         JButton save = new JButton("Lưu"), cancel = new JButton("Hủy");
         JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         buttons.add(save);
@@ -221,7 +201,7 @@ public class dlgLichHen extends JDialog {
         JPanel daysPanel = new JPanel(new GridLayout(0, 7, 3, 3));
         calendar.add(daysPanel, BorderLayout.CENTER);
         LocalDate homNay = LocalDate.now();
-     
+        LocalDateTime gioHienTai = LocalDateTime.now();
         LocalDate[] selectedDate = { banDau.toLocalDate().isBefore(homNay) ? homNay : banDau.toLocalDate() };
         YearMonth[] shownMonth = { YearMonth.from(selectedDate[0]) };
         JPanel timePanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 8, 4));
@@ -300,6 +280,7 @@ public class dlgLichHen extends JDialog {
                 return;
             }
             txtThoiGian.setText(value.format(F));
+            napNhanVienTheoGio(); // đổi giờ thì danh sách nhân viên có ca cũng đổi theo
             dlg.dispose();
         });
         cancel.addActionListener(e -> dlg.dispose());
@@ -311,9 +292,51 @@ public class dlgLichHen extends JDialog {
         dlg.setVisible(true);
     }
 
+    /**
+     * Nạp lại danh sách nhân viên theo giờ hẹn đang chọn: chỉ hiện nhân viên có ca làm việc phủ khung giờ đó và
+     * chưa có lịch khác chồng giờ. Giữ nguyên lựa chọn hiện tại nếu người đó vẫn hợp lệ ở giờ mới.
+     */
+    private void napNhanVienTheoGio() {
+        NhanVien dangChon = nhanVienMap.get((String) cboNV.getSelectedItem());
+        String maGiu = dangChon != null ? dangChon.getMaNV()
+                : (duLieu != null && cboNV.getItemCount() == 0 && duLieu.getMaNV() != null ? duLieu.getMaNV().getMaNV()
+                        : null);
+        nhanVienMap.clear();
+        cboNV.removeAllItems();
+        try {
+            LocalDateTime gio = LocalDateTime.parse(txtThoiGian.getText().trim(), F);
+            for (NhanVien nv : service.layNhanVienConTrong(gio, duLieu == null ? null : duLieu.getMaLichHen())) {
+                String label = nv.getMaNV() + " - " + nv.getTenNV();
+                nhanVienMap.put(label, nv);
+                cboNV.addItem(label);
+                if (nv.getMaNV().equals(maGiu))
+                    cboNV.setSelectedItem(label);
+            }
+        } catch (DateTimeParseException ignore) {
+            // chưa có giờ hợp lệ: để danh sách trống
+        } catch (RuntimeException ex) {
+            ThongBao.xuLy(this, "Không thể tải nhân viên theo ca làm việc", ex);
+        }
+
+        // Sửa lịch mà nhân viên cũ không còn hợp lệ ở giờ này (nghỉ ca, đã có lịch khác...): vẫn hiển thị để không bị
+        // tự đổi sang người khác một cách âm thầm; khi lưu service sẽ báo rõ lý do.
+        if (duLieu != null && duLieu.getMaNV() != null && maGiu != null && maGiu.equals(duLieu.getMaNV().getMaNV())
+                && nhanVienMap.values().stream().noneMatch(n -> n.getMaNV().equals(maGiu))) {
+            String label = maGiu + " - " + duLieu.getMaNV().getTenNV() + " (không có ca vào giờ này)";
+            nhanVienMap.put(label, duLieu.getMaNV());
+            cboNV.addItem(label);
+            cboNV.setSelectedItem(label);
+        }
+        if (cboNV.getItemCount() == 0)
+            cboNV.addItem(KHONG_CO_NV);
+    }
+
     private void luu() {
         try {
             String nvLabel = (String) cboNV.getSelectedItem();
+            if (KHONG_CO_NV.equals(nvLabel))
+                throw new IllegalArgumentException("Không có nhân viên nào làm việc vào khung giờ này. "
+                        + "Hãy chọn giờ khác, hoặc nhờ quản lý xếp ca làm việc (menu 4. Xử lý → Xếp lịch làm việc).");
             String khLabel = (String) cboKH.getSelectedItem();
             String tcLabel = (String) cboThuCung.getSelectedItem();
 

@@ -135,6 +135,46 @@ public class LichHenDAO {
         return ds;
     }
 
+    /** Ca làm việc của mọi nhân viên trong một ngày: mã nhân viên -> các ca {giờ bắt đầu, giờ kết thúc} theo thứ tự giờ. */
+    public Map<String, List<LocalTime[]>> layCaLamTheoNgay(LocalDate ngay) {
+        Map<String, List<LocalTime[]>> kq = new HashMap<>();
+        String q = "SELECT llv.maNV, ca.gioBatDau, ca.gioKetThuc FROM LichLamViec llv INNER JOIN CaLamViec ca ON ca.maCa=llv.maCa "
+                + "WHERE llv.ngayLamViec=? ORDER BY llv.maNV, ca.gioBatDau";
+        try (Connection c = ConnectDB.getConnection(); PreparedStatement p = c.prepareStatement(q)) {
+            p.setDate(1, java.sql.Date.valueOf(ngay));
+            try (ResultSet r = p.executeQuery()) {
+                while (r.next())
+                    kq.computeIfAbsent(r.getString(1), k -> new ArrayList<>())
+                            .add(new LocalTime[] { r.getTime(2).toLocalTime(), r.getTime(3).toLocalTime() });
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Không thể tải ca làm việc: " + e.getMessage(), e);
+        }
+        return kq;
+    }
+
+    /** Mã các nhân viên đã có lịch còn hiệu lực chồng lên khoảng [batDau, batDau + phut); bỏ qua lịch maBoQua (có thể null). */
+    public Set<String> layMaNhanVienBan(LocalDateTime batDau, int phut, String maBoQua) {
+        Set<String> kq = new HashSet<>();
+        String q = "SELECT DISTINCT maNV FROM LichHen WHERE trangThai NOT IN " + TienIchDAO.LICH_HEN_KHONG_CON_HIEU_LUC
+                + " AND thoiGianHen < ? AND DATEADD(MINUTE, ?, thoiGianHen) > ?"
+                + (maBoQua == null ? "" : " AND maLichHen <> ?");
+        try (Connection c = ConnectDB.getConnection(); PreparedStatement p = c.prepareStatement(q)) {
+            p.setTimestamp(1, Timestamp.valueOf(batDau.plusMinutes(phut)));
+            p.setInt(2, phut);
+            p.setTimestamp(3, Timestamp.valueOf(batDau));
+            if (maBoQua != null)
+                p.setString(4, maBoQua);
+            try (ResultSet r = p.executeQuery()) {
+                while (r.next())
+                    kq.add(r.getString(1));
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Không thể kiểm tra nhân viên bận: " + e.getMessage(), e);
+        }
+        return kq;
+    }
+
     /**
      * Các lịch còn hiệu lực (chưa Hoàn thành / Đã hủy / Đã xóa) của một nhân viên hoặc một thú cưng
      * chồng lấn khoảng [batDau, batDau + phut). Lịch kết thúc đúng lúc lịch khác bắt đầu thì không chồng.

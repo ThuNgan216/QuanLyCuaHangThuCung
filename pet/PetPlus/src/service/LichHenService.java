@@ -81,6 +81,54 @@ public class LichHenService {
         return tt == null ? new ArrayList<TrangThaiLichHen>() : tt.luaChonThuCong();
     }
 
+    /**
+     * Nhân viên có thể nhận lịch vào đúng giờ này: đang hoạt động, thuộc bộ phận chăm sóc, ca làm việc phủ kín
+     * khoảng [giờ hẹn, giờ hẹn + 30 phút] và chưa có lịch khác chồng giờ. Dùng cho form đặt lịch để người dùng
+     * chỉ thấy những nhân viên chọn được, không phải chọn xong mới bị báo lỗi.
+     *
+     * @param maLichBoQua mã lịch đang sửa (không tính là "bận"), null khi tạo mới
+     */
+    public List<NhanVien> layNhanVienConTrong(LocalDateTime thoiGian, String maLichBoQua) {
+        List<NhanVien> kq = new ArrayList<>();
+        if (thoiGian == null)
+            return kq;
+        LocalDateTime ketThuc = thoiGian.plusMinutes(DO_DAI_LICH_PHUT);
+        if (!ketThuc.toLocalDate().equals(thoiGian.toLocalDate()))
+            return kq; // lịch không được kéo dài sang ngày hôm sau
+        java.util.Map<String, List<LocalTime[]>> caTheoNV = dao.layCaLamTheoNgay(thoiGian.toLocalDate());
+        java.util.Set<String> ban = dao.layMaNhanVienBan(thoiGian, DO_DAI_LICH_PHUT, maLichBoQua);
+        for (NhanVien nv : dao.layNhanVien()) {
+            List<LocalTime[]> ca = caTheoNV.get(nv.getMaNV());
+            if (ca == null || ban.contains(nv.getMaNV()))
+                continue;
+            if (phuKhoangGio(gopCa(ca), thoiGian.toLocalTime(), ketThuc.toLocalTime()))
+                kq.add(nv);
+        }
+        return kq;
+    }
+
+    /** Gộp các ca liền nhau hoặc chồng nhau (ví dụ 07:00–12:00 và 12:00–17:00 thành 07:00–17:00). */
+    private static List<LocalTime[]> gopCa(List<LocalTime[]> caLam) {
+        List<LocalTime[]> sapXep = new ArrayList<>(caLam);
+        sapXep.sort((a, b) -> a[0].compareTo(b[0]));
+        List<LocalTime[]> khoang = new ArrayList<>();
+        for (LocalTime[] ca : sapXep) {
+            LocalTime[] cuoi = khoang.isEmpty() ? null : khoang.get(khoang.size() - 1);
+            if (cuoi == null || ca[0].isAfter(cuoi[1]))
+                khoang.add(new LocalTime[] { ca[0], ca[1] });
+            else if (ca[1].isAfter(cuoi[1]))
+                cuoi[1] = ca[1];
+        }
+        return khoang;
+    }
+
+    private static boolean phuKhoangGio(List<LocalTime[]> khoang, LocalTime tu, LocalTime den) {
+        for (LocalTime[] k : khoang)
+            if (!tu.isBefore(k[0]) && !den.isAfter(k[1]))
+                return true;
+        return false;
+    }
+
     /** Ném lỗi nếu lịch hẹn không còn được phép sửa (đang do màn hình Tiếp nhận quản lý, hoặc đã ở trạng thái cuối). */
     public void kiemTraChoPhepSua(LichHen cu) {
         if (cu == null)
@@ -226,14 +274,7 @@ public class LichHenService {
             throw new IllegalArgumentException("Nhân viên " + tenNV + " không có ca làm việc ngày " + ngay.format(NGAY)
                     + ". Vui lòng xếp lịch làm việc cho nhân viên hoặc chọn nhân viên khác.");
 
-        List<LocalTime[]> khoang = new ArrayList<>();
-        for (LocalTime[] ca : caLam) {
-            LocalTime[] cuoi = khoang.isEmpty() ? null : khoang.get(khoang.size() - 1);
-            if (cuoi == null || ca[0].isAfter(cuoi[1]))
-                khoang.add(new LocalTime[] { ca[0], ca[1] });
-            else if (ca[1].isAfter(cuoi[1]))
-                cuoi[1] = ca[1];
-        }
+        List<LocalTime[]> khoang = gopCa(caLam);
         LocalTime tu = batDau.toLocalTime(), den = ketThuc.toLocalTime();
         StringBuilder cacCa = new StringBuilder();
         for (LocalTime[] k : khoang) {
