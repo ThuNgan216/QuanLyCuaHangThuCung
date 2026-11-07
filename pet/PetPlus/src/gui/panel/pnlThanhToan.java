@@ -92,7 +92,6 @@ public class pnlThanhToan extends JPanel {
     private final JTable tblDon = new JTable(modelDon);
 
     private final DanhMuc dsSanPham = new DanhMuc(LOAI_SP, "Tìm sản phẩm theo tên hoặc mã...");
-    private final DanhMuc dsDichVu = new DanhMuc(LOAI_DV, "Tìm dịch vụ theo tên hoặc mã...");
 
     // Thông tin hóa đơn
     private final JTextField txtOrderCode = field("", false);
@@ -199,7 +198,6 @@ public class pnlThanhToan extends JPanel {
             if ((e.getChangeFlags() & HierarchyEvent.SHOWING_CHANGED) != 0 && isShowing()) {
                 capNhatNhanVien();
                 dsSanPham.taiDuLieu();
-                dsDichVu.taiDuLieu();
                 taiKhuyenMai();
             }
         });
@@ -281,7 +279,7 @@ public class pnlThanhToan extends JPanel {
             scroll.setBorder(new LineBorder(BORDER));
             content.add(scroll, BorderLayout.CENTER);
             content.add(lblTrangThai, BorderLayout.SOUTH);
-            return card(LOAI_SP.equals(loai) ? "Danh sách sản phẩm" : "Danh sách dịch vụ", content);
+            return card("Danh sách sản phẩm", content);
         }
 
         void loc() {
@@ -318,9 +316,7 @@ public class pnlThanhToan extends JPanel {
             new SwingWorker<List<Object[]>, Void>() {
                 @Override
                 protected List<Object[]> doInBackground() throws Exception {
-                    return LOAI_SP.equals(loai)
-                            ? thanhToanDAO.laySanPham()
-                            : thanhToanDAO.layDichVu();
+                    return thanhToanDAO.laySanPham();
                 }
 
                 @Override
@@ -1030,29 +1026,17 @@ public class pnlThanhToan extends JPanel {
     private JPanel createLeft() {
         JPanel left = new JPanel(new BorderLayout(0, 10));
         left.setOpaque(false);
-        JPanel top = new JPanel(new BorderLayout(10, 0));
+        JPanel top = new JPanel(new BorderLayout());
         top.setOpaque(false);
-        JPanel orderCard = createOrderCard();
-        orderCard.setPreferredSize(new Dimension(270, 0));
-        top.add(orderCard, BorderLayout.WEST);
         top.add(createCustomerCard(), BorderLayout.CENTER);
-        top.setPreferredSize(new Dimension(0, 236));
+        top.setPreferredSize(new Dimension(0, 210));
 
-        JPanel catalogs = new JPanel(new GridLayout(1, 2, 10, 0));
+        JPanel catalogs = new JPanel(new GridLayout(1, 1));
         catalogs.setOpaque(false);
         catalogs.add(dsSanPham.taoGiaoDien());
-        catalogs.add(dsDichVu.taoGiaoDien());
         left.add(top, BorderLayout.NORTH);
         left.add(catalogs, BorderLayout.CENTER);
         return left;
-    }
-
-    private JPanel createOrderCard() {
-        JPanel content = new JPanel(new BorderLayout());
-        content.setOpaque(false);
-        content.add(rows(new String[] { "Mã hóa đơn:", "Ngày tạo:", "Nhân viên:" },
-                new JComponent[] { txtOrderCode, txtOrderDate, txtEmployee }), BorderLayout.NORTH);
-        return card("Thông tin hóa đơn", content);
     }
 
     private JPanel createCustomerCard() {

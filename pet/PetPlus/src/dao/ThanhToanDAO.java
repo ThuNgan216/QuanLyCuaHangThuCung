@@ -116,12 +116,6 @@ public class ThanhToanDAO {
                         "FROM SanPham WHERE trangThai <> N'Đã xóa' ORDER BY tenSP");
     }
 
-    public List<Object[]> layDichVu() throws SQLException {
-        return layDanhMuc(
-                "SELECT maDichVu AS ma, tenDichVu AS ten, donGia AS gia " +
-                        "FROM DichVu WHERE trangThai NOT IN (N'Ngừng hoạt động', N'Đã xóa') ORDER BY tenDichVu");
-    }
-
     private List<Object[]> layDanhMuc(String sql) throws SQLException {
         List<Object[]> ds = new ArrayList<>();
 
