@@ -18,9 +18,11 @@ import java.text.Normalizer;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.sql.*;
@@ -66,9 +68,19 @@ public class pnlThanhToan extends JPanel {
     private static final String LOAI_DV = "Dịch vụ";
     private static final int C_LOAI = 0, C_TEN = 1, C_SL = 2, C_GIA = 3, C_TIEN = 4, C_GIAM = 5, C_MA = 6;
 
+    private static final String DUONG_DAN_QR = "pet/PetPlus/resources/QR/QR.jpg";
+    private static final String THU_MUC_HOA_DON = "pet/PetPlus/data/hoadon";
+
+    // Tài khoản nhận tiền (đã liên kết SePay). NGAN_HANG theo mã VietQR.
+    private static final String NGAN_HANG = "MBBank";
+    private static final String SO_TAI_KHOAN = "0833560809";
+    private static final int CHU_KY_KIEM_TRA_MS = 4000;
+    private static final long HET_HAN_MS = 10 * 60_000L;
+
     private final ThanhToanDAO thanhToanDAO = new ThanhToanDAO();
     private final TiepNhanThuCungDAO tiepNhanThuCungDAO = new TiepNhanThuCungDAO();
     private final MaVachDAO maVachDAO = new MaVachDAO();
+    private final SePayClient sePay = new SePayClient();
 
     private final DefaultTableModel modelDon = new DefaultTableModel(
             new String[] { "Loại", "Tên", "SL", "Đơn giá", "Thành tiền", "Giảm KM", "Mã" }, 0) {
@@ -128,19 +140,8 @@ public class pnlThanhToan extends JPanel {
     private int soDiemSuDung = 0;
     private String maTiepNhanDangLap;
     private final Set<String> maDichVuPhieuDangLap = new HashSet<>();
-    private static final String DUONG_DAN_QR = "pet/PetPlus/resources/QR/QR.jpg";
-    private static final String THU_MUC_HOA_DON = "pet/PetPlus/data/hoadon";
 
-    // ===== Chuyển khoản tự động (polling SePay) =====
-    // TODO: thay bằng thông tin tài khoản nhận tiền thật. NGAN_HANG theo mã của
-    // VietQR (MB, VCB, TCB, ACB...)
-    private static final String NGAN_HANG = "MB";
-    private static final String SO_TAI_KHOAN = "0123456789";
-    private static final String TEN_TAI_KHOAN = "CUA HANG PETPLUS";
-    private static final int CHU_KY_KIEM_TRA_MS = 4000;
-    private static final long HET_HAN_MS = 10 * 60_000L;
-
-    private final SePayClient sePay = new SePayClient();
+    // Chuyển khoản tự động
     private javax.swing.Timer timerCK;
     private String maNoiDungCK;
     private String maGiaoDichNH;
@@ -390,7 +391,6 @@ public class pnlThanhToan extends JPanel {
                 KhuyenMai km = (KhuyenMai) value;
                 setText(km.getTenKhuyenMai() + " (-" + dinhDangPhanTram(km.getPhanTramGiam()) + "%)");
                 setToolTipText(km.getDieuKienApDung());
-
                 return this;
             }
         });
@@ -492,9 +492,9 @@ public class pnlThanhToan extends JPanel {
     }
 
     /** Trả về các mã sản phẩm có số lượng đạt ngưỡng riêng cho từng mã. */
-    private java.util.Set<String> layMaSanPhamDatNguong(KhuyenMai km) {
-        java.util.Set<String> maSanPhamApDung = new java.util.HashSet<>(km.getMaSanPhamApDung());
-        java.util.Map<String, Long> soLuongTheoMa = new java.util.HashMap<>();
+    private Set<String> layMaSanPhamDatNguong(KhuyenMai km) {
+        Set<String> maSanPhamApDung = new HashSet<>(km.getMaSanPhamApDung());
+        Map<String, Long> soLuongTheoMa = new HashMap<>();
         for (int row = 0; row < modelDon.getRowCount(); row++) {
             if (!LOAI_SP.equals(modelDon.getValueAt(row, C_LOAI)))
                 continue;
@@ -504,8 +504,8 @@ public class pnlThanhToan extends JPanel {
             long soLuong = ((Number) modelDon.getValueAt(row, C_SL)).longValue();
             soLuongTheoMa.put(maSP, Math.addExact(soLuongTheoMa.getOrDefault(maSP, 0L), soLuong));
         }
-        java.util.Set<String> maDatNguong = new java.util.HashSet<>();
-        for (java.util.Map.Entry<String, Long> entry : soLuongTheoMa.entrySet()) {
+        Set<String> maDatNguong = new HashSet<>();
+        for (Map.Entry<String, Long> entry : soLuongTheoMa.entrySet()) {
             if (entry.getValue() >= km.getSoLuongToiThieu())
                 maDatNguong.add(entry.getKey());
         }
@@ -561,39 +561,22 @@ public class pnlThanhToan extends JPanel {
 
         Timer timer = new Timer(300, e -> timKhachHang(txtPhone.getText().trim()));
         timer.setRepeats(false);
-        txtPhone.getDocument().addDocumentListener(new DocumentListener() {
-            private void capNhat() {
-                if (dangChonKhachHang)
-                    return;
-                lanTimKhachHang++;
-                selectedKh = null;
-                chkSuDungDiem.setSelected(false);
-                capNhatTrangThaiDiem();
-                if (khachMoi)
-                    return;
-                txtCustomer.setText("");
-                txtAddress.setText("");
-                txtMemberType.setText("");
-                txtPoints.setText("0");
-                popupKhachHang.setVisible(false);
-                timer.restart();
-            }
-
-            @Override
-            public void insertUpdate(DocumentEvent e) {
-                capNhat();
-            }
-
-            @Override
-            public void removeUpdate(DocumentEvent e) {
-                capNhat();
-            }
-
-            @Override
-            public void changedUpdate(DocumentEvent e) {
-                capNhat();
-            }
-        });
+        txtPhone.getDocument().addDocumentListener(new SimpleDocumentListener(() -> {
+            if (dangChonKhachHang)
+                return;
+            lanTimKhachHang++;
+            selectedKh = null;
+            chkSuDungDiem.setSelected(false);
+            capNhatTrangThaiDiem();
+            if (khachMoi)
+                return;
+            txtCustomer.setText("");
+            txtAddress.setText("");
+            txtMemberType.setText("");
+            txtPoints.setText("0");
+            popupKhachHang.setVisible(false);
+            timer.restart();
+        }));
 
         txtPhone.addActionListener(e -> {
             if (!khachMoi && popupKhachHang.isVisible() && !modelKhachHang.isEmpty()) {
@@ -605,8 +588,7 @@ public class pnlThanhToan extends JPanel {
         listKhachHang.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                if (e.getClickCount() >= 1)
-                    chonKhachHang();
+                chonKhachHang();
             }
         });
     }
@@ -683,10 +665,10 @@ public class pnlThanhToan extends JPanel {
         actions.setOpaque(false);
         JButton btnQuetMaVach = outlineButton("Quét mã vạch");
         btnQuetMaVach.setToolTipText("Quét sản phẩm bằng webcam và thêm vào hóa đơn đang lập.");
-        btnQuetMaVach.addActionListener(e -> moQuetMaVach(
-                SwingUtilities.getWindowAncestor(this) instanceof Frame
-                        ? (Frame) SwingUtilities.getWindowAncestor(this)
-                        : null));
+        btnQuetMaVach.addActionListener(e -> {
+            Window w = SwingUtilities.getWindowAncestor(this);
+            moQuetMaVach(w instanceof Frame ? (Frame) w : null);
+        });
         JButton btnPhieuChoThanhToan = outlineButton("Chọn phiếu chờ thanh toán");
         btnPhieuChoThanhToan
                 .setToolTipText("Nạp thông tin khách hàng và dịch vụ từ phiếu tiếp nhận đang chờ thanh toán.");
@@ -918,10 +900,10 @@ public class pnlThanhToan extends JPanel {
                                     phieu.tenKH, phieu.sdt, phieu.tenThuCung, tenDichVuTrongPhieu(phieu),
                                     phieu.danhSachDichVu.isEmpty() ? phieu.phiDuKien : phieu.tongPhiDichVu() });
                         }
-                        status.setText(phieuData.size()
-                                + " phiếu đang chờ thanh toán. Nhấp đúp hoặc chọn rồi bấm Chọn phiếu.");
-                        if (phieuData.isEmpty())
-                            status.setText("Hiện không có phiếu nào chờ thanh toán.");
+                        status.setText(phieuData.isEmpty()
+                                ? "Hiện không có phiếu nào chờ thanh toán."
+                                : phieuData.size()
+                                        + " phiếu đang chờ thanh toán. Nhấp đúp hoặc chọn rồi bấm Chọn phiếu.");
                         choose.setEnabled(!phieuData.isEmpty());
                     } catch (Exception ex) {
                         Throwable loi = nguyenNhan(ex);
@@ -1000,11 +982,7 @@ public class pnlThanhToan extends JPanel {
                 return false;
         }
 
-        // Dừng việc chờ chuyển khoản của đơn cũ (nếu có) trước khi thay nội dung đơn.
-        huyChoChuyenKhoan();
-        daNhanTienCK = false;
-        maGiaoDichNH = null;
-
+        xoaTrangThaiChuyenKhoan();
         modelDon.setRowCount(0);
         cboKhuyenMai.setSelectedIndex(0);
         txtPaid.setText("0");
@@ -1337,8 +1315,8 @@ public class pnlThanhToan extends JPanel {
     // ================== SỬA HÓA ĐƠN ==================
 
     /**
-     * Sau khi đã nhận tiền chuyển khoản, không cho sửa đơn để tổng tiền không lệch
-     * với số đã nhận.
+     * Đã nhận tiền chuyển khoản thì khóa đơn để tổng tiền không lệch với số đã
+     * nhận.
      */
     private boolean daKhoaDonSauKhiNhanTien() {
         if (!daNhanTienCK)
@@ -1408,18 +1386,17 @@ public class pnlThanhToan extends JPanel {
         for (JButton b : nutTienNhanh)
             b.setEnabled(tienMat);
         updateTotals();
-        if (!tienMat) {
-            // Kiểm tra hóa đơn hợp lệ TRƯỚC khi hiện QR để tránh nhận tiền rồi mới báo lỗi.
-            if (!kiemTraHopLe()) {
-                rbCash.setSelected(true);
-                capNhatPhuongThuc();
-                return;
-            }
-            hienThiQR();
-        } else {
+        if (tienMat) {
             huyChoChuyenKhoan();
             if (dlgQR != null)
                 dlgQR.setVisible(false);
+        } else if (kiemTraHopLe()) {
+            hienThiQR();
+        } else {
+            // Hóa đơn chưa hợp lệ: quay về tiền mặt, không hiện QR để tránh nhận tiền rồi
+            // mới báo lỗi.
+            rbCash.setSelected(true);
+            capNhatPhuongThuc();
         }
     }
 
@@ -1458,7 +1435,7 @@ public class pnlThanhToan extends JPanel {
         tienGiamKhuyenMaiSanPham = 0;
         if (khuyenMaiSanPhamDangApDung != null) {
             double rate = Math.max(0, Math.min(100, khuyenMaiSanPhamDangApDung.getPhanTramGiam()));
-            java.util.Set<String> maSanPhamDatNguong = layMaSanPhamDatNguong(khuyenMaiSanPhamDangApDung);
+            Set<String> maSanPhamDatNguong = layMaSanPhamDatNguong(khuyenMaiSanPhamDangApDung);
             try {
                 for (int i = 0; i < modelDon.getRowCount(); i++) {
                     if (!LOAI_SP.equals(modelDon.getValueAt(i, C_LOAI)))
@@ -1745,9 +1722,7 @@ public class pnlThanhToan extends JPanel {
     }
 
     private void lamMoiDonHang() {
-        huyChoChuyenKhoan();
-        daNhanTienCK = false;
-        maGiaoDichNH = null;
+        xoaTrangThaiChuyenKhoan();
         modelDon.setRowCount(0);
         maTiepNhanDangLap = null;
         maDichVuPhieuDangLap.clear();
@@ -1762,7 +1737,6 @@ public class pnlThanhToan extends JPanel {
         setCustomerMode(false);
         lamMoiThongTinDon();
         capNhatPhuongThuc();
-        updateTotals();
     }
 
     // ================== TIỆN ÍCH ==================
@@ -1852,14 +1826,10 @@ public class pnlThanhToan extends JPanel {
         return b;
     }
 
-    private interface Callback {
-        void run();
-    }
-
     private static class SimpleDocumentListener implements DocumentListener {
-        private final Callback callback;
+        private final Runnable callback;
 
-        SimpleDocumentListener(Callback callback) {
+        SimpleDocumentListener(Runnable callback) {
             this.callback = callback;
         }
 
@@ -1929,7 +1899,6 @@ public class pnlThanhToan extends JPanel {
             });
             dlgQR.pack();
             dlgQR.setLocationRelativeTo(this);
-
         }
         batDauChoChuyenKhoan();
         capNhatNoiDungQR();
@@ -1941,14 +1910,11 @@ public class pnlThanhToan extends JPanel {
      * định kỳ.
      */
     private void batDauChoChuyenKhoan() {
-        huyChoChuyenKhoan();
+        xoaTrangThaiChuyenKhoan();
         soTienCK = total;
-        daNhanTienCK = false;
-        maGiaoDichNH = null;
         if (total <= 0) {
             lblAnhQR.setIcon(null);
             lblAnhQR.setText("Hóa đơn chưa có số tiền cần thanh toán.");
-            lblTrangThaiCK.setForeground(MUTED);
             lblTrangThaiCK.setText("");
             return;
         }
@@ -1964,12 +1930,20 @@ public class pnlThanhToan extends JPanel {
         timerCK.start();
     }
 
+    /** Dừng kiểm tra giao dịch. */
     private void huyChoChuyenKhoan() {
         if (timerCK != null) {
             timerCK.stop();
             timerCK = null;
         }
         maNoiDungCK = null;
+    }
+
+    /** Dừng kiểm tra và xóa trạng thái "đã nhận tiền" của đơn trước. */
+    private void xoaTrangThaiChuyenKhoan() {
+        huyChoChuyenKhoan();
+        daNhanTienCK = false;
+        maGiaoDichNH = null;
     }
 
     /**
@@ -1981,10 +1955,10 @@ public class pnlThanhToan extends JPanel {
         new SwingWorker<BufferedImage, Void>() {
             @Override
             protected BufferedImage doInBackground() throws Exception {
-                String url = "https://img.vietqr.io/image/" + NGAN_HANG + "-" + SO_TAI_KHOAN
-                        + "-compact2.png?amount=" + soTien
-                        + "&addInfo=" + URLEncoder.encode(noiDung, "UTF-8")
-                        + "&accountName=" + URLEncoder.encode(TEN_TAI_KHOAN, "UTF-8");
+                String url = "https://qr.sepay.vn/img?acc=" + SO_TAI_KHOAN
+                        + "&bank=" + URLEncoder.encode(NGAN_HANG, "UTF-8")
+                        + "&amount=" + soTien
+                        + "&des=" + URLEncoder.encode(noiDung, "UTF-8");
                 URLConnection conn = URI.create(url).toURL().openConnection();
                 conn.setConnectTimeout(5000);
                 conn.setReadTimeout(8000);
@@ -2001,17 +1975,49 @@ public class pnlThanhToan extends JPanel {
                     BufferedImage img = get();
                     if (img == null)
                         throw new IllegalStateException("Ảnh QR rỗng");
-                    int max = 310;
-                    double tiLe = Math.min((double) max / img.getWidth(), (double) max / img.getHeight());
-                    int w = Math.max(1, (int) (img.getWidth() * tiLe));
-                    int h = Math.max(1, (int) (img.getHeight() * tiLe));
-                    lblAnhQR.setText("");
-                    lblAnhQR.setIcon(new ImageIcon(img.getScaledInstance(w, h, Image.SCALE_SMOOTH)));
+                    hienAnhQR(img);
                 } catch (Exception ex) {
-                    napAnhQR(); // dự phòng: ảnh QR tĩnh
+                    ex.printStackTrace();
+                    napAnhQR();
+                    lblTrangThaiCK.setForeground(DARK_PINK);
+                    lblTrangThaiCK.setText("Không tạo được QR tự động (" + nguyenNhan(ex).getMessage()
+                            + "). Khách cần chuyển đúng " + MONEY.format(soTien) + " đ với nội dung: " + noiDung);
                 }
             }
         }.execute();
+    }
+
+    /** Ảnh QR tĩnh dự phòng (không có sẵn số tiền và nội dung). */
+    private void napAnhQR() {
+        File f = new File(DUONG_DAN_QR);
+        String lyDo;
+        try {
+            if (!f.exists()) {
+                lyDo = "File không tồn tại tại đường dẫn trên.";
+            } else {
+                BufferedImage img = ImageIO.read(f);
+                if (img != null) {
+                    hienAnhQR(img);
+                    return;
+                }
+                lyDo = "File có tồn tại nhưng Java không đọc được định dạng "
+                        + "(có thể là webp/CMYK hoặc đổi đuôi). Hãy mở bằng Paint rồi Save as JPEG/PNG.";
+            }
+        } catch (Exception ex) {
+            lyDo = "Lỗi khi đọc: " + ex;
+        }
+        lblAnhQR.setIcon(null);
+        lblAnhQR.setText("<html><div style='width:290px;text-align:center'>Không tải được ảnh QR<br>"
+                + f.getAbsolutePath() + "<br><b>" + lyDo + "</b></div></html>");
+    }
+
+    private void hienAnhQR(BufferedImage img) {
+        int max = 310;
+        double tiLe = Math.min((double) max / img.getWidth(), (double) max / img.getHeight());
+        int w = Math.max(1, (int) (img.getWidth() * tiLe));
+        int h = Math.max(1, (int) (img.getHeight() * tiLe));
+        lblAnhQR.setText("");
+        lblAnhQR.setIcon(new ImageIcon(img.getScaledInstance(w, h, Image.SCALE_SMOOTH)));
     }
 
     /**
@@ -2065,35 +2071,6 @@ public class pnlThanhToan extends JPanel {
                 }
             }
         }.execute();
-    }
-
-    private void napAnhQR() {
-        File f = new File(DUONG_DAN_QR);
-        String lyDo;
-        try {
-            if (!f.exists()) {
-                lyDo = "File không tồn tại tại đường dẫn trên.";
-            } else {
-                BufferedImage img = ImageIO.read(f);
-                if (img == null) {
-                    lyDo = "File có tồn tại nhưng Java không đọc được định dạng "
-                            + "(có thể là webp/CMYK hoặc đổi đuôi). Hãy mở bằng Paint rồi Save as JPEG/PNG.";
-                } else {
-                    int max = 310;
-                    double tiLe = Math.min((double) max / img.getWidth(), (double) max / img.getHeight());
-                    int w = Math.max(1, (int) (img.getWidth() * tiLe));
-                    int h = Math.max(1, (int) (img.getHeight() * tiLe));
-                    lblAnhQR.setText("");
-                    lblAnhQR.setIcon(new ImageIcon(img.getScaledInstance(w, h, Image.SCALE_SMOOTH)));
-                    return;
-                }
-            }
-        } catch (Exception ex) {
-            lyDo = "Lỗi khi đọc: " + ex;
-        }
-        lblAnhQR.setIcon(null);
-        lblAnhQR.setText("<html><div style='width:290px;text-align:center'>Không tải được ảnh QR<br>"
-                + f.getAbsolutePath() + "<br><b>" + lyDo + "</b></div></html>");
     }
 
     private void capNhatNoiDungQR() {
@@ -2158,7 +2135,7 @@ public class pnlThanhToan extends JPanel {
             StringBuilder sb = new StringBuilder();
             sb.append(gach).append("\r\n");
             sb.append(canGiua("CỦA HÀNG THÚ CƯNG PETPLUS")).append("\r\n");
-            sb.append(canGiua("Địa chỉ: 480 Nguyễn Thái Sơn, Quận Gò Vấp, TP. HCM")).append('\n');
+            sb.append(canGiua("Địa chỉ: 480 Nguyễn Thái Sơn, Quận Gò Vấp, TP. HCM")).append("\r\n");
             sb.append(canGiua("HÓA ĐƠN BÁN HÀNG")).append("\r\n");
             sb.append(gach).append("\r\n");
             sb.append("Mã hóa đơn : ").append(maHD).append("\r\n");

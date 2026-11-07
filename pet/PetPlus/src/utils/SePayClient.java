@@ -17,27 +17,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-/**
- * Lấy danh sách giao dịch tiền vào từ SePay (polling) để tự động xác nhận
- * chuyển khoản.
- *
- * Cấu hình:
- * - Chạy thật : đặt biến môi trường SEPAY_API_TOKEN.
- * - Chạy demo : đặt biến môi trường SEPAY_DEMO=true (hoặc VM option
- * -Dsepay.demo=true),
- * không cần token, dùng nút "Giả lập" trong dialog QR.
- */
 public final class SePayClient {
+    private static final String URL_GIAO_DICH = "https://userapi.sepay.vn/v2/transactions";
 
-    // TODO: đối chiếu với tài liệu SePay API v2 mục "API Giao dịch" (đường dẫn +
-    // tên trường)
-    private static final String URL_GIAO_DICH = "https://my.sepay.vn/userapi/transactions/list";
-    private static final String KEY_DANH_SACH = "transactions";
-    private static final String KEY_ID = "id";
-    private static final String KEY_SO_TIEN_VAO = "amount_in";
-    private static final String KEY_NOI_DUNG = "transaction_content";
-
-    /** Một giao dịch tiền vào. */
     public static final class GiaoDich {
         public final String id;
         public final String noiDung;
@@ -56,18 +38,19 @@ public final class SePayClient {
 
     private static final List<GiaoDich> GIAO_DICH_GIA = new CopyOnWriteArrayList<>();
 
-    /** Giả lập khách vừa chuyển khoản đúng nội dung và số tiền. */
     public static void moPhongChuyenKhoan(String noiDung, long soTien) {
-        // id theo thời gian để không trùng giữa các lần chạy (cột maGiaoDichNH có
-        // unique index)
         GIAO_DICH_GIA.add(0, new GiaoDich("DEMO-" + System.currentTimeMillis(), soTien, noiDung));
     }
 
     // ================== GỌI API THẬT ==================
     private final HttpClient http = HttpClient.newBuilder()
-            .connectTimeout(Duration.ofSeconds(5))
+            .connectTimeout(Duration.ofSeconds(15))
             .build();
 
+    /**
+     * Lấy các giao dịch tiền vào mới nhất (tối đa {@code limit}, API cho phép tới
+     * 100).
+     */
     public List<GiaoDich> layGiaoDichGanDay(int limit) throws Exception {
         if (DEMO)
             return new ArrayList<>(GIAO_DICH_GIA);
@@ -76,29 +59,55 @@ public final class SePayClient {
         if (token == null || token.trim().isEmpty())
             throw new IllegalStateException("Chưa cấu hình biến môi trường SEPAY_API_TOKEN");
 
-        HttpRequest req = HttpRequest.newBuilder(URI.create(URL_GIAO_DICH + "?limit=" + limit))
-                .timeout(Duration.ofSeconds(8))
-                .header("Authorization", "Bearer " + token)
+        int soLuong = Math.max(1, Math.min(100, limit));
+        String url = URL_GIAO_DICH + "?transfer_type=in&transaction_date_sort=desc&per_page=" + soLuong;
+
+        HttpRequest req = HttpRequest.newBuilder(URI.create(url))
+                .timeout(Duration.ofSeconds(15))
+                .header("Authorization", "Bearer " + token.trim())
+                .header("Accept", "application/json")
                 .GET()
                 .build();
         HttpResponse<String> res = http.send(req, HttpResponse.BodyHandlers.ofString());
-        if (res.statusCode() != 200)
-            throw new IOException("SePay trả về HTTP " + res.statusCode());
 
-        JsonObject goc = JsonParser.parseString(res.body()).getAsJsonObject();
-        JsonArray arr = goc.has(KEY_DANH_SACH) && goc.get(KEY_DANH_SACH).isJsonArray()
-                ? goc.getAsJsonArray(KEY_DANH_SACH)
-                : new JsonArray();
+        int ma = res.statusCode();
+        if (ma == 401 || ma == 403)
+            throw new IOException("SePay từ chối token (HTTP " + ma + "). Kiểm tra lại SEPAY_API_TOKEN.");
+        if (ma == 429)
+            throw new IOException("Gọi SePay quá dày (HTTP 429). Hãy tăng chu kỳ kiểm tra.");
+        if (ma != 200)
+            throw new IOException("SePay trả về HTTP " + ma);
+
+        return docDanhSach(res.body());
+    }
+
+    static List<GiaoDich> docDanhSach(String json) throws IOException {
+        JsonElement goc = JsonParser.parseString(json);
+        if (!goc.isJsonObject())
+            throw new IOException("Dữ liệu SePay không đúng định dạng.");
+        JsonObject o = goc.getAsJsonObject();
+
+        String trangThai = chuoi(o, "status");
+        if (!trangThai.isEmpty() && !"success".equalsIgnoreCase(trangThai))
+            throw new IOException("SePay báo lỗi: " + trangThai);
+
+        JsonElement data = o.get("data");
+        JsonArray arr = (data != null && data.isJsonArray()) ? data.getAsJsonArray() : new JsonArray();
 
         List<GiaoDich> ds = new ArrayList<>();
         for (JsonElement e : arr) {
-            JsonObject o = e.getAsJsonObject();
-            String id = chuoi(o, KEY_ID);
+            if (!e.isJsonObject())
+                continue;
+            JsonObject gd = e.getAsJsonObject();
+            String id = chuoi(gd, "id");
             if (id.isEmpty())
                 continue;
-            String tien = chuoi(o, KEY_SO_TIEN_VAO);
+            String loai = chuoi(gd, "transfer_type");
+            if (!loai.isEmpty() && !"in".equalsIgnoreCase(loai))
+                continue; // chỉ lấy tiền vào
+            String tien = chuoi(gd, "amount_in");
             long soTien = tien.isEmpty() ? 0L : new BigDecimal(tien).longValue();
-            ds.add(new GiaoDich(id, soTien, chuoi(o, KEY_NOI_DUNG)));
+            ds.add(new GiaoDich(id, soTien, chuoi(gd, "transaction_content")));
         }
         return ds;
     }
@@ -113,6 +122,7 @@ public final class SePayClient {
         List<GiaoDich> kq = new ArrayList<>();
         String ma = maCK.toUpperCase(Locale.ROOT);
         for (GiaoDich g : ds) {
+            // Ngân hàng có thể bỏ dấu cách/gạch trong nội dung nên chỉ so sánh chữ và số.
             String nd = g.noiDung.toUpperCase(Locale.ROOT).replaceAll("[^A-Z0-9]", "");
             if (g.soTienVao >= soTien && nd.contains(ma))
                 kq.add(g);
