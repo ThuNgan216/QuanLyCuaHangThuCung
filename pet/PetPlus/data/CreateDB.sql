@@ -1,7 +1,4 @@
 ﻿
-USE master;
-GO
-
 CREATE DATABASE PETPLUS;
 GO
 USE PETPLUS;
@@ -88,7 +85,9 @@ CREATE TABLE KhachHang (
     trangThai     NVARCHAR (50)  CONSTRAINT DF_KhachHang_TrangThai DEFAULT N'Hoạt động' NOT NULL,
     CONSTRAINT PK_KhachHang PRIMARY KEY (maKH),
     CONSTRAINT UQ_KhachHang_SDT UNIQUE (sdt),
-    CONSTRAINT CK_KhachHang_Diem CHECK (diemTichLuy >= 0)
+    CONSTRAINT CK_KhachHang_Diem CHECK (diemTichLuy >= 0),
+    -- Hạng thành viên chỉ có 3 bậc 1, 2, 3 (entity.HangThanhVien); NULL được coi là hạng 1
+    CONSTRAINT CK_KhachHang_Hang CHECK (hangThanhVien IS NULL OR hangThanhVien BETWEEN 1 AND 3)
 );
 
 
@@ -206,7 +205,10 @@ CREATE TABLE LichHen (
     CONSTRAINT PK_LichHen PRIMARY KEY (maLichHen),
     CONSTRAINT FK_LichHen_NhanVien FOREIGN KEY (maNV) REFERENCES NhanVien (maNV),
     CONSTRAINT FK_LichHen_KhachHang FOREIGN KEY (maKH) REFERENCES KhachHang (maKH),
-    CONSTRAINT FK_LichHen_ThuCung FOREIGN KEY (maThuCung) REFERENCES ThuCung (maThuCung)
+    CONSTRAINT FK_LichHen_ThuCung FOREIGN KEY (maThuCung) REFERENCES ThuCung (maThuCung),
+    -- Các trạng thái của máy trạng thái lịch hẹn (entity.TrangThaiLichHen) và "Đã xóa" (ẩn bản ghi)
+    CONSTRAINT CK_LichHen_TrangThai CHECK (trangThai IN (
+        N'Chờ xác nhận', N'Đã xác nhận', N'Đã tiếp nhận', N'Đang thực hiện', N'Hoàn thành', N'Đã hủy', N'Đã xóa'))
 );
 
 
@@ -225,6 +227,10 @@ CREATE TABLE DichVu (
     CONSTRAINT FK_DichVu_LichHen FOREIGN KEY (maLichHen) REFERENCES LichHen (maLichHen),
     CONSTRAINT CK_DichVu_DonGia CHECK (donGia >= 0)
 );
+
+-- Danh mục dịch vụ (maLichHen IS NULL) không được trùng tên; dịch vụ gắn lịch hẹn không bị ràng buộc này.
+CREATE UNIQUE INDEX UX_DichVu_TenDanhMuc ON DichVu (tenDichVu)
+WHERE maLichHen IS NULL AND trangThai <> N'Đã xóa';
 
 
 GO
@@ -487,7 +493,12 @@ BEGIN TRY
                              ('LLV004', '2026-10-13', 'NV004', 'CA001'),
                              ('LLV005', '2026-10-13', 'NV005', 'CA003'),
                              ('LLV006', '2026-10-14', 'NV001', 'CA001'),
-                             ('LLV007', '2026-10-14', 'NV002', 'CA002');
+                             ('LLV007', '2026-10-14', 'NV002', 'CA002'),
+                             ('LLV008', '2026-10-13', 'NV003', 'CA001'),
+                             ('LLV009', '2026-10-13', 'NV005', 'CA001'),
+                             ('LLV010', '2026-10-14', 'NV005', 'CA001'),
+                             ('LLV011', '2026-10-14', 'NV003', 'CA002'),
+                             ('LLV012', '2026-10-15', 'NV005', 'CA001');
     INSERT  INTO KhachHang (
         maKH,
         tenKH,
@@ -497,13 +508,13 @@ BEGIN TRY
         diemTichLuy
     )
     VALUES                 ('KH001', N'Nguyễn Minh Anh', '0912000001', N'Quận 1, TP.HCM', 1, 120),
-                           ('KH002', N'Trần Quốc Bảo', '0912000002', N'Gò Vấp, TP.HCM', 2, 250),
+                           ('KH002', N'Trần Quốc Bảo', '0912000002', N'Gò Vấp, TP.HCM', 1, 250),
                            ('KH003', N'Lê Ngọc Chi', '0912000003', N'Tân Phú, TP.HCM', 1, 80),
-                           ('KH004', N'Phạm Gia Hân', '0912000004', N'Thủ Đức, TP.HCM', 3, 560),
+                           ('KH004', N'Phạm Gia Hân', '0912000004', N'Thủ Đức, TP.HCM', 1, 560),
                            ('KH005', N'Võ Thành Nam', '0912000005', N'Bình Thạnh, TP.HCM', 1, 40),
-                           ('KH006', N'Đặng Thu Trang', '0912000006', N'Quận 7, TP.HCM', 2, 310),
+                           ('KH006', N'Đặng Thu Trang', '0912000006', N'Quận 7, TP.HCM', 1, 310),
                            ('KH007', N'Bùi Hoàng Long', '0912000007', N'Quận 10, TP.HCM', 1, 0),
-                           ('KH008', N'Phan Khánh Linh', '0912000008', N'Bình Tân, TP.HCM', 2, 175);
+                           ('KH008', N'Phan Khánh Linh', '0912000008', N'Bình Tân, TP.HCM', 1, 175);
     INSERT  INTO ThuCung (
         maThuCung,
         tenThuCung,
@@ -596,12 +607,12 @@ BEGIN TRY
         maKH,
         maThuCung
     )
-    VALUES               ('LH001', '2026-10-13T09:00:00', N'Đã xác nhận', 'NV003', 'KH001', 'TC001'),
+    VALUES               ('LH001', '2026-10-13T09:00:00', N'Hoàn thành', 'NV003', 'KH001', 'TC001'),
                          ('LH002', '2026-10-13T10:30:00', N'Hoàn thành', 'NV005', 'KH002', 'TC002'),
                          ('LH003', '2026-10-13T14:00:00', N'Đã xác nhận', 'NV003', 'KH003', 'TC003'),
-                         ('LH004', '2026-10-14T09:30:00', N'Chờ xác nhận', 'NV005', 'KH004', 'TC004'),
+                         ('LH004', '2026-10-14T09:30:00', N'Hoàn thành', 'NV005', 'KH004', 'TC004'),
                          ('LH005', '2026-10-14T15:00:00', N'Đã xác nhận', 'NV003', 'KH005', 'TC005'),
-                         ('LH006', '2026-10-15T10:00:00', N'Chờ xác nhận', 'NV005', 'KH006', 'TC006');
+                         ('LH006', '2026-10-15T10:00:00', N'Hoàn thành', 'NV005', 'KH006', 'TC006');
     INSERT  INTO DichVu (
         maDichVu,
         tenDichVu,
@@ -613,9 +624,26 @@ BEGIN TRY
     VALUES              ('DV001', N'Tắm và sấy chó nhỏ', 120000, N'Tắm, sấy và chải lông cơ bản', N'Hoàn thành', 'LH001'),
                         ('DV002', N'Vệ sinh tai mèo', 80000, N'Vệ sinh tai và kiểm tra sơ bộ', N'Hoàn thành', 'LH002'),
                         ('DV003', N'Cắt tỉa lông', 180000, N'Cắt tỉa theo yêu cầu khách hàng', N'Đã đặt', 'LH003'),
-                        ('DV004', N'Khám sức khỏe tổng quát', 150000, N'Kiểm tra sức khỏe tổng quát', N'Đã đặt', 'LH004'),
-                        ('DV005', N'Cắt móng thú cưng', 50000, N'Cắt móng và vệ sinh bàn chân', N'Đã đặt', 'LH005'),
+                        ('DV004', N'Khám sức khỏe tổng quát', 150000, N'Kiểm tra sức khỏe tổng quát', N'Hoàn thành', 'LH004'),
+                        ('DV005', N'Cắt móng thú cưng', 50000, N'Cắt móng và vệ sinh bàn chân', N'Hoàn thành', 'LH006'),
                         ('DV006', N'Tắm mèo', 140000, N'Tắm và sấy dành cho mèo', N'Đã đặt', 'LH006');
+
+    -- Danh mục dịch vụ của cửa hàng (không gắn lịch hẹn, trạng thái Đang hoạt động);
+    -- màn hình Tiếp nhận lấy các dịch vụ này làm mẫu.
+    INSERT  INTO DichVu (
+        maDichVu,
+        tenDichVu,
+        donGia,
+        moTa,
+        trangThai,
+        maLichHen
+    )
+    VALUES              ('DV007', N'Tắm và sấy chó nhỏ', 120000, N'Tắm, sấy và chải lông cơ bản', N'Đang hoạt động', NULL),
+                        ('DV008', N'Vệ sinh tai mèo', 80000, N'Vệ sinh tai và kiểm tra sơ bộ', N'Đang hoạt động', NULL),
+                        ('DV009', N'Cắt tỉa lông', 180000, N'Cắt tỉa theo yêu cầu khách hàng', N'Đang hoạt động', NULL),
+                        ('DV010', N'Khám sức khỏe tổng quát', 150000, N'Kiểm tra sức khỏe tổng quát', N'Đang hoạt động', NULL),
+                        ('DV011', N'Cắt móng thú cưng', 50000, N'Cắt móng và vệ sinh bàn chân', N'Đang hoạt động', NULL),
+                        ('DV012', N'Tắm mèo', 140000, N'Tắm và sấy dành cho mèo', N'Đang hoạt động', NULL);
     INSERT  INTO KhuyenMai (
         maKhuyenMai,
         tenKhuyenMai,
@@ -817,3 +845,7 @@ BEGIN
     ALTER TABLE dbo.KhachHang
         ADD CONSTRAINT UQ_KhachHang_SDT UNIQUE (sdt);
 END;
+
+/*Tạo mã thanh toán*/
+ALTER TABLE HoaDon ADD maGiaoDichNH NVARCHAR(64) NULL;
+CREATE UNIQUE INDEX UX_HoaDon_GDNH ON HoaDon(maGiaoDichNH) WHERE maGiaoDichNH IS NOT NULL;

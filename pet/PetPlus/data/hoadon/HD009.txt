@@ -1,31 +1,28 @@
 ﻿================================================
-                    PETPLUS
+           CỦA HÀNG THÚ CƯNG PETPLUS
+Địa chỉ: 480 Nguyễn Thái Sơn, Quận Gò Vấp, TP. HCM
                 HÓA ĐƠN BÁN HÀNG
 ================================================
 Mã hóa đơn : HD009
-Ngày lập   : 02/11/2026 01:49
+Ngày lập   : 07/11/2026 11:21
 Nhân viên  : Nguyễn Văn An
-Khách hàng : Danh (KH009)
+Khách hàng : DANH TEST (KH09)
 SĐT        : 0327984637
-Địa chỉ    : Lê văn thọ
+Địa chỉ    : Lê Văn Thọ
 Thanh toán : Tiền mặt
 ------------------------------------------------
-1. Cát vệ sinh mèo 5L [Sản phẩm]
-   1 x 89.000 đ                         89.000 đ
-2. Đồ chơi bóng cao su [Sản phẩm]
-   1 x 25.000 đ                         25.000 đ
-3. Khám sức khỏe tổng quát [Dịch vụ]
-   1 x 150.000 đ                       150.000 đ
-4. Tắm và sấy chó nhỏ [Dịch vụ]
-   1 x 120.000 đ                       120.000 đ
+1. Bình nước thú cưng [Sản phẩm]
+   1 x 55.000 đ                         55.000 đ
+2. Pate chó lon 400g [Sản phẩm]
+   1 x 35.000 đ                         35.000 đ
 ------------------------------------------------
-Tạm tính:                              384.000 đ
-KM hóa đơn:                            -19.200 đ
+Tạm tính:                               90.000 đ
+KM hóa đơn:                                 -0 đ
 KM sản phẩm:                                -0 đ
 Giảm bằng điểm:                             -0 đ
 ------------------------------------------------
-TỔNG THANH TOÁN:                       364.800 đ
-Khách đưa:                             364.800 đ
+TỔNG THANH TOÁN:                        90.000 đ
+Khách đưa:                              90.000 đ
 Tiền thừa:                                   0 đ
 ================================================
                Cảm ơn quý khách!

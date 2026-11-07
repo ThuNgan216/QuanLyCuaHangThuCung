@@ -3,24 +3,27 @@
 Địa chỉ: 480 Nguyễn Thái Sơn, Quận Gò Vấp, TP. HCM
                 HÓA ĐƠN BÁN HÀNG
 ================================================
-Mã hóa đơn : HD011
-Ngày lập   : 02/11/2026 09:21
+Mã hóa đơn : HD015
+Ngày lập   : 05/11/2026 09:12
 Nhân viên  : Nguyễn Văn An
 Khách hàng : Danh (KH009)
 SĐT        : 0327984637
 Địa chỉ    : Lê văn thọ
-Thanh toán : Tiền mặt
+Thanh toán : Chuyển khoản
 ------------------------------------------------
-1. tEST [Sản phẩm]
-   1 x 0 đ                                   0 đ
+1. Cát vệ sinh mèo 5L [Sản phẩm]
+   1 x 89.000 đ                         89.000 đ
+2. Hạt chó trưởng thành 2kg [Sản phẩm]
+   1 x 185.000 đ                       185.000 đ
 ------------------------------------------------
-Tạm tính:                                    0 đ
-KM hóa đơn:                                 -0 đ
-KM sản phẩm:                                -0 đ
+Tạm tính:                              274.000 đ
+KM hóa đơn:                            -27.400 đ
+KM sản phẩm:                           -18.500 đ
+  Test
 Giảm bằng điểm:                             -0 đ
 ------------------------------------------------
-TỔNG THANH TOÁN:                             0 đ
-Khách đưa:                                   0 đ
+TỔNG THANH TOÁN:                       228.100 đ
+Khách đưa:                             228.100 đ
 Tiền thừa:                                   0 đ
 ================================================
                Cảm ơn quý khách!
