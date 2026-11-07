@@ -49,7 +49,7 @@ public class pnlHoaDon extends JPanel {
     private static final Color PINK_LIGHT = new Color(0xFFF0F5);
     private static final Color PINK_SELECT = new Color(0xFFE0EA);
 
-    private static final String[] COLUMNS = { "STT", "Mã đơn hàng", "Tên khách hàng", "Số điện thoại", "Ngày lập",
+    private static final String[] COLUMNS = { "STT", "Mã Hóa Đơn", "Tên khách hàng", "Số điện thoại", "Ngày lập",
             "Thành tiền" };
 
     private final HoaDonDAO hoaDonDAO = new HoaDonDAO();
@@ -117,7 +117,7 @@ public class pnlHoaDon extends JPanel {
         panel.setBackground(AppColors.WHITE);
         panel.setBorder(BorderFactory.createLineBorder(AppColors.BORDER));
 
-        panel.add(createSectionTitle("Danh sách đơn hàng"), BorderLayout.NORTH);
+        panel.add(createSectionTitle("Danh sách hóa đơn"), BorderLayout.NORTH);
 
         model = new DefaultTableModel(COLUMNS, 0) {
             @Override

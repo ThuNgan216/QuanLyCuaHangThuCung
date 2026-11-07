@@ -131,10 +131,14 @@ public class pnlThanhToan extends JPanel {
     private KhuyenMai khuyenMaiSanPhamDangApDung;
     private long tienGiamKhuyenMaiSanPham;
     private boolean dangNapKhuyenMai = false;
+    private boolean dangTaiKhuyenMai = false;
+    private boolean daTaiKhuyenMai = false;
+    private boolean yeuCauTaiLaiKhuyenMai = false;
     private final JRadioButton rbCash = new JRadioButton("Tiền mặt", true);
     private final JRadioButton rbQR = new JRadioButton("Chuyển khoản");
     private JButton[] nutTienNhanh = new JButton[0];
     private JButton btnConfirm;
+    private boolean dangLuuHoaDon = false;
     private long total = 0;
     private int soDiemSuDung = 0;
     private String maTiepNhanDangLap;
@@ -194,13 +198,47 @@ public class pnlThanhToan extends JPanel {
         lamMoiThongTinDon();
         capNhatPhuongThuc();
 
+        // CardLayout có thể phát sinh sự kiện hiển thị trước khi panel thực sự
+        // hoàn tất trạng thái showing. Đưa việc nạp dữ liệu sang lượt EDT kế tiếp.
         addHierarchyListener(e -> {
-            if ((e.getChangeFlags() & HierarchyEvent.SHOWING_CHANGED) != 0 && isShowing()) {
-                capNhatNhanVien();
-                dsSanPham.taiDuLieu();
-                taiKhuyenMai();
+            if ((e.getChangeFlags() & HierarchyEvent.SHOWING_CHANGED) != 0) {
+                SwingUtilities.invokeLater(() -> {
+                    if (isShowing()) {
+                        onPageShown();
+                    }
+                });
             }
         });
+    }
+
+    /**
+     * Gọi khi trang Thanh toán được mở. An toàn khi gọi nhiều lần vì các hàm
+     * tải dữ liệu có cơ chế chống tải trùng và lưu cache trong vòng đời panel.
+     */
+    public void onPageShown() {
+        if (!SwingUtilities.isEventDispatchThread()) {
+            SwingUtilities.invokeLater(this::onPageShown);
+            return;
+        }
+        capNhatNhanVien();
+        dsSanPham.taiDuLieu();
+        taiKhuyenMai();
+    }
+
+    /**
+     * Làm mới danh mục sản phẩm và khuyến mãi sau khi dữ liệu được thay đổi
+     * ở các màn hình quản lý tương ứng.
+     */
+    public void lamMoiDuLieu() {
+        Runnable action = () -> {
+            dsSanPham.taiDuLieu(true);
+            taiKhuyenMai(true);
+        };
+        if (SwingUtilities.isEventDispatchThread()) {
+            action.run();
+        } else {
+            SwingUtilities.invokeLater(action);
+        }
     }
 
     // ================== DANH MỤC SẢN PHẨM / DỊCH VỤ ==================
@@ -222,6 +260,8 @@ public class pnlThanhToan extends JPanel {
         final JTextField txtSearch;
         final JLabel lblTrangThai = label("", 12, MUTED, false);
         boolean dangTai = false;
+        boolean daTaiThanhCong = false;
+        boolean yeuCauTaiLai = false;
 
         DanhMuc(String loai, String goiY) {
             this.loai = loai;
@@ -307,8 +347,20 @@ public class pnlThanhToan extends JPanel {
         }
 
         void taiDuLieu() {
-            if (dangTai)
+            taiDuLieu(false);
+        }
+
+        void taiDuLieu(boolean batBuocTaiLai) {
+            if (dangTai) {
+                if (batBuocTaiLai) {
+                    yeuCauTaiLai = true;
+                }
                 return;
+            }
+            if (daTaiThanhCong && !batBuocTaiLai) {
+                return;
+            }
+
             dangTai = true;
             lblTrangThai.setForeground(MUTED);
             lblTrangThai.setText("Đang tải...");
@@ -325,12 +377,15 @@ public class pnlThanhToan extends JPanel {
                     try {
                         List<Object[]> ds = get();
                         model.setRowCount(0);
-                        for (Object[] row : ds)
+                        for (Object[] row : ds) {
                             model.addRow(row);
+                        }
                         loc();
+                        daTaiThanhCong = true;
                         lblTrangThai.setForeground(MUTED);
                         lblTrangThai.setText(ds.size() + " mục • Nhấp đúp hoặc Enter để thêm vào đơn");
                     } catch (Exception ex) {
+                        daTaiThanhCong = false;
                         Throwable loi = nguyenNhan(ex);
                         lblTrangThai.setForeground(DARK_PINK);
                         lblTrangThai.setText("Lỗi tải dữ liệu: " + loi.getMessage());
@@ -338,6 +393,12 @@ public class pnlThanhToan extends JPanel {
                         JOptionPane.showMessageDialog(pnlThanhToan.this,
                                 "Không thể tải " + loai + ":\n" + loi.getMessage(),
                                 "Lỗi cơ sở dữ liệu", JOptionPane.ERROR_MESSAGE);
+                    } finally {
+                        if (yeuCauTaiLai) {
+                            yeuCauTaiLai = false;
+                            daTaiThanhCong = false;
+                            taiDuLieu(true);
+                        }
                     }
                 }
             }.execute();
@@ -397,6 +458,22 @@ public class pnlThanhToan extends JPanel {
     }
 
     private void taiKhuyenMai() {
+        taiKhuyenMai(false);
+    }
+
+    private void taiKhuyenMai(boolean batBuocTaiLai) {
+        if (dangTaiKhuyenMai) {
+            if (batBuocTaiLai) {
+                yeuCauTaiLaiKhuyenMai = true;
+            }
+            return;
+        }
+        if (daTaiKhuyenMai && !batBuocTaiLai) {
+            return;
+        }
+
+        dangTaiKhuyenMai = true;
+
         new SwingWorker<List<KhuyenMai>, Void>() {
             @Override
             protected List<KhuyenMai> doInBackground() throws Exception {
@@ -405,45 +482,61 @@ public class pnlThanhToan extends JPanel {
 
             @Override
             protected void done() {
+                dangTaiKhuyenMai = false;
                 try {
                     List<KhuyenMai> ds = get();
-                    khuyenMaiSanPhamHieuLuc = new ArrayList<>();
+                    List<KhuyenMai> khuyenMaiSanPham = new ArrayList<>();
                     List<KhuyenMai> khuyenMaiHoaDon = new ArrayList<>();
+
                     for (KhuyenMai km : ds) {
                         if (KhuyenMai.PHAM_VI_SAN_PHAM.equals(km.getPhamViApDung())) {
-                            khuyenMaiSanPhamHieuLuc.add(km);
+                            khuyenMaiSanPham.add(km);
                         } else {
                             khuyenMaiHoaDon.add(km);
                         }
                     }
+
                     KhuyenMai dangChon = (KhuyenMai) cboKhuyenMai.getSelectedItem();
                     dangNapKhuyenMai = true;
                     try {
                         cboKhuyenMai.removeAllItems();
-                        for (KhuyenMai km : khuyenMaiHoaDon)
+                        for (KhuyenMai km : khuyenMaiHoaDon) {
                             cboKhuyenMai.addItem(km);
+                        }
 
                         boolean daChon = false;
                         if (dangChon != null && dangChon.getMaKhuyenMai() != null) {
                             for (int i = 0; i < cboKhuyenMai.getItemCount(); i++) {
-                                if (dangChon.equals(cboKhuyenMai.getItemAt(i))) {
+                                KhuyenMai item = cboKhuyenMai.getItemAt(i);
+                                if (dangChon.equals(item)) {
                                     cboKhuyenMai.setSelectedIndex(i);
                                     daChon = true;
                                     break;
                                 }
                             }
                         }
-                        if (!daChon)
+                        if (!daChon) {
                             chonKhongKhuyenMai();
+                        }
                     } finally {
                         dangNapKhuyenMai = false;
                     }
+
+                    khuyenMaiSanPhamHieuLuc = khuyenMaiSanPham;
                     updateTotals();
+                    daTaiKhuyenMai = true;
                 } catch (Exception ex) {
+                    daTaiKhuyenMai = false;
                     Throwable loi = nguyenNhan(ex);
                     JOptionPane.showMessageDialog(pnlThanhToan.this,
                             "Không thể tải khuyến mãi:\n" + loi.getMessage(),
                             "Lỗi cơ sở dữ liệu", JOptionPane.ERROR_MESSAGE);
+                } finally {
+                    if (yeuCauTaiLaiKhuyenMai) {
+                        yeuCauTaiLaiKhuyenMai = false;
+                        daTaiKhuyenMai = false;
+                        taiKhuyenMai(true);
+                    }
                 }
             }
         }.execute();
@@ -515,8 +608,19 @@ public class pnlThanhToan extends JPanel {
 
     private void lamMoiThongTinDon() {
         LocalDateTime now = LocalDateTime.now();
-        txtOrderCode.setText("DH-" + now.format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss")));
-        txtOrderDate.setText(now.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
+
+        // Hóa đơn mới: mã do hệ thống sinh khi lưu.
+        // Phiếu tiếp nhận: giữ mã hóa đơn đã tồn tại.
+        txtOrderCode.setText(
+                maTiepNhanDangLap == null
+                        ? "Tự động sinh khi lưu"
+                        : maTiepNhanDangLap);
+
+        txtOrderCode.setEditable(false);
+
+        txtOrderDate.setText(
+                now.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
+
         capNhatNhanVien();
     }
 
@@ -1562,6 +1666,11 @@ public class pnlThanhToan extends JPanel {
      * Lỗi ở bất kỳ bước nào sẽ rollback toàn bộ.
      */
     private void luuDonHang() {
+        if (dangLuuHoaDon) {
+            return;
+        }
+        dangLuuHoaDon = true;
+
         final boolean themKhach = khachMoi;
         final String ten = txtCustomer.getText().trim();
         final String sdt = txtPhone.getText().trim();
@@ -1615,8 +1724,19 @@ public class pnlThanhToan extends JPanel {
                             maKH = khachCu.maKH;
                         }
 
-                        String maHD = luuHoaDon(con, maKH, maNV, dong, tongTien, phuongThuc,
-                                maKhuyenMai, khuyenMaiSanPham, diemSuDung, tienKhachDua, maGDNH);
+                        String maHD = luuHoaDon(
+                                con,
+                                maKH,
+                                maNV,
+                                dong,
+                                tongTien,
+                                phuongThuc,
+                                maKhuyenMai,
+                                khuyenMaiSanPham,
+                                diemSuDung,
+                                tienKhachDua,
+                                maTiepNhan,
+                                maGDNH);
                         if (maTiepNhan != null)
                             tiepNhanThuCungDAO.danhDauDaThanhToan(con, maTiepNhan);
                         con.commit();
@@ -1639,6 +1759,7 @@ public class pnlThanhToan extends JPanel {
 
             @Override
             protected void done() {
+                dangLuuHoaDon = false;
                 btnConfirm.setEnabled(true);
                 try {
                     String[] kq = get();
@@ -1671,26 +1792,70 @@ public class pnlThanhToan extends JPanel {
         }.execute();
     }
 
-    /**
-     * Ghi HoaDon, ChiTietHoaDon, trừ tồn kho và cập nhật điểm tích lũy.
-     * Dùng chung Connection (transaction) do luuDonHang() quản lý.
-     */
-    private String luuHoaDon(Connection con, String maKH, String maNV,
-            List<Object[]> dong, long tongTien,
-            String phuongThuc, String maKhuyenMai,
-            KhuyenMai khuyenMaiSanPham, int diemSuDung, long tienKhachDua,
+    private String luuHoaDon(
+            Connection con,
+            String maKH,
+            String maNV,
+            List<Object[]> dong,
+            long tongTien,
+            String phuongThuc,
+            String maKhuyenMai,
+            KhuyenMai khuyenMaiSanPham,
+            int diemSuDung,
+            long tienKhachDua,
+            String maHoaDonTiepNhan,
             String maGiaoDichNganHang) throws SQLException {
-        String maHD = thanhToanDAO.taoMaHoaDon(con);
+
         String maPTTT = thanhToanDAO.layMaPTTT(con, phuongThuc);
-        thanhToanDAO.themHoaDon(con, maHD, maNV, maKH, maKhuyenMai, maPTTT);
-        if (maGiaoDichNganHang != null)
-            thanhToanDAO.ganMaGiaoDichNH(con, maHD, maGiaoDichNganHang);
-        thanhToanDAO.themChiTiet(con, maHD, dong, tienKhachDua);
+
+        final String maHD;
+
+        // TRƯỜNG HỢP 1: LẬP HÓA ĐƠN MỚI
+        if (maHoaDonTiepNhan == null || maHoaDonTiepNhan.trim().isEmpty()) {
+
+            // Hệ thống tự sinh mã hóa đơn
+            maHD = thanhToanDAO.taoMaHoaDon(con);
+
+            // Thêm hóa đơn mới
+            thanhToanDAO.themHoaDon(
+                    con,
+                    maHD,
+                    maNV,
+                    maKH,
+                    maKhuyenMai,
+                    maPTTT);
+
+            // Lưu mã giao dịch nếu thanh toán QR
+            if (maGiaoDichNganHang != null) {
+                thanhToanDAO.ganMaGiaoDichNH(
+                        con, maHD, maGiaoDichNganHang);
+            }
+
+        } else {
+
+            // TRƯỜNG HỢP 2: THANH TOÁN PHIẾU TIẾP NHẬN
+            // Giữ nguyên mã hóa đơn đã được tạo trước đó
+            maHD = maHoaDonTiepNhan;
+
+            thanhToanDAO.capNhatThanhToanHoaDon(
+                    con,
+                    maHD,
+                    maNV,
+                    maKhuyenMai,
+                    maPTTT,
+                    maGiaoDichNganHang);
+            thanhToanDAO.xoaChiTietHoaDon(con, maHD);
+        }
+        thanhToanDAO.themChiTiet(
+                con, maHD, dong, tienKhachDua);
         if (khuyenMaiSanPham != null) {
-            thanhToanDAO.themKhuyenMaiSanPham(con, maHD, dong, khuyenMaiSanPham);
+            thanhToanDAO.themKhuyenMaiSanPham(
+                    con, maHD, dong, khuyenMaiSanPham);
         }
         thanhToanDAO.truTonKho(con, dong);
-        thanhToanDAO.capNhatDiem(con, maKH, diemSuDung, tongTien);
+        thanhToanDAO.capNhatDiem(
+                con, maKH, diemSuDung, tongTien);
+
         return maHD;
     }
 

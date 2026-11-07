@@ -121,7 +121,21 @@ public class pnlLichHen extends JPanel {
 
         top.add(btnLoc);
 
-        add(top, BorderLayout.NORTH);
+        // Tiêu đề phía trên panel
+        JLabel lblTieuDe = new JLabel("QUẢN LÝ LỊCH HẸN");
+        lblTieuDe.setFont(new Font("Arial", Font.BOLD, 22));
+        lblTieuDe.setForeground(new Color(32, 44, 64));
+
+        // Khu vực tiêu đề và bộ lọc
+        JPanel pnlHeader = new JPanel(new BorderLayout(0, 10));
+        pnlHeader.setBackground(Color.WHITE);
+        pnlHeader.setBorder(
+                BorderFactory.createEmptyBorder(0, 0, 10, 0));
+
+        pnlHeader.add(lblTieuDe, BorderLayout.NORTH);
+        pnlHeader.add(top, BorderLayout.CENTER);
+
+        add(pnlHeader, BorderLayout.NORTH);
 
         // Định dạng bảng
         table.setFont(new Font("Arial", Font.PLAIN, 13));
