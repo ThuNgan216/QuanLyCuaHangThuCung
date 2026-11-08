@@ -93,11 +93,6 @@ public class KhachHangService {
         return khachHangDAO.xoa(maKH.trim());
     }
 
-    /**
-     * Địa chỉ thật thường có số nhà và dấu phẩy (vd: "650 Lê Văn Thọ, Gò Vấp"),
-     * nên cho phép chữ, chữ số, khoảng trắng và các ký tự , . / -
-     * Để public static để form nhập liệu dùng chung, tránh viết luật hai lần.
-     */
     private static final java.util.regex.Pattern DIA_CHI_HOP_LE = java.util.regex.Pattern
             .compile("[\\p{L}\\p{N}\\s,./\\-]+");
 
@@ -107,8 +102,8 @@ public class KhachHangService {
         if (ten.isEmpty()) {
             throw new IllegalArgumentException("Tên khách hàng không được để trống.");
         }
-        if (ten.length() > 100) {
-            throw new IllegalArgumentException("Tên khách hàng tối đa 100 ký tự.");
+        if (ten.length() > 50) {
+            throw new IllegalArgumentException("Tên khách hàng tối đa 50 ký tự.");
         }
         if (!ten.matches("\\p{Lu}\\p{Ll}*(?:\\s+\\p{Lu}\\p{Ll}*)*")) {
             throw new IllegalArgumentException(
@@ -129,8 +124,8 @@ public class KhachHangService {
         if (dc.isEmpty()) {
             throw new IllegalArgumentException("Địa chỉ không được để trống.");
         }
-        if (dc.length() > 255) {
-            throw new IllegalArgumentException("Địa chỉ tối đa 255 ký tự.");
+        if (dc.length() > 40) {
+            throw new IllegalArgumentException("Địa chỉ tối đa 40 ký tự.");
         }
         if (!DIA_CHI_HOP_LE.matcher(dc).matches()) {
             throw new IllegalArgumentException(
