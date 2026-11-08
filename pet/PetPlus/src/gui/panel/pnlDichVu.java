@@ -10,17 +10,14 @@ import java.text.DecimalFormat;
 import java.util.List;
 
 /**
- * Quản lý danh mục dịch vụ của cửa hàng: thêm dịch vụ mới, sửa giá, ngừng cung cấp, xóa.
+ * Quản lý danh mục dịch vụ của cửa hàng: thêm dịch vụ mới, sửa giá, ngừng cung
+ * cấp, xóa.
  * Khung màn hình dùng chung ở pnlQuanLyChung; luật nghiệp vụ ở DichVuService.
  */
 public class pnlDichVu extends pnlQuanLyChung<DichVu> {
     private static final DecimalFormat TIEN = new DecimalFormat("#,##0");
 
     private final DichVuService service = new DichVuService();
-
-    private static final Color PRIMARY = new Color(224, 25, 91);
-    private static final Color TEXT = new Color(32, 44, 64);
-    private static final Color BORDER = new Color(237, 217, 225);
 
     public pnlDichVu() {
         super("QUẢN LÝ DỊCH VỤ", "dịch vụ", "Mã, tên, mô tả hoặc trạng thái dịch vụ",
@@ -35,7 +32,8 @@ public class pnlDichVu extends pnlQuanLyChung<DichVu> {
 
     @Override
     protected Object[] taoDong(DichVu d) {
-        return new Object[] { d.getMaDichVu(), d.getTenDichVu(), d.getDonGia() == null ? "" : TIEN.format(d.getDonGia()),
+        return new Object[] { d.getMaDichVu(), d.getTenDichVu(),
+                d.getDonGia() == null ? "" : TIEN.format(d.getDonGia()),
                 d.getMoTa(), d.getTrangThai() };
     }
 
