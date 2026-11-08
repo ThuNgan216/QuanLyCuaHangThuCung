@@ -3,6 +3,9 @@ package entity;
 import java.time.LocalDate;
 
 public class ThuCung {
+    /** Giá trị canNang khi người dùng chưa nhập cân nặng (lưu NULL trong CSDL). */
+    public static final float CAN_NANG_TRONG = -1f;
+
     private String maThuCung;
     private String tenThuCung;
     private String loai;

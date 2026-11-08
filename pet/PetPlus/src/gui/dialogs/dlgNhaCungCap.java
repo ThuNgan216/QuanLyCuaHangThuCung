@@ -8,10 +8,6 @@ import javax.swing.*;
 import service.NhaCungCapService;
 import utils.PetPlusTheme;
 
-import javax.swing.*;
-import java.awt.*;
-import java.sql.SQLException;
-
 public class dlgNhaCungCap extends JDialog {
     private final JTextField txtMaNCC = new JTextField(15);
     private final JTextField txtTenNCC = new JTextField(15);
@@ -81,9 +77,8 @@ public class dlgNhaCungCap extends JDialog {
                 String maMoi = nccDAO.phatSinhMaNCCMoi();
                 txtMaNCC.setText(maMoi);
             } catch (SQLException ex) {
-                txtMaNCC.setText("");
-                txtMaNCC.setToolTipText("Không thể phát sinh mã nhà cung cấp: " + ex.getMessage());
-                btnLuu.setEnabled(false);
+                txtMaNCC.setText("Lỗi tạo mã");
+                ex.printStackTrace();
             }
         }
 

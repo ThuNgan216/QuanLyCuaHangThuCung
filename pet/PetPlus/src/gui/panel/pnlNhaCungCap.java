@@ -69,13 +69,11 @@ public class pnlNhaCungCap extends JPanel {
         btnThem = new JButton("Thêm mới");
         btnSua = new JButton("Cập nhật");
         btnXoa = new JButton("Xóa");
-        btnXemSP = new JButton("Xem SP");
 
         pnlNut.add(btnThem);
         pnlNut.add(btnSua);
         pnlNut.add(btnXoa);
-        pnlNut.add(btnXemSP);
-
+        
         pnlTop.add(pnlNut, BorderLayout.EAST);
 
         // --- Bảng danh sách ---
@@ -141,9 +139,6 @@ public class pnlNhaCungCap extends JPanel {
                 }
             }
         });
-
-        // Sự kiện click nút Xem SP
-        btnXemSP.addActionListener(e -> xemSanPhamCungCap());
 
         // Nút Xóa
         btnXoa.addActionListener(e -> xoaNCC());
