@@ -24,16 +24,6 @@ import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * DAO phục vụ màn hình thanh toán PETPLUS.
- *
- * Quy ước:
- * - Các phương thức nhận Connection không tự đóng Connection; transaction do
- * tầng gọi quản lý.
- * - Các phương thức tự lấy Connection sẽ tự đóng toàn bộ tài nguyên JDBC.
- * - Không thực hiện truy vấn JDBC trên Swing EDT; giao diện phải gọi DAO qua
- * SwingWorker hoặc một executor nền.
- */
 public class ThanhToanDAO {
 
     private static final String LOAI_SAN_PHAM = "Sản phẩm";
@@ -413,10 +403,6 @@ public class ThanhToanDAO {
         }
     }
 
-    /**
-     * Hoàn tất thanh toán cho hóa đơn đã được tạo ở bước tiếp nhận.
-     * Giữ phương thức public để tương thích với các màn hình/nghiệp vụ khác.
-     */
     public void capNhatThanhToanHoaDon(
             Connection con,
             String maHD,

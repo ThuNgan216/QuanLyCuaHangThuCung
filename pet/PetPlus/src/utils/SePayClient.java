@@ -47,10 +47,6 @@ public final class SePayClient {
             .connectTimeout(Duration.ofSeconds(15))
             .build();
 
-    /**
-     * Lấy các giao dịch tiền vào mới nhất (tối đa {@code limit}, API cho phép tới
-     * 100).
-     */
     public List<GiaoDich> layGiaoDichGanDay(int limit) throws Exception {
         if (DEMO)
             return new ArrayList<>(GIAO_DICH_GIA);

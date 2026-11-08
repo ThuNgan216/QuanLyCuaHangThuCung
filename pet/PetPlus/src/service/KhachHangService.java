@@ -110,9 +110,9 @@ public class KhachHangService {
         if (ten.length() > 100) {
             throw new IllegalArgumentException("Tên khách hàng tối đa 100 ký tự.");
         }
-        if (!ten.matches("[\\p{L}]+(?:\\s+[\\p{L}]+)*")) {
+        if (!ten.matches("\\p{Lu}\\p{Ll}*(?:\\s+\\p{Lu}\\p{Ll}*)*")) {
             throw new IllegalArgumentException(
-                    "Tên khách hàng chỉ được chứa chữ cái và khoảng trắng, không có số hoặc ký tự đặc biệt.");
+                    "Tên khách hàng phải viết hoa chữ cái đầu mỗi từ, các chữ còn lại viết thường; chỉ dùng chữ cái và khoảng trắng.");
         }
     }
 
