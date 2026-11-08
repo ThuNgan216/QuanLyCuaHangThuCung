@@ -42,15 +42,11 @@ public final class SePayClient {
         GIAO_DICH_GIA.add(0, new GiaoDich("DEMO-" + System.currentTimeMillis(), soTien, noiDung));
     }
 
-    // ================== GỌI API THẬT ==================
+    // ================== GỌI API==================
     private final HttpClient http = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(15))
             .build();
 
-    /**
-     * Lấy các giao dịch tiền vào mới nhất (tối đa {@code limit}, API cho phép tới
-     * 100).
-     */
     public List<GiaoDich> layGiaoDichGanDay(int limit) throws Exception {
         if (DEMO)
             return new ArrayList<>(GIAO_DICH_GIA);
@@ -104,7 +100,7 @@ public final class SePayClient {
                 continue;
             String loai = chuoi(gd, "transfer_type");
             if (!loai.isEmpty() && !"in".equalsIgnoreCase(loai))
-                continue; // chỉ lấy tiền vào
+                continue;
             String tien = chuoi(gd, "amount_in");
             long soTien = tien.isEmpty() ? 0L : new BigDecimal(tien).longValue();
             ds.add(new GiaoDich(id, soTien, chuoi(gd, "transaction_content")));
@@ -117,12 +113,10 @@ public final class SePayClient {
         return (e == null || e.isJsonNull()) ? "" : e.getAsString();
     }
 
-    /** Giao dịch tiền vào có chứa mã chuyển khoản và đủ số tiền. */
     public static List<GiaoDich> locKhop(List<GiaoDich> ds, String maCK, long soTien) {
         List<GiaoDich> kq = new ArrayList<>();
         String ma = maCK.toUpperCase(Locale.ROOT);
         for (GiaoDich g : ds) {
-            // Ngân hàng có thể bỏ dấu cách/gạch trong nội dung nên chỉ so sánh chữ và số.
             String nd = g.noiDung.toUpperCase(Locale.ROOT).replaceAll("[^A-Z0-9]", "");
             if (g.soTienVao >= soTien && nd.contains(ma))
                 kq.add(g);
