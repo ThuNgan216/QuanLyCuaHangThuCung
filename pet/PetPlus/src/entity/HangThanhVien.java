@@ -1,11 +1,5 @@
 package entity;
 
-/**
- * Hạng thành viên của khách hàng, tính từ điểm tích lũy.
- * Quy tắc: cứ đủ {@value #DIEM_MOI_HANG} điểm thì tăng 1 hạng, chỉ có 3 bậc 1, 2, 3 (hạng 3 là cao nhất).
- * Cột KhachHang.hangThanhVien trong CSDL lưu {@link #getMa()}.
- * Điểm kiếm được theo quy tắc 1 điểm / 10.000 đ (xem ThanhToanDAO.capNhatDiem).
- */
 public enum HangThanhVien {
     HANG_1(1),
     HANG_2(2),
@@ -19,10 +13,7 @@ public enum HangThanhVien {
     HangThanhVien(int ma) {
         this.ma = ma;
     }
-
-    /** Mã hạng lưu trong CSDL: 1, 2 hoặc 3. */
     public int getMa() { return ma; }
-
     public String getTen() { return "Hạng " + ma; }
 
     /** Số điểm tối thiểu để đạt hạng này: hạng 1 từ 0, hạng 2 từ 2000, hạng 3 từ 4000. */
@@ -32,13 +23,12 @@ public enum HangThanhVien {
     public static HangThanhVien tuDiem(int diem) {
         return tuMa(Math.max(0, diem) / DIEM_MOI_HANG + 1);
     }
-
+    
     /** Đổi mã trong CSDL sang hạng; mã trống (NULL = 0) coi là hạng 1, mã lớn hơn 3 coi là hạng 3. */
     public static HangThanhVien tuMa(int ma) {
         HangThanhVien[] ds = values();
         return ds[Math.min(Math.max(ma, 1), ds.length) - 1];
     }
-
     /** Hạng cao hơn liền kề, null nếu đã ở hạng cao nhất. */
     public HangThanhVien hangTiepTheo() {
         HangThanhVien[] ds = values();

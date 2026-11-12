@@ -3,10 +3,6 @@ package utils;
 import java.awt.Component;
 import javax.swing.JOptionPane;
 
-/**
- * Hộp thoại thông báo dùng chung cho các màn hình quản lý (khách hàng, thú cưng, lịch hẹn, dịch vụ)
- * để cách báo thành công / cảnh báo / lỗi giống hệt nhau ở mọi nơi.
- */
 public final class ThongBao {
     private ThongBao() {
     }
@@ -25,10 +21,7 @@ public final class ThongBao {
         ex.printStackTrace();
     }
 
-    /**
-     * Phân loại lỗi một cách thống nhất: vi phạm luật nghiệp vụ / dữ liệu nhập (IllegalArgumentException)
-     * là cảnh báo cho người dùng sửa; các lỗi còn lại (CSDL, hệ thống) là lỗi.
-     */
+
     public static void xuLy(Component cha, String tieuDe, Exception ex) {
         if (ex instanceof IllegalArgumentException)
             canhBao(cha, tieuDe, ex.getMessage());

@@ -322,7 +322,7 @@ public class dlgLichHen extends JDialog {
         // tự đổi sang người khác một cách âm thầm; khi lưu service sẽ báo rõ lý do.
         if (duLieu != null && duLieu.getMaNV() != null && maGiu != null && maGiu.equals(duLieu.getMaNV().getMaNV())
                 && nhanVienMap.values().stream().noneMatch(n -> n.getMaNV().equals(maGiu))) {
-            String label = maGiu + " - " + duLieu.getMaNV().getTenNV() + " (không có ca vào giờ này)";
+            String label = maGiu + " - " + duLieu.getMaNV().getTenNV() + " (Đã có khách lịch hoặc nghỉ ca vào giờ này)";
             nhanVienMap.put(label, duLieu.getMaNV());
             cboNV.addItem(label);
             cboNV.setSelectedItem(label);

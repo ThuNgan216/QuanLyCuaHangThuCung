@@ -18,10 +18,6 @@ public class pnlDichVu extends pnlQuanLyChung<DichVu> {
 
     private final DichVuService service = new DichVuService();
 
-    private static final Color PRIMARY = new Color(224, 25, 91);
-    private static final Color TEXT = new Color(32, 44, 64);
-    private static final Color BORDER = new Color(237, 217, 225);
-
     public pnlDichVu() {
         super("QUẢN LÝ DỊCH VỤ", "dịch vụ", "Mã, tên, mô tả hoặc trạng thái dịch vụ",
                 new String[] { "Mã dịch vụ", "Tên dịch vụ", "Đơn giá (đ)", "Mô tả", "Trạng thái" });

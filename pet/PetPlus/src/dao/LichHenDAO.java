@@ -175,13 +175,7 @@ public class LichHenDAO {
         return kq;
     }
 
-    /**
-     * Các lịch còn hiệu lực (chưa Hoàn thành / Đã hủy / Đã xóa) của một nhân viên hoặc một thú cưng
-     * chồng lấn khoảng [batDau, batDau + phut). Lịch kết thúc đúng lúc lịch khác bắt đầu thì không chồng.
-     *
-     * @param cot       "maNV" hoặc "maThuCung"
-     * @param maBoQua   mã lịch bỏ qua (chính lịch đang sửa), có thể null
-     */
+
     public List<LichHen> timLichChong(String cot, String ma, LocalDateTime batDau, int phut, String maBoQua) {
         if (!"maNV".equals(cot) && !"maThuCung".equals(cot))
             throw new IllegalArgumentException("Cột kiểm tra trùng lịch không hợp lệ.");

@@ -17,19 +17,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-/**
- * Nghiệp vụ lịch hẹn:
- * <ul>
- * <li>Trạng thái đi theo máy trạng thái ({@link TrangThaiLichHen#coTheChuyenSang}).</li>
- * <li>Khách hàng, thú cưng, nhân viên phải tồn tại; thú cưng phải thuộc khách hàng đã chọn;
- * nhân viên phải là nhân viên chăm sóc đang hoạt động.</li>
- * <li>Lịch nằm trong ca làm việc của nhân viên (bảng LichLamViec / CaLamViec).</li>
- * <li>Mỗi lịch kéo dài {@value #DO_DAI_LICH_PHUT} phút; nhân viên và thú cưng không bị đặt chồng giờ.</li>
- * <li>Lịch đã tiếp nhận / hoàn thành / hủy không được sửa; chỉ xóa lịch Chờ xác nhận hoặc Đã hủy.</li>
- * </ul>
- */
 public class LichHenService {
-    /** Mỗi lịch hẹn chiếm 30 phút của nhân viên. */
     public static final int DO_DAI_LICH_PHUT = 30;
 
     private static final DateTimeFormatter NGAY_GIO = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
@@ -40,7 +28,6 @@ public class LichHenService {
     private final KhachHangDAO khachHangDAO = new KhachHangDAO();
     private final ThuCungDAO thuCungDAO = new ThuCungDAO();
 
-    // ---------------------------------------------------------------- truy vấn
 
     public List<LichHen> layDanhSach() {
         return dao.layDanhSach();
@@ -81,13 +68,7 @@ public class LichHenService {
         return tt == null ? new ArrayList<TrangThaiLichHen>() : tt.luaChonThuCong();
     }
 
-    /**
-     * Nhân viên có thể nhận lịch vào đúng giờ này: đang hoạt động, thuộc bộ phận chăm sóc, ca làm việc phủ kín
-     * khoảng [giờ hẹn, giờ hẹn + 30 phút] và chưa có lịch khác chồng giờ. Dùng cho form đặt lịch để người dùng
-     * chỉ thấy những nhân viên chọn được, không phải chọn xong mới bị báo lỗi.
-     *
-     * @param maLichBoQua mã lịch đang sửa (không tính là "bận"), null khi tạo mới
-     */
+
     public List<NhanVien> layNhanVienConTrong(LocalDateTime thoiGian, String maLichBoQua) {
         List<NhanVien> kq = new ArrayList<>();
         if (thoiGian == null)
