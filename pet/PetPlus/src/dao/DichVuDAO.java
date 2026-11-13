@@ -11,10 +11,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Truy vấn danh mục dịch vụ trong SQL Server. Chỉ làm việc với dịch vụ của cửa hàng (maLichHen IS NULL);
- * các bản sao dịch vụ gắn với lịch hẹn do chức năng Tiếp nhận tạo ra, không hiển thị và không quản lý ở đây.
- */
 public class DichVuDAO {
     private static final String SELECT = "SELECT d.maDichVu, d.tenDichVu, d.donGia, d.moTa, d.trangThai, d.maLichHen "
             + "FROM DichVu d WHERE d.trangThai <> N'Đã xóa' AND d.maLichHen IS NULL ";
@@ -53,7 +49,6 @@ public class DichVuDAO {
         return ds;
     }
 
-    /** Mã gợi ý để hiển thị; mã thật được sinh lại khi lưu (xem {@link #them}). */
     public String taoMaMoi() {
         try (Connection con = ConnectDB.getConnection()) {
             return taoMaMoi(con);
@@ -66,7 +61,6 @@ public class DichVuDAO {
         return TienIchDAO.sinhMa(con, "DichVu", "maDichVu", "DV");
     }
 
-    /** Thêm dịch vụ; mã được sinh tại đây và sinh lại nếu hai người thêm cùng lúc bị trùng mã. */
     public boolean them(DichVu d) {
         String sql = "INSERT INTO DichVu(maDichVu, tenDichVu, donGia, moTa, trangThai, maLichHen) VALUES(?,?,?,?,?,?)";
         try (Connection con = ConnectDB.getConnection()) {
@@ -86,7 +80,6 @@ public class DichVuDAO {
         }
     }
 
-    /** Tìm một dịch vụ (chưa bị xóa) theo mã; null nếu không có. */
     public DichVu timTheoMa(String ma) {
         String sql = SELECT + "AND d.maDichVu = ?";
         try (Connection con = ConnectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
